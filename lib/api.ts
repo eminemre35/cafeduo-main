@@ -26,11 +26,11 @@ export const api = {
       }
       return data;
     },
-    register: async (username: string, email: string, password: string): Promise<User> => {
+    register: async (username: string, email: string, password: string, department?: string): Promise<any> => {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, department }),
       });
 
       const text = await res.text();
@@ -44,6 +44,26 @@ export const api = {
 
       if (!res.ok) {
         throw new Error(data.error || 'Kayıt başarısız');
+      }
+      return data;
+    },
+    verify: async (email: string, code: string): Promise<User> => {
+      const res = await fetch(`${API_URL}/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Sunucu hatası: ${res.status}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Doğrulama başarısız');
       }
       return data;
     }

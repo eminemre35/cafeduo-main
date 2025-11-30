@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
 import { api } from '../lib/api';
+import { PAU_DEPARTMENTS } from '../constants';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,10 +12,10 @@ interface AuthModalProps {
   onLoginSuccess: (user: UserType) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  initialMode, 
+export const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  onClose,
+  initialMode,
   onLoginSuccess
 }) => {
   const [mode, setMode] = useState(initialMode);
@@ -25,13 +26,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+  const [department, setDepartment] = useState('');
+
   useEffect(() => {
     setMode(initialMode);
     setError('');
     setUsername('');
     setEmail('');
     setPassword('');
+    setDepartment('');
   }, [initialMode, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +45,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       if (mode === 'register') {
         // Register Call
-        const user = await api.auth.register(username, email, password);
+        const user = await api.auth.register(username, email, password, department);
         onLoginSuccess(user);
       } else {
         // Login Call
@@ -61,21 +64,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       ></div>
 
       {/* Modal Container */}
       <div className="relative w-full max-w-md bg-[#1a1f2e] border-4 border-gray-500 border-t-white border-l-white border-b-gray-800 border-r-gray-800 shadow-2xl animate-pulse-slow">
-        
+
         {/* Header Bar */}
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 px-4 py-2 flex justify-between items-center border-b-4 border-gray-800">
           <span className="font-pixel text-white tracking-widest animate-pulse">
             {mode === 'login' ? 'GIRIS_YAP.EXE' : 'KAYIT_OL.EXE'}
           </span>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="bg-red-500 hover:bg-red-600 text-white p-1 border-2 border-red-300 border-b-red-800 border-r-red-800"
           >
             <X size={16} />
@@ -84,15 +87,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Content */}
         <div className="p-8 flex flex-col gap-6">
-          
+
           <div className="flex justify-center gap-4 font-pixel text-sm mb-4">
-            <button 
+            <button
               onClick={() => setMode('login')}
               className={`pb-1 border-b-2 transition-colors ${mode === 'login' ? 'text-white border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
             >
               Giriş Yap
             </button>
-            <button 
+            <button
               onClick={() => setMode('register')}
               className={`pb-1 border-b-2 transition-colors ${mode === 'register' ? 'text-white border-purple-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
             >
@@ -108,40 +111,57 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
+
             {mode === 'register' && (
-               <div className="relative group">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-                <input 
-                  type="text" 
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Kullanıcı Adı" 
-                  className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
-                />
-              </div>
+              <>
+                <div className="relative group">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Kullanıcı Adı"
+                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+                  />
+                </div>
+
+                <div className="relative group">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
+                  <select
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-sans text-sm transition-all appearance-none"
+                  >
+                    <option value="">Bölüm Seçiniz (İsteğe Bağlı)</option>
+                    {PAU_DEPARTMENTS.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
 
             <div className="relative group">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="E-posta Adresi" 
+                placeholder="E-posta Adresi"
                 className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
               />
             </div>
 
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Şifre" 
+                placeholder="Şifre"
                 className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
               />
             </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
+import { PAU_DEPARTMENTS } from '../constants';
 
 interface UserProfileModalProps {
     isOpen: boolean;
@@ -65,13 +66,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                                 <div className="mt-2 flex items-center gap-2">
                                     {isEditing ? (
                                         <div className="flex items-center gap-2">
-                                            <input
-                                                type="text"
+                                            <select
                                                 value={department}
                                                 onChange={(e) => setDepartment(e.target.value)}
-                                                placeholder="Bölüm Giriniz"
-                                                className="bg-black/50 border border-gray-600 text-white text-xs px-2 py-1 rounded outline-none w-32"
-                                            />
+                                                className="bg-black/50 border border-gray-600 text-white text-xs px-2 py-1 rounded outline-none w-48"
+                                            >
+                                                <option value="">Bölüm Seçiniz</option>
+                                                {PAU_DEPARTMENTS.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
                                             <button onClick={handleSave} disabled={loading} className="text-green-400 hover:text-green-300">
                                                 <Save size={16} />
                                             </button>
