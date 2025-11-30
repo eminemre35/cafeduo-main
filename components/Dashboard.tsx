@@ -165,7 +165,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     }
 
     try {
-      await api.games.join(id);
+      await api.games.join(id, currentUser.username);
       const game = requests.find(r => r.id === id);
       setRequests(requests.filter(req => req.id !== id));
 
@@ -289,9 +289,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           ) : activeGameType === 'Arena Düellosu' ? (
             <GladiatorGame
               currentUser={currentUser}
+              gameId={activeGameId}
               onGameEnd={handleGameEnd}
               onLeave={() => setActiveGameId(null)}
-              isBot={!opponentName}
+              isBot={!opponentName && activeGameId === null} // Only bot if explicitly bot mode (not implemented yet) or waiting
               opponentName={opponentName}
             />
           ) : (
