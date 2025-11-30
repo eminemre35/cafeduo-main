@@ -101,6 +101,45 @@ const initDb = async () => {
       // 7. Seed Initial Cafes
       await pool.query(`INSERT INTO cafes (name) VALUES ('PAÜ İİBF Kantin'), ('PAÜ Yemekhane') ON CONFLICT (name) DO NOTHING`);
 
+      // 9. Achievements Table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS achievements (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          description TEXT NOT NULL,
+          icon VARCHAR(50) NOT NULL,
+          points_reward INTEGER NOT NULL,
+          condition_type VARCHAR(50) NOT NULL, -- e.g., 'wins', 'games_played', 'points'
+          condition_value INTEGER NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // 10. User Achievements Table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_achievements (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id),
+          achievement_id INTEGER REFERENCES achievements(id),
+          unlocked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, achievement_id)
+        );
+      `);
+
+      // 11. Seed Initial Achievements
+      const achievementsCheck = await pool.query('SELECT COUNT(*) FROM achievements');
+      if (parseInt(achievementsCheck.rows[0].count) === 0) {
+        await pool.query(`
+            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value) VALUES
+            ('İlk Adım', 'İlk oyununu oyna.', 'footsteps', 50, 'games_played', 1),
+            ('Acemi Şanslı', 'İlk galibiyetini al.', 'trophy', 100, 'wins', 1),
+            ('Oyun Kurdu', '10 oyun oyna.', 'gamepad', 200, 'games_played', 10),
+            ('Yenilmez', '10 galibiyet al.', 'crown', 500, 'wins', 10),
+            ('Zengin', '1000 puana ulaş.', 'coins', 300, 'points', 1000)
+          `);
+        console.log('🏆 Başlangıç başarımları eklendi.');
+      }
+
       // 8. Seed Initial Rewards (If empty)
       const rewardsCheck = await pool.query('SELECT COUNT(*) FROM rewards');
       if (parseInt(rewardsCheck.rows[0].count) === 0) {
@@ -143,31 +182,57 @@ const isDbConnected = async () => {
 
 // --- API ROUTES ---
 
+// Email Configuration
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
+
 // 1. REGISTER
 app.post('/api/auth/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, department } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
   }
 
+  // Check if user already exists
+  if (await isDbConnected()) {
+    const check = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (check.rows.length > 0) return res.status(400).json({ error: 'E-posta kullanımda.' });
+  } else {
+    if (MEMORY_USERS.find(u => u.email === email)) return res.status(400).json({ error: 'E-posta kullanımda.' });
+  }
+
+  // Create User Directly
   if (await isDbConnected()) {
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const result = await pool.query(
         'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-        [username, email, hashedPassword, req.body.department || '']
+        [username, email, hashedPassword, department || '']
       );
       res.json(result.rows[0]);
     } catch (err) {
-      res.status(400).json({ error: 'Kullanıcı oluşturulamadı. E-posta kullanımda olabilir.' });
+      res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
     }
   } else {
     // Fallback
-    if (MEMORY_USERS.find(u => u.email === email)) {
-      return res.status(400).json({ error: 'E-posta kullanımda.' });
-    }
-    const newUser = { id: Date.now(), username, email, password, points: 100, wins: 0, gamesPlayed: 0 };
+    const newUser = {
+      id: Date.now(),
+      username,
+      email,
+      password,
+      points: 100,
+      wins: 0,
+      gamesPlayed: 0,
+      department
+    };
     MEMORY_USERS.push(newUser);
     res.json(newUser);
   }
@@ -274,27 +339,7 @@ app.post('/api/games/:id/join', async (req, res) => {
   }
 });
 
-// 6. UPDATE USER (Points, Stats)
-app.put('/api/users/:id', async (req, res) => {
-  const { id } = req.params;
-  const { points, wins, gamesPlayed } = req.body;
 
-  if (await isDbConnected()) {
-    const result = await pool.query(
-      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-      [points, wins, gamesPlayed, req.body.department, id]
-    );
-    res.json(result.rows[0]);
-  } else {
-    const idx = MEMORY_USERS.findIndex(u => u.id == id);
-    if (idx !== -1) {
-      MEMORY_USERS[idx] = { ...MEMORY_USERS[idx], points, wins, gamesPlayed };
-      res.json(MEMORY_USERS[idx]);
-    } else {
-      res.status(404).json({ error: 'User not found' });
-    }
-  }
-});
 
 // 7. SHOP: BUY ITEM
 app.post('/api/shop/buy', async (req, res) => {
@@ -316,7 +361,8 @@ app.post('/api/shop/buy', async (req, res) => {
       await pool.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
 
       // 3. Add to inventory
-      const code = `CD-${Math.floor(1000 + Math.random() * 9000)}`;
+      const crypto = require('crypto');
+      const code = `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       const redeemRes = await pool.query(
         'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING *',
         [userId, item.id, item.title, code]
@@ -543,6 +589,130 @@ app.delete('/api/rewards/:id', async (req, res) => {
     }
   } else {
     res.status(501).json({ error: 'Not implemented in memory mode' });
+  }
+});
+
+// 14. LEADERBOARD
+app.get('/api/leaderboard', async (req, res) => {
+  const { type, department } = req.query; // type: 'general' or 'department'
+
+  if (await isDbConnected()) {
+    try {
+      let query = 'SELECT id, username, points, wins, games_played as "gamesPlayed", department FROM users';
+      let params = [];
+
+      if (type === 'department' && department) {
+        query += ' WHERE department = $1';
+        params.push(department);
+      }
+
+      query += ' ORDER BY points DESC LIMIT 50';
+
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).json({ error: 'Liderlik tablosu yüklenemedi.' });
+    }
+  } else {
+    // Memory fallback
+    let users = [...MEMORY_USERS];
+    if (type === 'department' && department) {
+      users = users.filter(u => u.department === department);
+    }
+    users.sort((a, b) => b.points - a.points);
+    res.json(users.slice(0, 50));
+  }
+});
+
+// 15. ACHIEVEMENTS: GET ALL & USER STATUS
+app.get('/api/achievements/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  if (await isDbConnected()) {
+    try {
+      // Get all achievements
+      const allAchievements = await pool.query('SELECT * FROM achievements ORDER BY points_reward ASC');
+
+      // Get user's unlocked achievements
+      const userUnlocked = await pool.query('SELECT achievement_id, unlocked_at FROM user_achievements WHERE user_id = $1', [userId]);
+      const unlockedMap = new Map();
+      userUnlocked.rows.forEach(row => unlockedMap.set(row.achievement_id, row.unlocked_at));
+
+      const result = allAchievements.rows.map(ach => ({
+        ...ach,
+        unlocked: unlockedMap.has(ach.id),
+        unlockedAt: unlockedMap.get(ach.id) || null
+      }));
+
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: 'Başarımlar yüklenemedi.' });
+    }
+  } else {
+    res.json([]); // Fallback
+  }
+});
+
+// 16. CHECK ACHIEVEMENTS (Call this after game/point updates)
+const checkAchievements = async (userId) => {
+  if (!await isDbConnected()) return;
+
+  try {
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userRes.rows.length === 0) return;
+    const user = userRes.rows[0];
+
+    const achievementsRes = await pool.query('SELECT * FROM achievements');
+    const achievements = achievementsRes.rows;
+
+    for (const ach of achievements) {
+      let qualified = false;
+      if (ach.condition_type === 'points' && user.points >= ach.condition_value) qualified = true;
+      if (ach.condition_type === 'wins' && user.wins >= ach.condition_value) qualified = true;
+      if (ach.condition_type === 'games_played' && user.games_played >= ach.condition_value) qualified = true;
+
+      if (qualified) {
+        // Try to insert (ignore if already exists due to UNIQUE constraint)
+        const insertRes = await pool.query(
+          'INSERT INTO user_achievements (user_id, achievement_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *',
+          [userId, ach.id]
+        );
+
+        if (insertRes.rows.length > 0) {
+          // Newly unlocked! Give reward
+          await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [ach.points_reward, userId]);
+          console.log(`🏆 Achievement Unlocked: ${user.username} - ${ach.title} (+${ach.points_reward} pts)`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Achievement Check Error:', err);
+  }
+};
+
+// Hook into User Update to check achievements
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { points, wins, gamesPlayed } = req.body;
+
+  if (await isDbConnected()) {
+    const result = await pool.query(
+      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
+      [points, wins, gamesPlayed, req.body.department, id]
+    );
+
+    // Check achievements asynchronously
+    checkAchievements(id);
+
+    res.json(result.rows[0]);
+  } else {
+    const idx = MEMORY_USERS.findIndex(u => u.id == id);
+    if (idx !== -1) {
+      MEMORY_USERS[idx] = { ...MEMORY_USERS[idx], points, wins, gamesPlayed };
+      res.json(MEMORY_USERS[idx]);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
   }
 });
 

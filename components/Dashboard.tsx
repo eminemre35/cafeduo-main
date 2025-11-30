@@ -9,6 +9,8 @@ import { AdminDashboard } from './AdminDashboard';
 import { api } from '../lib/api';
 import { MatchingGame } from './MatchingGame';
 import { GladiatorGame } from './GladiatorGame';
+import { Leaderboard } from './Leaderboard';
+import { Achievements } from './Achievements';
 import {
   Wifi,
   MapPin,
@@ -59,6 +61,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const [activeGameId, setActiveGameId] = useState<number | null>(null);
   const [activeGameType, setActiveGameType] = useState<string>('');
   const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
+
+  // Main Tab State
+  const [mainTab, setMainTab] = useState<'games' | 'leaderboard' | 'achievements'>('games');
 
   // Load Games & Inventory
   useEffect(() => {
@@ -347,223 +352,251 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Navigation Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-gray-800 pb-1 overflow-x-auto">
+          <button
+            onClick={() => setMainTab('games')}
+            className={`px-6 py-3 font-pixel text-sm transition-all border-b-2 ${mainTab === 'games' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+          >
+            OYUN MERKEZİ
+          </button>
+          <button
+            onClick={() => setMainTab('leaderboard')}
+            className={`px-6 py-3 font-pixel text-sm transition-all border-b-2 ${mainTab === 'leaderboard' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+          >
+            LİDERLİK TABLOSU
+          </button>
+          <button
+            onClick={() => setMainTab('achievements')}
+            className={`px-6 py-3 font-pixel text-sm transition-all border-b-2 ${mainTab === 'achievements' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+          >
+            BAŞARIMLAR
+          </button>
+        </div>
 
-          {/* LEFT PANEL: Step 1 - Table & Status */}
-          <div className="space-y-6">
-            <div className={`bg-[#1a1f2e] border-4 ${isMatched ? 'border-green-600' : 'border-gray-600'} relative overflow-hidden transition-colors duration-500`}>
-              <div className="bg-gray-800 p-2 flex items-center justify-between border-b-2 border-gray-600">
-                <span className="font-pixel text-xs text-gray-400">STEP 01 // CONNECTION</span>
-                <div className="flex gap-1">
-                  <div className={`w-2 h-2 rounded-full ${isMatched ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                </div>
-              </div>
+        {mainTab === 'leaderboard' && <Leaderboard />}
 
-              <div className="p-6 relative z-10">
-                <h3 className="font-pixel text-xl text-white mb-1">MASA EŞLEŞMESİ</h3>
-                <p className="text-gray-400 text-sm mb-6 font-mono">Oturduğunuz masanın kodunu giriniz.</p>
+        {mainTab === 'achievements' && <Achievements userId={currentUser.id} />}
 
-                {!isMatched ? (
-                  <form onSubmit={handleTableSubmit} className="space-y-4">
-                    <div className="relative">
-                      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" />
-                      <input
-                        type="text"
-                        value={tableCode}
-                        onChange={(e) => setTableCode(e.target.value)}
-                        placeholder="Örn: MASA01"
-                        className="w-full bg-black border-2 border-gray-600 focus:border-blue-500 text-center font-retro text-3xl py-4 text-white outline-none tracking-widest transition-all shadow-inner uppercase"
-                        maxLength={6}
-                      />
-                    </div>
-                    {matchError && <p className="text-red-500 text-xs font-pixel">{matchError}</p>}
-                    <RetroButton type="submit" className="w-full" variant="primary">
-                      {loadingTable ? 'BAĞLANILIYOR...' : 'BAĞLAN'}
-                    </RetroButton>
-                  </form>
-                ) : (
-                  <div className="bg-green-500/10 border border-green-500/50 p-4 rounded-lg text-center animate-pulse-slow">
-                    <div className="flex justify-center mb-2"><Check size={40} className="text-green-500" /></div>
-                    <div className="text-green-400 font-pixel text-3xl mb-2">{tableCode}</div>
-                    <span className="text-xs text-green-300 tracking-widest uppercase">BAĞLANTI BAŞARILI</span>
-                    <button
-                      onClick={() => { setIsMatched(false); setTableCode('') }}
-                      className="mt-4 text-xs text-gray-400 hover:text-white underline block w-full"
-                    >
-                      Bağlantıyı Kes
-                    </button>
+        {mainTab === 'games' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* LEFT PANEL: Step 1 - Table & Status */}
+            <div className="space-y-6">
+              <div className={`bg-[#1a1f2e] border-4 ${isMatched ? 'border-green-600' : 'border-gray-600'} relative overflow-hidden transition-colors duration-500`}>
+                <div className="bg-gray-800 p-2 flex items-center justify-between border-b-2 border-gray-600">
+                  <span className="font-pixel text-xs text-gray-400">STEP 01 // CONNECTION</span>
+                  <div className="flex gap-1">
+                    <div className={`w-2 h-2 rounded-full ${isMatched ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                   </div>
-                )}
-              </div>
-
-              <div className="absolute bottom-0 right-0 p-4 opacity-10 pointer-events-none">
-                <Wifi size={120} />
-              </div>
-            </div>
-
-            <div className="bg-[#1a1f2e] p-4 border-2 border-gray-700 rounded-lg">
-              <h4 className="font-pixel text-sm text-gray-400 mb-3">İSTATİSTİKLER</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-black/40 p-3 rounded border border-gray-700">
-                  <span className="block text-xs text-gray-500 mb-1">Oyun Sayısı</span>
-                  <span className="font-retro text-2xl text-white">{currentUser.gamesPlayed}</span>
                 </div>
-                <div className="bg-black/40 p-3 rounded border border-gray-700">
-                  <span className="block text-xs text-gray-500 mb-1">Galibiyet</span>
-                  <span className="font-retro text-2xl text-green-400">{currentUser.wins}</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* MIDDLE PANEL: Step 2 - Game Lobby */}
-          <div className="lg:col-span-2">
-            <GameLobby
-              currentUser={currentUser}
-              requests={requests}
-              onJoinGame={handleJoinGame}
-              onCreateGameClick={() => setIsCreateModalOpen(true)}
-              onViewProfile={handleViewProfile}
-            />
-          </div>
+                <div className="p-6 relative z-10">
+                  <h3 className="font-pixel text-xl text-white mb-1">MASA EŞLEŞMESİ</h3>
+                  <p className="text-gray-400 text-sm mb-6 font-mono">Oturduğunuz masanın kodunu giriniz.</p>
 
-          {/* RIGHT PANEL: Step 3 - Rewards */}
-          <div className="lg:col-span-3 mt-8">
-            <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Gift size={32} className="text-yellow-400" />
-                <div>
-                  <h3 className="font-pixel text-2xl text-white">ÖDÜL MERKEZİ</h3>
-                  <p className="text-gray-400 text-sm">Puanlarını harca, kafede keyfini çıkar.</p>
-                </div>
-              </div>
-
-              <div className="flex bg-black p-1 rounded-lg border border-gray-700">
-                <button
-                  onClick={() => setRewardTab('shop')}
-                  className={`px-6 py-2 rounded font-pixel text-sm transition-all ${rewardTab === 'shop' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'}`}
-                >
-                  MAĞAZA
-                </button>
-                <button
-                  onClick={() => setRewardTab('inventory')}
-                  className={`px-6 py-2 rounded font-pixel text-sm transition-all ${rewardTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                >
-                  KUPONLARIM ({redeemedRewards.length})
-                </button>
-              </div>
-            </div>
-
-            {rewardTab === 'shop' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {rewards.map((reward) => {
-                  const canAfford = currentUser.points >= reward.cost;
-                  return (
-                    <div key={reward.id} className={`relative group bg-[#1a1f2e] border-2 ${canAfford ? 'border-yellow-500/30 hover:border-yellow-500' : 'border-gray-700 opacity-60'} rounded-xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 h-full`}>
-
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-white/5 to-transparent rounded-bl-full pointer-events-none"></div>
-
-                      <div>
-                        <div className="flex justify-between items-start mb-4">
-                          <div className={`p-3 rounded-lg ${canAfford ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700/50 text-gray-500'}`}>
-                            {getRewardIcon(reward.icon)}
-                          </div>
-                          <div className="text-right">
-                            <span className={`block font-retro text-3xl ${canAfford ? 'text-white' : 'text-red-400'}`}>{reward.cost}</span>
-                          </div>
-                        </div>
-                        <h4 className="text-lg font-bold text-white mb-1 font-pixel leading-tight min-h-[3rem]">{reward.title}</h4>
-                        <p className="text-xs text-gray-400 mb-6">{reward.description}</p>
+                  {!isMatched ? (
+                    <form onSubmit={handleTableSubmit} className="space-y-4">
+                      <div className="relative">
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" />
+                        <input
+                          type="text"
+                          value={tableCode}
+                          onChange={(e) => setTableCode(e.target.value)}
+                          placeholder="Örn: MASA01"
+                          className="w-full bg-black border-2 border-gray-600 focus:border-blue-500 text-center font-retro text-3xl py-4 text-white outline-none tracking-widest transition-all shadow-inner uppercase"
+                          maxLength={6}
+                        />
                       </div>
-
+                      {matchError && <p className="text-red-500 text-xs font-pixel">{matchError}</p>}
+                      <RetroButton type="submit" className="w-full" variant="primary">
+                        {loadingTable ? 'BAĞLANILIYOR...' : 'BAĞLAN'}
+                      </RetroButton>
+                    </form>
+                  ) : (
+                    <div className="bg-green-500/10 border border-green-500/50 p-4 rounded-lg text-center animate-pulse-slow">
+                      <div className="flex justify-center mb-2"><Check size={40} className="text-green-500" /></div>
+                      <div className="text-green-400 font-pixel text-3xl mb-2">{tableCode}</div>
+                      <span className="text-xs text-green-300 tracking-widest uppercase">BAĞLANTI BAŞARILI</span>
                       <button
-                        disabled={!canAfford}
-                        onClick={() => handleRedeemReward(reward)}
-                        className={`w-full py-3 font-pixel text-sm rounded flex items-center justify-center gap-2 transition-all border-b-4 active:border-b-0 active:translate-y-1 ${canAfford
-                          ? 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-700'
-                          : 'bg-gray-800 text-gray-500 border-gray-900 cursor-not-allowed'
-                          }`}
+                        onClick={() => { setIsMatched(false); setTableCode('') }}
+                        className="mt-4 text-xs text-gray-400 hover:text-white underline block w-full"
                       >
-                        {canAfford ? (
-                          <>SATIN AL <ShoppingBag size={16} /></>
-                        ) : (
-                          'YETERSİZ PUAN'
-                        )}
+                        Bağlantıyı Kes
                       </button>
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+
+                <div className="absolute bottom-0 right-0 p-4 opacity-10 pointer-events-none">
+                  <Wifi size={120} />
+                </div>
               </div>
-            ) : (
-              <div className="bg-[#151921] border-2 border-dashed border-gray-700 rounded-xl p-6 min-h-[300px]">
-                {redeemedRewards.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12">
-                    <Ticket size={64} className="mb-4 opacity-20" />
-                    <p className="font-pixel text-lg">HENÜZ KUPONUN YOK</p>
-                    <p className="text-sm mt-2">Mağazadan puanlarınla ödül alabilirsin.</p>
-                    <button onClick={() => setRewardTab('shop')} className="mt-6 text-blue-400 hover:underline font-pixel text-sm">MAĞAZAYA GİT</button>
+
+              <div className="bg-[#1a1f2e] p-4 border-2 border-gray-700 rounded-lg">
+                <h4 className="font-pixel text-sm text-gray-400 mb-3">İSTATİSTİKLER</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-black/40 p-3 rounded border border-gray-700">
+                    <span className="block text-xs text-gray-500 mb-1">Oyun Sayısı</span>
+                    <span className="font-retro text-2xl text-white">{currentUser.gamesPlayed}</span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {redeemedRewards.map((item: any) => {
-                      const expirationDate = new Date(new Date(item.redeemedAt).getTime() + 5 * 24 * 60 * 60 * 1000);
-                      const isExpired = new Date() > expirationDate;
-                      const isUsed = item.status === 'used';
+                  <div className="bg-black/40 p-3 rounded border border-gray-700">
+                    <span className="block text-xs text-gray-500 mb-1">Galibiyet</span>
+                    <span className="font-retro text-2xl text-green-400">{currentUser.wins}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                      return (
-                        <div key={item.redeemId} className={`relative overflow-hidden font-mono shadow-lg transform hover:scale-105 transition-transform ${isUsed || isExpired ? 'grayscale opacity-70' : ''}`}>
-                          <div className={`bg-[#fff8dc] text-black p-4 rounded h-full flex flex-col justify-between`}>
-                            {/* Holes */}
-                            <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#151921] rounded-full"></div>
-                            <div className="absolute right-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#151921] rounded-full"></div>
+            {/* MIDDLE PANEL: Step 2 - Game Lobby */}
+            <div className="lg:col-span-2">
+              <GameLobby
+                currentUser={currentUser}
+                requests={requests}
+                onJoinGame={handleJoinGame}
+                onCreateGameClick={() => setIsCreateModalOpen(true)}
+                onViewProfile={handleViewProfile}
+              />
+            </div>
 
-                            <div className="border-2 border-black border-dashed p-3 h-full flex flex-col justify-between relative">
-                              {isUsed && (
-                                <div className="absolute inset-0 flex items-center justify-center z-10">
-                                  <div className="bg-red-600 text-white font-bold text-xl px-4 py-2 rotate-[-15deg] border-4 border-white shadow-xl">KULLANILDI</div>
+            {/* RIGHT PANEL: Step 3 - Rewards */}
+            <div className="lg:col-span-3 mt-8">
+              <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Gift size={32} className="text-yellow-400" />
+                  <div>
+                    <h3 className="font-pixel text-2xl text-white">ÖDÜL MERKEZİ</h3>
+                    <p className="text-gray-400 text-sm">Puanlarını harca, kafede keyfini çıkar.</p>
+                  </div>
+                </div>
+
+                <div className="flex bg-black p-1 rounded-lg border border-gray-700">
+                  <button
+                    onClick={() => setRewardTab('shop')}
+                    className={`px-6 py-2 rounded font-pixel text-sm transition-all ${rewardTab === 'shop' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    MAĞAZA
+                  </button>
+                  <button
+                    onClick={() => setRewardTab('inventory')}
+                    className={`px-6 py-2 rounded font-pixel text-sm transition-all ${rewardTab === 'inventory' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    KUPONLARIM ({redeemedRewards.length})
+                  </button>
+                </div>
+              </div>
+
+              {rewardTab === 'shop' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {rewards.map((reward) => {
+                    const canAfford = currentUser.points >= reward.cost;
+                    return (
+                      <div key={reward.id} className={`relative group bg-[#1a1f2e] border-2 ${canAfford ? 'border-yellow-500/30 hover:border-yellow-500' : 'border-gray-700 opacity-60'} rounded-xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 h-full`}>
+
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-white/5 to-transparent rounded-bl-full pointer-events-none"></div>
+
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div className={`p-3 rounded-lg ${canAfford ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700/50 text-gray-500'}`}>
+                              {getRewardIcon(reward.icon)}
+                            </div>
+                            <div className="text-right">
+                              <span className={`block font-retro text-3xl ${canAfford ? 'text-white' : 'text-red-400'}`}>{reward.cost}</span>
+                            </div>
+                          </div>
+                          <h4 className="text-lg font-bold text-white mb-1 font-pixel leading-tight min-h-[3rem]">{reward.title}</h4>
+                          <p className="text-xs text-gray-400 mb-6">{reward.description}</p>
+                        </div>
+
+                        <button
+                          disabled={!canAfford}
+                          onClick={() => handleRedeemReward(reward)}
+                          className={`w-full py-3 font-pixel text-sm rounded flex items-center justify-center gap-2 transition-all border-b-4 active:border-b-0 active:translate-y-1 ${canAfford
+                            ? 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-700'
+                            : 'bg-gray-800 text-gray-500 border-gray-900 cursor-not-allowed'
+                            }`}
+                        >
+                          {canAfford ? (
+                            <>SATIN AL <ShoppingBag size={16} /></>
+                          ) : (
+                            'YETERSİZ PUAN'
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-[#151921] border-2 border-dashed border-gray-700 rounded-xl p-6 min-h-[300px]">
+                  {redeemedRewards.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-500 py-12">
+                      <Ticket size={64} className="mb-4 opacity-20" />
+                      <p className="font-pixel text-lg">HENÜZ KUPONUN YOK</p>
+                      <p className="text-sm mt-2">Mağazadan puanlarınla ödül alabilirsin.</p>
+                      <button onClick={() => setRewardTab('shop')} className="mt-6 text-blue-400 hover:underline font-pixel text-sm">MAĞAZAYA GİT</button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {redeemedRewards.map((item: any) => {
+                        const expirationDate = new Date(new Date(item.redeemedAt).getTime() + 5 * 24 * 60 * 60 * 1000);
+                        const isExpired = new Date() > expirationDate;
+                        const isUsed = item.status === 'used';
+
+                        return (
+                          <div key={item.redeemId} className={`relative overflow-hidden font-mono shadow-lg transform hover:scale-105 transition-transform ${isUsed || isExpired ? 'grayscale opacity-70' : ''}`}>
+                            <div className={`bg-[#fff8dc] text-black p-4 rounded h-full flex flex-col justify-between`}>
+                              {/* Holes */}
+                              <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#151921] rounded-full"></div>
+                              <div className="absolute right-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#151921] rounded-full"></div>
+
+                              <div className="border-2 border-black border-dashed p-3 h-full flex flex-col justify-between relative">
+                                {isUsed && (
+                                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <div className="bg-red-600 text-white font-bold text-xl px-4 py-2 rotate-[-15deg] border-4 border-white shadow-xl">KULLANILDI</div>
+                                  </div>
+                                )}
+                                {isExpired && !isUsed && (
+                                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <div className="bg-gray-600 text-white font-bold text-xl px-4 py-2 rotate-[-15deg] border-4 border-white shadow-xl">SÜRESİ DOLDU</div>
+                                  </div>
+                                )}
+
+                                <div className="text-center border-b-2 border-black pb-2 mb-2">
+                                  <h4 className="font-bold text-lg uppercase leading-tight">{item.title}</h4>
+                                  <span className="text-xs">CAFE DUO KUPONU</span>
                                 </div>
-                              )}
-                              {isExpired && !isUsed && (
-                                <div className="absolute inset-0 flex items-center justify-center z-10">
-                                  <div className="bg-gray-600 text-white font-bold text-xl px-4 py-2 rotate-[-15deg] border-4 border-white shadow-xl">SÜRESİ DOLDU</div>
+
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="w-16 h-16 bg-black text-white flex items-center justify-center text-[8px] p-1 text-center leading-none">
+                                    QR KOD ALANI
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="block text-2xl font-bold tracking-widest">{item.code}</span>
+                                    <span className="text-[10px] block">SKT: {expirationDate.toLocaleDateString()}</span>
+                                  </div>
                                 </div>
-                              )}
 
-                              <div className="text-center border-b-2 border-black pb-2 mb-2">
-                                <h4 className="font-bold text-lg uppercase leading-tight">{item.title}</h4>
-                                <span className="text-xs">CAFE DUO KUPONU</span>
-                              </div>
-
-                              <div className="flex justify-between items-center mb-2">
-                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center text-[8px] p-1 text-center leading-none">
-                                  QR KOD ALANI
+                                <div className="text-[10px] text-center italic opacity-70">
+                                  *Bu kupon tek kullanımlıktır.
                                 </div>
-                                <div className="text-right">
-                                  <span className="block text-2xl font-bold tracking-widest">{item.code}</span>
-                                  <span className="text-[10px] block">SKT: {expirationDate.toLocaleDateString()}</span>
+
+                                <div className="bg-black text-white text-center py-1 text-xs font-bold mt-auto uppercase">
+                                  KASADA GÖSTERİN
                                 </div>
-                              </div>
-
-                              <div className="text-[10px] text-center italic opacity-70">
-                                *Bu kupon tek kullanımlıktır.
-                              </div>
-
-                              <div className="bg-black text-white text-center py-1 text-xs font-bold mt-auto uppercase">
-                                KASADA GÖSTERİN
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-        </div >
+          </div >
+        )}
       </div >
     </div >
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { RetroButton } from './RetroButton';
+import { ABTest } from './ABTest';
 
 interface HeroProps {
   onLogin: () => void;
@@ -63,13 +64,27 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </RetroButton>
           ) : (
             <>
-              <RetroButton
-                onClick={onRegister}
-                className="min-w-[200px] py-4 text-lg group"
-                variant="primary"
-              >
-                HEMEN BAŞLA <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-              </RetroButton>
+              <ABTest
+                testName="hero_cta_text"
+                variantA={
+                  <RetroButton
+                    onClick={onRegister}
+                    className="min-w-[200px] py-4 text-lg group"
+                    variant="primary"
+                  >
+                    HEMEN BAŞLA <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                  </RetroButton>
+                }
+                variantB={
+                  <RetroButton
+                    onClick={onRegister}
+                    className="min-w-[200px] py-4 text-lg group"
+                    variant="primary"
+                  >
+                    ÜCRETSİZ KAYDOL <Sparkles className="ml-2 group-hover:rotate-12 transition-transform" />
+                  </RetroButton>
+                }
+              />
 
               <RetroButton
                 onClick={onLogin}
