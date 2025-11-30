@@ -24,7 +24,7 @@ export const HowItWorks: React.FC = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-[#0f141a] relative overflow-hidden">
+    <section id="features" className="py-24 bg-[#0f141a] relative overflow-hidden">
 
       {/* Background Elements */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] pointer-events-none"></div>

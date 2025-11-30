@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Scissors, Scroll, Hand, User, Bot, Trophy, AlertCircle, Circle } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
+import { api } from '../lib/api';
 
 interface GameRoomProps {
     currentUser: UserType;
@@ -33,29 +34,76 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
         return timer;
     };
 
+    // Polling for Game State
     useEffect(() => {
-        return () => {
-            timers.current.forEach(clearTimeout);
-        };
-    }, []);
+        if (!gameId || isBot) return;
 
-    // Bot Logic - Explicit Start
-    useEffect(() => {
-        if (opponentName) {
-            setWaitingForOpponent(false);
-        }
-    }, [opponentName]);
+        const pollGame = async () => {
+            try {
+                const game = await api.games.get(gameId);
+
+                // Check if opponent joined
+                if (waitingForOpponent && game.guest_name) {
+                    setWaitingForOpponent(false);
+                }
+
+                // Check for opponent move
+                const isHost = currentUser.username === game.host_name;
+                const oppMove = isHost ? game.player2_move : game.player1_move;
+
+                if (oppMove && !opponentMove) {
+                    setOpponentMove(oppMove as Move);
+                }
+
+                // Check for result reset (new round)
+                if (!game.player1_move && !game.player2_move && result) {
+                    resetRound();
+                }
+
+            } catch (err) {
+                console.error("Polling error", err);
+            }
+        };
+
+        const interval = setInterval(pollGame, 2000);
+        return () => clearInterval(interval);
+    }, [gameId, isBot, waitingForOpponent, opponentMove, result]);
 
     const startBotGame = () => {
         setIsBot(true);
         setWaitingForOpponent(false);
     };
 
-    const handleMove = (move: Move) => {
+    const handleMove = async (move: Move) => {
         if (playerMove) return;
         setPlayerMove(move);
 
-        // Start countdown for reveal
+        if (!isBot) {
+            try {
+                const isHost = currentUser.username === (opponentName || ''); // Logic check: actually we need to know if we are host.
+                // Better: check against game data, but for now assume if we created it we are host.
+                // Wait, opponentName is passed from Dashboard. If I joined, opponentName is Host.
+                // If I am host, opponentName is undefined initially.
+
+                // Let's rely on API to handle "which player am I" or send it.
+                // Simplified: Send "host" or "guest" role based on logic.
+                // Actually, let's just send the move and let server decide or send role.
+                // For this simple implementation, let's assume:
+                // If I am the creator (host), I am player 1.
+
+                // We need to know if we are host or guest.
+                // In Dashboard, we set opponentName.
+                // If I created (Host), opponentName is undefined (until someone joins).
+                // If I joined (Guest), opponentName is Host's name.
+
+                const role = opponentName ? 'guest' : 'host';
+                await api.games.move(gameId, { player: role, move });
+            } catch (e) {
+                console.error("Move failed", e);
+            }
+        }
+
+        // Start countdown for reveal (Visual only, real reveal happens when both moved)
         setCountdown(3);
     };
 
@@ -71,15 +119,20 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
     }, [countdown]);
 
     const finishRound = () => {
+        // In multiplayer, we wait for opponent move from polling
+        if (!isBot && !opponentMove) {
+            // If opponent hasn't moved yet, we wait.
+            // But countdown finished? 
+            // Actually, for multiplayer, we shouldn't show countdown until BOTH have moved?
+            // OR: We show "Waiting for opponent..." after we move.
+            return;
+        }
+
+        // ... (rest of logic)
+
         let oppMove: Move = opponentMove;
 
         if (isBot) {
-            const moves: Move[] = ['rock', 'paper', 'scissors'];
-            oppMove = moves[Math.floor(Math.random() * 3)];
-            setOpponentMove(oppMove);
-        } else {
-            // Simulate opponent for now if not real-time
-            // In real app, this would come from socket
             const moves: Move[] = ['rock', 'paper', 'scissors'];
             oppMove = moves[Math.floor(Math.random() * 3)];
             setOpponentMove(oppMove);
@@ -93,26 +146,31 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
 
         if (p1 === p2) {
             setResult('BERABERE!');
-            addTimer(resetRound, 2000);
+            addTimer(resetRound, 3000);
         } else if (
             (p1 === 'rock' && p2 === 'scissors') ||
             (p1 === 'paper' && p2 === 'rock') ||
             (p1 === 'scissors' && p2 === 'paper')
         ) {
             setResult('KAZANDIN!');
-            // No points for bot
-            addTimer(() => onGameEnd(currentUser.username, isBot ? 0 : 100), 2000);
+            addTimer(() => onGameEnd(currentUser.username, isBot ? 0 : 100), 3000);
         } else {
             setResult('KAYBETTİN!');
-            addTimer(() => onGameEnd('opponent', 0), 2000);
+            addTimer(() => onGameEnd('opponent', 0), 3000);
         }
     };
 
-    const resetRound = () => {
+    const resetRound = async () => {
         setPlayerMove(null);
         setOpponentMove(null);
         setResult('');
         setCountdown(null);
+
+        if (!isBot) {
+            // Reset on server
+            const role = opponentName ? 'guest' : 'host';
+            await api.games.move(gameId, { player: role, move: null });
+        }
     };
 
     const getIcon = (move: Move) => {

@@ -26,7 +26,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <div id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-[#0f141a]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-[#0f141a] to-[#0f141a]"></div>

@@ -46,10 +46,14 @@ const initDb = async () => {
         CREATE TABLE IF NOT EXISTS games (
           id SERIAL PRIMARY KEY,
           host_name VARCHAR(255) NOT NULL,
+          guest_name VARCHAR(255),
           game_type VARCHAR(50) NOT NULL,
           points INTEGER NOT NULL,
           table_code VARCHAR(50) NOT NULL,
           status VARCHAR(20) DEFAULT 'waiting',
+          player1_move VARCHAR(50),
+          player2_move VARCHAR(50),
+          game_state JSONB,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -97,6 +101,12 @@ const initDb = async () => {
 
       await addColumn('user_items', 'is_used', 'BOOLEAN DEFAULT FALSE');
       await addColumn('user_items', 'used_at', 'TIMESTAMP WITH TIME ZONE');
+
+      // Games Table Updates
+      await addColumn('games', 'guest_name', 'VARCHAR(255)');
+      await addColumn('games', 'player1_move', 'VARCHAR(50)');
+      await addColumn('games', 'player2_move', 'VARCHAR(50)');
+      await addColumn('games', 'game_state', 'JSONB');
 
       // 7. Seed Initial Cafes
       await pool.query(`INSERT INTO cafes (name) VALUES ('PAÜ İİBF Kantin'), ('PAÜ Yemekhane') ON CONFLICT (name) DO NOTHING`);
@@ -325,13 +335,74 @@ app.post('/api/games', async (req, res) => {
   }
 });
 
-// 5. JOIN GAME (Delete/Archive logic)
+// 5. JOIN GAME
 app.post('/api/games/:id/join', async (req, res) => {
   const { id } = req.params;
+  const { guestName } = req.body;
 
   if (await isDbConnected()) {
-    // For simplicity, we just delete it from active list or mark status active
-    await pool.query('UPDATE games SET status = \'active\' WHERE id = $1', [id]);
+    await pool.query('UPDATE games SET status = \'active\', guest_name = $1 WHERE id = $2', [guestName, id]);
+    res.json({ success: true });
+  } else {
+    const game = MEMORY_GAMES.find(g => g.id == id);
+    if (game) {
+      game.status = 'active';
+      game.guestName = guestName;
+    }
+    res.json({ success: true });
+  }
+});
+
+// 6. GET GAME STATE (Polling)
+app.get('/api/games/:id', async (req, res) => {
+  const { id } = req.params;
+  if (await isDbConnected()) {
+    const result = await pool.query('SELECT * FROM games WHERE id = $1', [id]);
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } else {
+    const game = MEMORY_GAMES.find(g => g.id == id);
+    res.json(game || {});
+  }
+});
+
+// 7. MAKE MOVE
+app.post('/api/games/:id/move', async (req, res) => {
+  const { id } = req.params;
+  const { player, move, gameState } = req.body; // player: 'host' or 'guest'
+
+  if (await isDbConnected()) {
+    let query = '';
+    let params = [];
+    if (player === 'host') {
+      query = 'UPDATE games SET player1_move = $1 WHERE id = $2';
+      params = [move, id];
+    } else {
+      query = 'UPDATE games SET player2_move = $1 WHERE id = $2';
+      params = [move, id];
+    }
+
+    if (gameState) {
+      query = 'UPDATE games SET game_state = $1 WHERE id = $2';
+      params = [gameState, id];
+    }
+
+    await pool.query(query, params);
+    res.json({ success: true });
+  } else {
+    // Memory fallback
+    res.json({ success: true });
+  }
+});
+
+// 8. DELETE GAME
+app.delete('/api/games/:id', async (req, res) => {
+  const { id } = req.params;
+  if (await isDbConnected()) {
+    await pool.query('DELETE FROM games WHERE id = $1', [id]);
     res.json({ success: true });
   } else {
     MEMORY_GAMES = MEMORY_GAMES.filter(g => g.id != id);

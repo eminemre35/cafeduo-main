@@ -1,6 +1,13 @@
 import { User, GameRequest } from '../types';
 
-const API_URL = '/api';
+// BURASI DEĞİŞTİ:
+// Canlıdaysak (PROD) Render linkini kullan, değilsek (DEV) yerel proxy'yi (/api) kullan.
+const RENDER_URL = "https://cafeduo-api.onrender.com";
+const API_URL = import.meta.env.PROD
+  ? 'https://cafeduo-api.onrender.com/api'
+  : '/api';
+
+console.log("🚀 Current API URL:", API_URL); // Debugging log
 
 export const api = {
   auth: {
@@ -17,7 +24,6 @@ export const api = {
         data = JSON.parse(text);
       } catch (e) {
         console.error("Login Error (Non-JSON):", text);
-        // Show the actual response text in the error to debug
         throw new Error(`Sunucu Hatası (${res.status}): ${text.substring(0, 100)}`);
       }
 
@@ -73,6 +79,10 @@ export const api = {
       const res = await fetch(`${API_URL}/games`);
       return res.json();
     },
+    get: async (id: number) => {
+      const response = await fetch(`${API_URL}/games/${id}`);
+      return response.json();
+    },
     create: async (game: Partial<GameRequest>): Promise<GameRequest> => {
       const res = await fetch(`${API_URL}/games`, {
         method: 'POST',
@@ -81,9 +91,27 @@ export const api = {
       });
       return res.json();
     },
-    join: async (id: number): Promise<void> => {
-      await fetch(`${API_URL}/games/${id}/join`, { method: 'POST' });
-    }
+    join: async (id: number, guestName: string): Promise<void> => {
+      await fetch(`${API_URL}/games/${id}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guestName }),
+      });
+    },
+    move: async (id: number, data: any) => {
+      const response = await fetch(`${API_URL}/games/${id}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return response.json();
+    },
+    delete: async (id: number) => {
+      const response = await fetch(`${API_URL}/games/${id}`, {
+        method: 'DELETE',
+      });
+      return response.json();
+    },
   },
   users: {
     update: async (user: User): Promise<User> => {
