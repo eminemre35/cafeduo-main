@@ -1,6 +1,27 @@
+import React, { useState, useEffect, Suspense } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Navbar } from './components/Navbar';
+import { Hero } from './components/Hero';
+import { HowItWorks } from './components/HowItWorks';
+import { About } from './components/About';
+import { Footer } from './components/Footer';
+import { AuthModal } from './components/AuthModal';
+import { User } from './types';
+import { api } from './lib/api';
 import { CafeSelection } from './components/CafeSelection';
 
-// ... (imports remain same)
+// Lazy Load Components
+const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
+const Dashboard = React.lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then(module => ({ default: module.CafeDashboard })));
+
+// Loading Component
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex flex-col items-center justify-center text-white">
+    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: { children: React.ReactElement, user: User | null, isAdminRoute?: boolean, requiredRole?: string }) => {
