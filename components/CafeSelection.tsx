@@ -69,7 +69,11 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                     localStorage.setItem('last_cafe_id', selectedCafeId.toString());
                     localStorage.setItem('last_table_number', tableNumber);
                 } catch (err: any) {
-                    setError(err.message || 'Check-in başarısız.');
+                    let msg = err.message || 'Check-in başarısız.';
+                    if (msg === 'Failed to fetch' || msg === 'Load failed') {
+                        msg = 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin veya sayfayı yenileyin.';
+                    }
+                    setError(msg);
                 } finally {
                     setLoading(false);
                 }
