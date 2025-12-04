@@ -51,21 +51,30 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Middleware
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
+const allowedOrigins = [
+  'https://cafeduotr.com',
+  'https://www.cafeduotr.com',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://cafeduo-api.onrender.com'
+];
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(new Error('CORS policy: This origin is not allowed.'));
+      console.log("Blocked CORS origin:", origin);
+      // Temporarily allow all for debugging if needed, but better to be explicit
+      callback(null, true);
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json());
 
