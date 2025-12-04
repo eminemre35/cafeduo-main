@@ -1242,7 +1242,7 @@ app.put('/api/users/:id', async (req, res) => {
 
   if (await isDbConnected()) {
     const result = await pool.query(
-      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
+      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, cafe_name, avatar_url',
       [points, wins, gamesPlayed, req.body.department, id]
     );
 
