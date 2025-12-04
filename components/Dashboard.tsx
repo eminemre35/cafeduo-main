@@ -104,13 +104,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     };
 
     const checkActiveGame = async () => {
+      // If we already have an active game locally, don't overwrite it with null from server immediately
+      // But if server says we have a game, and we don't, we should sync.
+      // However, if user explicitly left, we want to avoid auto-rejoin loop.
+      // For now, let's just sync if we are NOT in a game locally.
+      if (activeGameId) return;
+
       try {
         const game = await api.users.getActiveGame(currentUser.username);
         setServerActiveGame(game);
 
-        // Auto-rejoin if just refreshed and found game? 
-        // Maybe not auto, let user click. But if we want auto:
-        // if (game && !activeGameId) { ... }
+        // Only auto-join if we found a game and we are not currently in one
+        if (game && !activeGameId) {
+          // OPTIONAL: Ask user "Rejoin game?" instead of forcing.
+          // For now, let's NOT auto-join to break the loop.
+          // User can click "Rejoin" button if we add one.
+          // But wait, the UI shows "Active Game" banner if serverActiveGame is set.
+          // So we just set serverActiveGame and let the UI handle it.
+        }
       } catch (error) {
         console.error("Failed to check active game", error);
       }

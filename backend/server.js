@@ -1347,6 +1347,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Sunucu hatası oluştu.' });
 });
 
+// Prevent Node.js from crashing on unhandled errors
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL ERROR (Uncaught Exception):', err);
+  // Do not exit, keep server running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('CRITICAL ERROR (Unhandled Rejection):', reason);
+});
+
 // Initialize DB and start server
 initDb().then(() => {
   app.listen(PORT, () => {
