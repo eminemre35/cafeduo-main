@@ -997,9 +997,18 @@ app.put('/api/admin/cafes/:id', async (req, res) => {
   }
 });
 
-// 19. CHECK-IN (PIN Verification - Replaced GPS)
+// 19. CHECK-IN (PIN Verification - STRICT MODE)
 app.post('/api/cafes/check-in', async (req, res) => {
   const { userId, cafeId, tableNumber, pin } = req.body;
+
+  // Validate input
+  if (!userId || !cafeId || !tableNumber) {
+    return res.status(400).json({ error: 'Eksik bilgi: userId, cafeId, tableNumber gerekli.' });
+  }
+
+  if (!pin || pin.length < 4) {
+    return res.status(400).json({ error: 'PIN kodu gerekli (en az 4 haneli).' });
+  }
 
   if (await isDbConnected()) {
     try {
@@ -1008,8 +1017,10 @@ app.post('/api/cafes/check-in', async (req, res) => {
       if (cafeRes.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
       const cafe = cafeRes.rows[0];
 
-      // 2. Verify PIN
-      if (cafe.daily_pin && cafe.daily_pin !== '0000' && cafe.daily_pin !== pin) {
+      // 2. Verify PIN (STRICT: PIN must match)
+      const cafePin = cafe.daily_pin || '0000'; // Default PIN if not set
+      if (cafePin !== pin) {
+        console.log(`PIN mismatch: expected ${cafePin}, got ${pin}`);
         return res.status(400).json({ error: 'Yanlış PIN kodu! Kafe personelinden güncel PIN kodunu isteyin.' });
       }
 
@@ -1023,7 +1034,15 @@ app.post('/api/cafes/check-in', async (req, res) => {
       res.status(500).json({ error: 'Check-in işlemi başarısız.' });
     }
   } else {
-    // Memory Fallback
+    // Memory Fallback - ALSO REQUIRES PIN CHECK
+    // For demo mode, default PIN is 0000
+    const demoPins = { 1: '1234', 2: '5678' };
+    const expectedPin = demoPins[cafeId] || '0000';
+
+    if (expectedPin !== pin) {
+      return res.status(400).json({ error: 'Yanlış PIN kodu! Demo için PIN: 0000, 1234 veya 5678' });
+    }
+
     const user = MEMORY_USERS.find(u => u.id === userId);
     if (user) {
       user.cafe_id = cafeId;
@@ -1349,6 +1368,84 @@ app.put('/api/admin/users/:id/role', async (req, res) => {
     }
   } else {
     res.status(501).json({ error: 'Not implemented in memory mode' });
+  }
+});
+
+// 23. SHOP: BUY REWARD
+app.post('/api/shop/buy', async (req, res) => {
+  const { userId, rewardId } = req.body;
+
+  if (!userId || !rewardId) {
+    return res.status(400).json({ error: 'userId ve rewardId gerekli.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      // 1. Get User
+      const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+      if (userRes.rows.length === 0) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+      const user = userRes.rows[0];
+
+      // 2. Get Reward
+      const rewardRes = await pool.query('SELECT * FROM rewards WHERE id = $1', [rewardId]);
+      if (rewardRes.rows.length === 0) return res.status(404).json({ error: 'Ödül bulunamadı.' });
+      const reward = rewardRes.rows[0];
+
+      // 3. Check Points
+      if (user.points < reward.cost) {
+        return res.status(400).json({ error: `Yetersiz puan! ${reward.cost} puan gerekli, ${user.points} puanınız var.` });
+      }
+
+      // 4. Deduct Points
+      await pool.query('UPDATE users SET points = points - $1 WHERE id = $2', [reward.cost, userId]);
+
+      // 5. Generate Coupon Code
+      const couponCode = `CD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+      // 6. Add to User Items
+      await pool.query(
+        'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4)',
+        [userId, rewardId, reward.title, couponCode]
+      );
+
+      res.json({
+        success: true,
+        message: `${reward.title} satın alındı!`,
+        code: couponCode,
+        newPoints: user.points - reward.cost
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Satın alma işlemi başarısız.' });
+    }
+  } else {
+    res.status(501).json({ error: 'Shop not available in demo mode.' });
+  }
+});
+
+// 24. SHOP: GET USER INVENTORY
+app.get('/api/shop/inventory/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        `SELECT ui.id as redeemId, ui.item_title as title, ui.code, ui.is_used as isUsed, 
+         ui.redeemed_at as redeemedAt, ui.used_at as usedAt,
+         r.cost, r.description, r.icon
+         FROM user_items ui
+         LEFT JOIN rewards r ON ui.item_id = r.id
+         WHERE ui.user_id = $1
+         ORDER BY ui.redeemed_at DESC`,
+        [userId]
+      );
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Envanter yüklenemedi.' });
+    }
+  } else {
+    res.json([]); // Empty inventory in demo mode
   }
 });
 

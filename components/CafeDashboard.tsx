@@ -41,7 +41,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
         try {
             const cafes = await api.cafes.list();
             // Find the cafe for this admin
-            const myCafe = cafes.find((c: any) => c.id === currentUser.cafeId);
+            const myCafe = cafes.find((c: any) => c.id === currentUser.cafe_id);
             if (myCafe) {
                 setCurrentPin(myCafe.daily_pin || '0000');
             }
@@ -82,7 +82,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
         try {
             await api.rewards.create({
                 ...newReward,
-                cafeId: currentUser.cafeId
+                cafeId: currentUser.cafe_id
             });
             alert('Ödül başarıyla oluşturuldu!');
             setNewReward({ title: '', cost: 500, description: '', icon: 'coffee' });
@@ -115,7 +115,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
         setPinStatus('idle');
 
         try {
-            await api.cafes.updatePin(currentUser.cafeId!, newPin);
+            await api.cafes.updatePin(currentUser.cafe_id!, newPin);
             setCurrentPin(newPin);
             setNewPin('');
             setPinStatus('success');
@@ -401,8 +401,8 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                                     type="submit"
                                     disabled={loadingPin || !newPin}
                                     className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${loadingPin || !newPin
-                                            ? 'bg-gray-700 cursor-not-allowed'
-                                            : 'bg-green-600 hover:bg-green-500'
+                                        ? 'bg-gray-700 cursor-not-allowed'
+                                        : 'bg-green-600 hover:bg-green-500'
                                         }`}
                                 >
                                     {loadingPin ? (
