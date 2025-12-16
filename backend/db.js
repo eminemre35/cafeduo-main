@@ -13,17 +13,30 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
+const logger = require('./utils/logger');
+
 // Connection test
-pool.connect((err, client, release) => {
-  if (err) {
-    console.warn('⚠️  UYARI: PostgreSQL bağlantısı kurulamadı.');
-    console.warn('   Sunucu "In-Memory" (Geçici Bellek) modunda çalışacak.');
-    console.warn('   Veriler sunucu kapandığında silinecektir.');
-  } else {
-    console.log('✅ Veritabanı bağlantısı başarılı.');
-    release();
-  }
-});
+// Connection Test with Retry Logic
+const connectWithRetry = (attempts = 5) => {
+  pool.connect((err, client, release) => {
+    if (err) {
+      logger.error(`❌ DB Connection Attempt Failed: ${err.message}`);
+      if (attempts > 1) {
+        logger.info(`🔄 Retrying in 3 seconds... (${attempts - 1} attempts left)`);
+        setTimeout(() => connectWithRetry(attempts - 1), 3000);
+      } else {
+        logger.error('❌ All connection attempts failed.');
+        logger.warn('⚠️  UYARI: PostgreSQL bağlantısı kurulamadı.');
+        logger.warn('   Sunucu "In-Memory" (Geçici Bellek) modunda çalışacak.');
+      }
+    } else {
+      logger.info('✅ Veritabanı bağlantısı başarılı.');
+      release();
+    }
+  });
+};
+
+connectWithRetry();
 
 module.exports = {
   query: (text, params) => pool.query(text, params),

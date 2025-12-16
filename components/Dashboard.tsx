@@ -276,12 +276,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
     if (window.confirm(`${reward.title} ödülünü ${reward.cost} puan karşılığında almak istiyor musun?`)) {
       try {
-        const res = await fetch('/api/shop/buy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id, item: reward })
-        });
-        const data = await res.json();
+        const data = await api.shop.buy(currentUser.id, reward.id);
 
         if (data.success) {
           onUpdateUser({ ...currentUser, points: data.newPoints });
