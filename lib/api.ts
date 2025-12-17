@@ -1,11 +1,12 @@
 import { User, GameRequest } from '../types';
 
-// BURASI DEĞİŞTİ:
-// Canlıdaysak (PROD) Render linkini kullan, değilsek (DEV) yerel proxy'yi (/api) kullan.
-const RENDER_URL = "https://cafeduo-api.onrender.com";
-const API_URL = 'https://cafeduo-api.onrender.com/api';
+// API URL: Geliştirme ortamında localhost, canlıda Render kullanılır
+const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_URL = isDev
+  ? 'http://localhost:3001/api'
+  : 'https://cafeduo-api.onrender.com/api';
 
-console.log("🚀 Current API URL:", API_URL); // Debugging log
+console.log(`🚀 API URL: ${API_URL} (${isDev ? 'DEV' : 'PROD'})`);
 
 export const api = {
   auth: {
