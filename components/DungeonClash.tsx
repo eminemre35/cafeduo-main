@@ -194,8 +194,13 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
     };
 
     const handleCancel = async () => {
-        if (gameId) {
-            await api.games.delete(gameId);
+        try {
+            if (gameId) {
+                await api.games.delete(gameId);
+            }
+        } catch (error) {
+            console.error('Game cancel error:', error);
+            // Hata olsa bile çıkış yap
         }
         onLeave();
     };
