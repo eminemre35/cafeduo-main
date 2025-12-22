@@ -2,6 +2,9 @@
 CREATE TABLE IF NOT EXISTS cafes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
+    address TEXT,
+    total_tables INTEGER DEFAULT 10,
+    pin VARCHAR(4) DEFAULT '0000',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     department VARCHAR(255),
     role VARCHAR(50) DEFAULT 'user', -- 'user', 'admin', 'cafe_admin'
     cafe_id INTEGER REFERENCES cafes(id), -- For cafe_admin
+    table_number INTEGER, -- Current table number when checked in
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -31,6 +35,20 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='cafe_id') THEN
         ALTER TABLE users ADD COLUMN cafe_id INTEGER REFERENCES cafes(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='table_number') THEN
+        ALTER TABLE users ADD COLUMN table_number INTEGER;
+    END IF;
+    
+    -- Add missing columns to cafes table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='address') THEN
+        ALTER TABLE cafes ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='total_tables') THEN
+        ALTER TABLE cafes ADD COLUMN total_tables INTEGER DEFAULT 10;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='pin') THEN
+        ALTER TABLE cafes ADD COLUMN pin VARCHAR(4) DEFAULT '0000';
     END IF;
 END $$;
 
@@ -69,4 +87,12 @@ BEGIN
 END $$;
 
 -- Insert Initial Cafes
-INSERT INTO cafes (name) VALUES ('PAÜ İİBF Kantin'), ('PAÜ Yemekhane') ON CONFLICT (name) DO NOTHING;
+INSERT INTO cafes (name, address, total_tables, pin) 
+VALUES 
+    ('PAÜ İİBF Kantin', 'İktisadi ve İdari Bilimler Fakültesi', 30, '1234'),
+    ('PAÜ Mühendislik Kafeterya', 'Mühendislik Fakültesi', 25, '1234'),
+    ('PAÜ Merkez Yemekhane', 'Merkez Kampüs', 50, '1234')
+ON CONFLICT (name) DO UPDATE SET 
+    address = EXCLUDED.address,
+    total_tables = EXCLUDED.total_tables,
+    pin = EXCLUDED.pin;
