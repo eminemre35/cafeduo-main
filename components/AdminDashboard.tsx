@@ -1,36 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Trash2, Shield, Search, MapPin, Coffee, Gamepad2, Save, Navigation } from 'lucide-react';
+import { Users, Trash2, Shield, Search, Coffee, Gamepad2, Save } from 'lucide-react';
 import { User, GameRequest } from '../types';
 import { api } from '../lib/api';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix Leaflet default icon issue
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface AdminDashboardProps {
     currentUser: User;
-}
-
-// Map Click Handler Component
-function LocationMarker({ setLocation }: { setLocation: (lat: number, lng: number) => void }) {
-    useMapEvents({
-        click(e) {
-            setLocation(e.latlng.lat, e.latlng.lng);
-        },
-    });
-    return null;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
@@ -44,10 +18,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     // Cafe Management State
     const [selectedCafe, setSelectedCafe] = useState<any>(null);
     const [editCafeData, setEditCafeData] = useState({
-        latitude: 37.7749,
-        longitude: 29.0875, // Default: Denizli
-        table_count: 20,
-        radius: 100
+        address: '',
+        total_tables: 20,
+        pin: '1234'
     });
 
     useEffect(() => {
@@ -69,10 +42,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             if (cafesData.length > 0 && !selectedCafe) {
                 setSelectedCafe(cafesData[0]);
                 setEditCafeData({
-                    latitude: cafesData[0].latitude || 37.7749,
-                    longitude: cafesData[0].longitude || 29.0875,
-                    table_count: cafesData[0].table_count || 20,
-                    radius: cafesData[0].radius || 100
+                    address: cafesData[0].address || '',
+                    total_tables: cafesData[0].total_tables || 20,
+                    pin: cafesData[0].pin || '1234'
                 });
             }
         } catch (error) {
@@ -98,10 +70,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         if (cafe) {
             setSelectedCafe(cafe);
             setEditCafeData({
-                latitude: cafe.latitude || 37.7749,
-                longitude: cafe.longitude || 29.0875,
-                table_count: cafe.table_count || 20,
-                radius: cafe.radius || 100
+                address: cafe.address || '',
+                total_tables: cafe.total_tables || 20,
+                pin: cafe.pin || '1234'
             });
         }
     };
@@ -109,10 +80,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const [showAddCafeModal, setShowAddCafeModal] = useState(false);
     const [newCafeData, setNewCafeData] = useState({
         name: '',
-        latitude: 37.7749,
-        longitude: 29.0875,
-        table_count: 20,
-        radius: 100
+        address: '',
+        total_tables: 20,
+        pin: '1234'
     });
 
     // ... (existing loadData and other functions)
@@ -151,7 +121,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             await api.admin.createCafe(newCafeData);
             alert('Yeni kafe eklendi!');
             setShowAddCafeModal(false);
-            setNewCafeData({ name: '', latitude: 37.7749, longitude: 29.0875, table_count: 20, radius: 100 });
+            setNewCafeData({ name: '', address: '', total_tables: 20, pin: '1234' });
             loadData();
         } catch (error) {
             alert('Kafe eklenirken hata oluştu.');
@@ -177,7 +147,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         {[
                             { id: 'users', icon: Users, label: 'Kullanıcılar' },
                             { id: 'games', icon: Gamepad2, label: 'Oyunlar' },
-                            { id: 'cafes', icon: MapPin, label: 'Kafe & Konum' }
+                            { id: 'cafes', icon: Coffee, label: 'Kafeler' }
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -305,115 +275,93 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         </div>
                     )}
 
-                    {/* CAFES TAB (LOCATION) */}
+                    {/* CAFES TAB (SIMPLIFIED) */}
                     {activeTab === 'cafes' && (
-                        <div className="flex h-[600px]">
-                            {/* Sidebar */}
-                            <div className="w-1/3 border-r border-gray-700/50 p-6 bg-black/20 overflow-y-auto">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl text-white font-bold flex items-center gap-2">
-                                        <Coffee className="text-orange-400" /> Kafe Ayarları
-                                    </h2>
-                                    <button
-                                        onClick={() => setShowAddCafeModal(true)}
-                                        className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg transition-colors"
-                                        title="Yeni Kafe Ekle"
-                                    >
-                                        <div className="flex items-center gap-1 text-xs font-bold">
-                                            <span>+</span> EKLE
-                                        </div>
-                                    </button>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-gray-400 text-sm mb-2">Düzenlenecek Kafe</label>
-                                        <select
-                                            className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
-                                            onChange={(e) => handleCafeSelect(e.target.value)}
-                                            value={selectedCafe?.id || ''}
-                                        >
-                                            {cafes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
-                                    </div>
-
-                                    {selectedCafe && (
-                                        <>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-gray-400 text-xs mb-1">Enlem (Lat)</label>
-                                                    <input
-                                                        type="number"
-                                                        value={editCafeData.latitude}
-                                                        onChange={e => setEditCafeData({ ...editCafeData, latitude: parseFloat(e.target.value) })}
-                                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-2 text-white text-sm"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-gray-400 text-xs mb-1">Boylam (Lng)</label>
-                                                    <input
-                                                        type="number"
-                                                        value={editCafeData.longitude}
-                                                        onChange={e => setEditCafeData({ ...editCafeData, longitude: parseFloat(e.target.value) })}
-                                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-2 text-white text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-gray-400 text-sm mb-2">Toplam Masa Sayısı</label>
-                                                <input
-                                                    type="number"
-                                                    value={editCafeData.table_count}
-                                                    onChange={e => setEditCafeData({ ...editCafeData, table_count: parseInt(e.target.value) })}
-                                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-gray-400 text-sm mb-2">Menzil (Metre)</label>
-                                                <input
-                                                    type="number"
-                                                    value={editCafeData.radius}
-                                                    onChange={e => setEditCafeData({ ...editCafeData, radius: parseInt(e.target.value) })}
-                                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
-                                                />
-                                                <p className="text-xs text-gray-500 mt-1">Kullanıcıların giriş yapabilmesi için gereken maksimum mesafe.</p>
-                                            </div>
-
-                                            <button
-                                                onClick={handleCafeUpdate}
-                                                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20"
-                                            >
-                                                <Save size={18} /> KAYDET
-                                            </button>
-
-                                            <div className="bg-blue-900/20 border border-blue-800/50 p-4 rounded-lg">
-                                                <p className="text-blue-300 text-xs flex items-start gap-2">
-                                                    <Navigation size={14} className="mt-0.5" />
-                                                    Haritadan bir noktaya tıklayarak koordinatları otomatik doldurabilirsiniz.
-                                                </p>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl text-white font-bold flex items-center gap-2">
+                                    <Coffee className="text-orange-400" /> Kafe Yönetimi
+                                </h2>
+                                <button
+                                    onClick={() => setShowAddCafeModal(true)}
+                                    className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    <span>+</span> Yeni Kafe Ekle
+                                </button>
                             </div>
 
-                            {/* Map Area */}
-                            <div className="w-2/3 relative">
-                                <MapContainer
-                                    center={[editCafeData.latitude, editCafeData.longitude]}
-                                    zoom={15}
-                                    style={{ height: '100%', width: '100%' }}
-                                    key={`${selectedCafe?.id}-${activeTab}`} // Force re-render only when cafe changes
-                                >
-                                    <TileLayer
-                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                    />
-                                    <Marker position={[editCafeData.latitude, editCafeData.longitude]} />
-                                    <LocationMarker setLocation={(lat, lng) => setEditCafeData(prev => ({ ...prev, latitude: lat, longitude: lng }))} />
-                                </MapContainer>
+                            <div className="grid gap-6">
+                                {/* Cafe Selector */}
+                                <div className="bg-black/20 border border-gray-700 rounded-xl p-6">
+                                    <label className="block text-gray-400 text-sm mb-2">Düzenlenecek Kafe Seçin</label>
+                                    <select
+                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                        onChange={(e) => handleCafeSelect(e.target.value)}
+                                        value={selectedCafe?.id || ''}
+                                    >
+                                        {cafes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Edit Form */}
+                                {selectedCafe && (
+                                    <div className="bg-black/20 border border-gray-700 rounded-xl p-6 space-y-4">
+                                        <h3 className="text-white font-bold text-lg mb-4">Kafe Bilgilerini Düzenle</h3>
+
+                                        <div>
+                                            <label className="block text-gray-400 text-sm mb-2">Kafe Adı</label>
+                                            <input
+                                                type="text"
+                                                value={selectedCafe.name}
+                                                disabled
+                                                className="w-full bg-black/60 border border-gray-600 rounded-lg p-3 text-gray-500 cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Kafe adı değiştirilemez</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-400 text-sm mb-2">Adres</label>
+                                            <input
+                                                type="text"
+                                                value={editCafeData.address}
+                                                onChange={e => setEditCafeData({ ...editCafeData, address: e.target.value })}
+                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                                placeholder="Örn: Mühendislik Fakültesi, Kampüs"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-400 text-sm mb-2">Toplam Masa Sayısı</label>
+                                            <input
+                                                type="number"
+                                                value={editCafeData.total_tables}
+                                                onChange={e => setEditCafeData({ ...editCafeData, total_tables: parseInt(e.target.value) })}
+                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                                min="1"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-400 text-sm mb-2">PIN Kodu (4 Haneli)</label>
+                                            <input
+                                                type="text"
+                                                value={editCafeData.pin}
+                                                onChange={e => setEditCafeData({ ...editCafeData, pin: e.target.value.slice(0, 4) })}
+                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono text-lg"
+                                                placeholder="1234"
+                                                maxLength={4}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Kullanıcılar bu PIN ile kafeye giriş yapacak</p>
+                                        </div>
+
+                                        <button
+                                            onClick={handleCafeUpdate}
+                                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+                                        >
+                                            <Save size={18} /> DEĞİŞİKLİKLERİ KAYDET
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -429,44 +377,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-gray-400 text-sm mb-2">Kafe Adı</label>
+                                <label className="block text-gray-400 text-sm mb-2">Kafe Adı *</label>
                                 <input
                                     type="text"
                                     value={newCafeData.name}
                                     onChange={e => setNewCafeData({ ...newCafeData, name: e.target.value })}
                                     className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
-                                    placeholder="Örn: Kampüs Kafe"
+                                    placeholder="Örn: Kampüs Kafeterya"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Enlem</label>
-                                    <input
-                                        type="number"
-                                        value={newCafeData.latitude}
-                                        onChange={e => setNewCafeData({ ...newCafeData, latitude: parseFloat(e.target.value) })}
-                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Boylam</label>
-                                    <input
-                                        type="number"
-                                        value={newCafeData.longitude}
-                                        onChange={e => setNewCafeData({ ...newCafeData, longitude: parseFloat(e.target.value) })}
-                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Adres</label>
+                                <input
+                                    type="text"
+                                    value={newCafeData.address}
+                                    onChange={e => setNewCafeData({ ...newCafeData, address: e.target.value })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                    placeholder="Örn: İİBF, Merkez Kampüs"
+                                />
                             </div>
 
                             <div>
-                                <label className="block text-gray-400 text-sm mb-2">Masa Sayısı</label>
+                                <label className="block text-gray-400 text-sm mb-2">Toplam Masa Sayısı *</label>
                                 <input
                                     type="number"
-                                    value={newCafeData.table_count}
-                                    onChange={e => setNewCafeData({ ...newCafeData, table_count: parseInt(e.target.value) })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
+                                    value={newCafeData.total_tables}
+                                    onChange={e => setNewCafeData({ ...newCafeData, total_tables: parseInt(e.target.value) })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                    min="1"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">PIN Kodu (4 Haneli) *</label>
+                                <input
+                                    type="text"
+                                    value={newCafeData.pin}
+                                    onChange={e => setNewCafeData({ ...newCafeData, pin: e.target.value.slice(0, 4) })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono text-lg"
+                                    placeholder="1234"
+                                    maxLength={4}
                                 />
                             </div>
 
