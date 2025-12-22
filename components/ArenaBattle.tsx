@@ -5,7 +5,7 @@ import { Sword, Shield, Heart, Zap, Trophy, AlertCircle, RefreshCw, X } from 'lu
 
 interface ArenaBattleProps {
     currentUser: User;
-    gameId: number | null;
+    gameId: string | number | null;
     opponentName?: string;
     isBot: boolean;
     onGameEnd: (winner: string, points: number) => void;

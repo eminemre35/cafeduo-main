@@ -58,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const [rewardTab, setRewardTab] = useState<'shop' | 'inventory'>('shop');
 
   // Active Game State
-  const [activeGameId, setActiveGameId] = useState<number | null>(null);
+  const [activeGameId, setActiveGameId] = useState<string | number | null>(null);
   const [activeGameType, setActiveGameType] = useState<string>('');
   const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
   const [isBot, setIsBot] = useState<boolean>(false); // Explicit bot tracking

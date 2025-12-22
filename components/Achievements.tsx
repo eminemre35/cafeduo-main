@@ -12,7 +12,7 @@ interface Achievement {
 }
 
 interface AchievementsProps {
-    userId: number;
+    userId: string | number;
 }
 
 export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
@@ -53,8 +53,8 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
                 <div
                     key={ach.id}
                     className={`relative p-4 rounded-lg border flex items-start gap-4 transition-all ${ach.unlocked
-                            ? 'bg-gray-800/50 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]'
-                            : 'bg-gray-900/50 border-gray-800 opacity-60 grayscale'
+                        ? 'bg-gray-800/50 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]'
+                        : 'bg-gray-900/50 border-gray-800 opacity-60 grayscale'
                         }`}
                 >
                     <div className={`p-3 rounded-lg shrink-0 ${ach.unlocked ? 'bg-yellow-500/20 text-yellow-500' : 'bg-gray-800 text-gray-600'}`}>
