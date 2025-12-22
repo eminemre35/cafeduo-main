@@ -20,7 +20,7 @@ export interface StepProps {
 }
 
 export interface User {
-  id: number;
+  id: string | number;
   username: string;
   email: string;
   table?: string;
@@ -30,19 +30,19 @@ export interface User {
   department?: string;
   isAdmin?: boolean;
   role?: 'user' | 'admin' | 'cafe_admin';
-  cafe_id?: number;
+  cafe_id?: string | number;
   cafe_name?: string;
   table_number?: string;
   avatar_url?: string;
 }
 
 export interface GameRequest {
-  id: number;
+  id: string | number;
   hostName: string;
   gameType: string;
   points: number;
   table: string;
-  status: 'waiting' | 'active' | 'finished';
+  status: 'waiting' | 'active' | 'finished' | 'playing';
   guestName?: string;
   player1Move?: string;
   player2Move?: string;
@@ -50,15 +50,25 @@ export interface GameRequest {
 }
 
 export interface Reward {
-  id: number;
+  id: string | number;
   title: string;
   cost: number;
   description: string;
-  icon: 'coffee' | 'discount' | 'dessert' | 'game';
+  icon: 'coffee' | 'discount' | 'dessert' | 'game' | string;
 }
 
 export interface RedeemedReward extends Reward {
   redeemId: string;
   redeemedAt: Date;
   code: string;
+}
+
+export interface Cafe {
+  id: string | number;
+  name: string;
+  daily_pin?: string;
+  table_count?: number;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
 }

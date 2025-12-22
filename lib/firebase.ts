@@ -167,22 +167,22 @@ export const firebaseAuth = {
 // ====================
 
 export const firebaseUsers = {
-    get: async (uid: string) => {
+    get: async (uid: string): Promise<any> => {
         const userDoc = await getDoc(doc(db, 'users', uid));
         return userDoc.exists() ? { id: uid, ...userDoc.data() } : null;
     },
 
-    update: async (uid: string, data: any) => {
+    update: async (uid: string, data: any): Promise<any> => {
         await updateDoc(doc(db, 'users', uid), data);
         return await firebaseUsers.get(uid);
     },
 
-    getAll: async () => {
+    getAll: async (): Promise<any[]> => {
         const snapshot = await getDocs(collection(db, 'users'));
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     },
 
-    getLeaderboard: async (limit = 10) => {
+    getLeaderboard: async (limit = 10): Promise<any[]> => {
         const q = query(collection(db, 'users'), orderBy('points', 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.slice(0, limit).map(doc => ({ id: doc.id, ...doc.data() }));
@@ -201,7 +201,7 @@ const FALLBACK_CAFES = [
 ];
 
 export const firebaseCafes = {
-    getAll: async () => {
+    getAll: async (): Promise<any[]> => {
         try {
             console.log('Fetching cafes from Firestore...');
             const cafesRef = collection(db, 'cafes');
@@ -252,6 +252,10 @@ export const firebaseCafes = {
             createdAt: serverTimestamp()
         });
         return { id: docRef.id, ...data };
+    },
+
+    update: async (cafeId: string, data: any): Promise<void> => {
+        await updateDoc(doc(db, 'cafes', cafeId), data);
     }
 };
 
@@ -260,8 +264,15 @@ export const firebaseCafes = {
 // ====================
 
 export const firebaseGames = {
-    getAll: async () => {
+    getAll: async (): Promise<any[]> => {
         const q = query(collection(db, 'games'), where('status', '==', 'waiting'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    },
+
+    getAllGames: async (): Promise<any[]> => {
+        // Get all games regardless of status (for admin panel)
+        const q = query(collection(db, 'games'), orderBy('createdAt', 'desc'));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     },
@@ -359,6 +370,41 @@ export const firebaseRewards = {
     getUserItems: async (userId: string) => {
         const snapshot = await getDocs(collection(db, 'users', userId, 'items'));
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    },
+
+    create: async (data: any): Promise<any> => {
+        const docRef = await addDoc(collection(db, 'rewards'), {
+            ...data,
+            createdAt: serverTimestamp()
+        });
+        return { id: docRef.id, ...data };
+    },
+
+    delete: async (rewardId: string): Promise<void> => {
+        await deleteDoc(doc(db, 'rewards', rewardId));
+    },
+
+    useCoupon: async (code: string): Promise<{ success: boolean; item?: any }> => {
+        // Find the coupon by code in all user items
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+
+        for (const userDoc of usersSnapshot.docs) {
+            const itemsSnapshot = await getDocs(collection(db, 'users', userDoc.id, 'items'));
+
+            for (const itemDoc of itemsSnapshot.docs) {
+                const itemData = itemDoc.data();
+                if (itemData.code === code && itemData.status !== 'used') {
+                    // Mark as used
+                    await updateDoc(doc(db, 'users', userDoc.id, 'items', itemDoc.id), {
+                        status: 'used',
+                        usedAt: serverTimestamp()
+                    });
+                    return { success: true, item: { id: itemDoc.id, ...itemData } };
+                }
+            }
+        }
+
+        throw new Error('Geçersiz veya kullanılmış kupon kodu');
     }
 };
 

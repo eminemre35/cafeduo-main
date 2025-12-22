@@ -5,7 +5,7 @@ import { Sword, Shield, Zap, Trophy, AlertCircle, X, Heart, RefreshCw } from 'lu
 
 interface DungeonClashProps {
     currentUser: User;
-    gameId: number | null;
+    gameId: string | number | null;
     opponentName?: string;
     isBot: boolean;
     onGameEnd: (winner: string, points: number) => void;
