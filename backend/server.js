@@ -782,6 +782,182 @@ app.put('/api/cafes/:id/pin', async (req, res) => {
   }
 });
 
+// ===================================
+// 4. ADMIN ENDPOINTS
+// ===================================
+
+// 4.1 GET ALL USERS (Admin only)
+app.get('/api/admin/users', async (req, res) => {
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          u.id, u.username, u.email, u.points, u.wins, u.games_played as "gamesPlayed",
+          u.department, u.role, u.is_admin as "isAdmin", u.cafe_id, u.table_number,
+          c.name as cafe_name
+        FROM users u
+        LEFT JOIN cafes c ON u.cafe_id = c.id
+        ORDER BY u.created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      res.status(500).json({ error: 'Kullanıcılar yüklenemedi.' });
+    }
+  } else {
+    res.json(MEMORY_USERS);
+  }
+});
+
+// 4.2 GET ALL GAMES (Admin only)
+app.get('/api/admin/games', async (req, res) => {
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          g.id, g.host_name, g.guest_name, g.game_type, g.table_code, g.status,
+          g.created_at, c.name as cafe_name
+        FROM games g
+        LEFT JOIN users u ON g.host_name = u.username
+        LEFT JOIN cafes c ON u.cafe_id = c.id
+        ORDER BY g.created_at DESC
+        LIMIT 100
+      `);
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching games:', err);
+      res.status(500).json({ error: 'Oyunlar yüklenemedi.' });
+    }
+  } else {
+    res.json([]);
+  }
+});
+
+// 4.3 UPDATE USER ROLE (Admin only)
+app.put('/api/admin/users/:id/role', async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!role || !['user', 'cafe_admin', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Geçersiz rol.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        `UPDATE users SET role = $1, is_admin = $2 WHERE id = $3 RETURNING *`,
+        [role, role === 'admin', id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+      }
+
+      res.json({ success: true, user: result.rows[0] });
+    } catch (err) {
+      console.error('Role update error:', err);
+      res.status(500).json({ error: 'Rol güncellenemedi.' });
+    }
+  } else {
+    const userIdx = MEMORY_USERS.findIndex(u => u.id == id);
+    if (userIdx !== -1) {
+      MEMORY_USERS[userIdx].role = role;
+      MEMORY_USERS[userIdx].isAdmin = (role === 'admin');
+      res.json({ success: true, user: MEMORY_USERS[userIdx] });
+    } else {
+      res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    }
+  }
+});
+
+// 4.4 UPDATE CAFE (Admin only)
+app.put('/api/admin/cafes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { address, total_tables, pin } = req.body;
+
+  if (await isDbConnected()) {
+    try {
+      const updates = [];
+      const values = [];
+      let paramCount = 1;
+
+      if (address !== undefined) {
+        updates.push(`address = $${paramCount++}`);
+        values.push(address);
+      }
+      if (total_tables !== undefined) {
+        updates.push(`total_tables = $${paramCount++}`);
+        values.push(total_tables);
+      }
+      if (pin !== undefined) {
+        if (pin.length !== 4) {
+          return res.status(400).json({ error: 'PIN 4 haneli olmalıdır.' });
+        }
+        updates.push(`pin = $${paramCount++}`);
+        values.push(pin);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ error: 'Güncellenecek alan bulunamadı.' });
+      }
+
+      values.push(id);
+      const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+
+      const result = await pool.query(query, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      }
+
+      res.json({ success: true, cafe: result.rows[0] });
+    } catch (err) {
+      console.error('Cafe update error:', err);
+      res.status(500).json({ error: 'Kafe güncellenemedi.' });
+    }
+  } else {
+    res.status(501).json({ error: 'Demo modda kafe güncellenemez.' });
+  }
+});
+
+// 4.5 CREATE CAFE (Admin only)
+app.post('/api/admin/cafes', async (req, res) => {
+  const { name, address, total_tables, pin } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Kafe adı zorunludur.' });
+  }
+
+  const cafePin = pin || '1234';
+  const cafeTables = total_tables || 20;
+
+  if (cafePin.length !== 4) {
+    return res.status(400).json({ error: 'PIN 4 haneli olmalıdır.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        `INSERT INTO cafes (name, address, total_tables, pin) 
+         VALUES ($1, $2, $3, $4) 
+         RETURNING *`,
+        [name, address || '', cafeTables, cafePin]
+      );
+
+      res.json({ success: true, cafe: result.rows[0] });
+    } catch (err) {
+      console.error('Cafe creation error:', err);
+      if (err.code === '23505') { // Unique violation
+        res.status(409).json({ error: 'Bu isimde bir kafe zaten mevcut.' });
+      } else {
+        res.status(500).json({ error: 'Kafe oluşturulamadı.' });
+      }
+    }
+  } else {
+    res.status(501).json({ error: 'Demo modda kafe oluşturulamaz.' });
+  }
+});
+
 // 2.6 LOCATION CHECK-IN SYSTEM
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   var R = 6371; // Radius of the earth in km
