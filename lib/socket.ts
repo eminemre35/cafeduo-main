@@ -43,7 +43,7 @@ class SocketService {
     }
 
     emitMove(gameId: string, move: any) {
-        this.socket?.emit('game_move', { gameId, move });
+        this.socket?.emit('rps_move', { gameId, move });
     }
 }
 
