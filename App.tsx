@@ -13,6 +13,7 @@ import { socketService } from './lib/socket';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -271,4 +272,11 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+// AuthProvider ile sarmalanmış App
+const AppWithAuth: React.FC = () => (
+  <AuthProvider>
+    <App />
+  </AuthProvider>
+);
+
+export default AppWithAuth;
