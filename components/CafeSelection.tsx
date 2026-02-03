@@ -55,7 +55,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
         try {
             const res = await api.cafes.checkIn({
-                userId: currentUser.id,
+                // userId kaldırıldı - backend token'dan alıyor
                 cafeId: selectedCafeId,
                 tableNumber: parseInt(tableNumber),
                 pin: pin

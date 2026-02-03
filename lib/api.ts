@@ -131,11 +131,11 @@ export const api = {
       }
     },
 
-    checkIn: async (params: { userId: string | number; cafeId: string | number; tableNumber: number; pin: string }) => {
+    checkIn: async (params: { cafeId: string | number; tableNumber: number; pin: string }) => {
+      // NOTE: userId artık token'dan alınıyor, body'e gönderilmiyor
       return await fetchAPI('/cafes/check-in', {
         method: 'POST',
         body: JSON.stringify({
-          userId: params.userId,
           cafeId: params.cafeId,
           tableNumber: params.tableNumber,
           pin: params.pin,
