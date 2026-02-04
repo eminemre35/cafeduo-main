@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Temel Skeleton elementi - Shimmer efekti ile
 interface SkeletonProps {
