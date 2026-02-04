@@ -29,3 +29,10 @@ dist-ssr
 
 # Temporary extracted assets
 temp_assets/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
