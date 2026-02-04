@@ -8,124 +8,98 @@
 ## 📍 Şu Anki Durum
 
 **Tarih:** 2026-02-03
-**Aktif Branch:** `feat/phase-1-security-hardening`
-**Faz:** Faz 2 tamamlandı, Faz 3 planlaması
+**Aktif Branch:** `feat/phase-5-testing`
+**Faz:** Faz 5 - Testing & QA (Gün 2/4)
 
 ---
 
 ## ✅ Son Yapılan İşlem
 
-Faz 2 (Frontend Refactoring) tamamlandı ve GitHub'a push edildi.
+Faz 5 Testing - Gün 2 tamamlandı. Dashboard Integration testleri yazıldı.
 
-**Commit:** `252d62a` ve önceki
-**Mesaj:** "refactor: complete Dashboard extraction with custom hooks"
+### Test Durumu: 62/62 ✅
 
-### Başarılanlar:
-- Dashboard.tsx 659 → ~150 satır (%77 azalma)
-- useGames, useRewards hooks oluşturuldu
-- StatusBar, GameSection, RewardSection component'leri ayrıldı
-- AuthContext implementasyonu
-- Backend memory mode token fix
-- Check-in API JWT entegrasyonu
+| Test Suite | Test Sayısı | Durum |
+|------------|-------------|-------|
+| RetroButton | 7 | ✅ |
+| AuthModal | 5 | ✅ |
+| useGames hook | 9 | ✅ |
+| ToastContext | 11 | ✅ |
+| useRewards hook | 8 | ✅ |
+| Dashboard Integration | 22 | ✅ |
+| **TOPLAM** | **62** | **✅** |
 
-### Test Sonuçları (Başarılı):
-```
-✅ Login çalışıyor
-✅ Token kaydediliyor
-✅ Kafe check-in çalışıyor
-✅ Dashboard yüklüyor
-✅ Oyun lobisi görünüyor
-✅ Mağaza/Envanter çalışıyor
+### Altyapı Kurulumu:
+- Jest + ts-jest + React Testing Library
+- `import.meta.env` mock'u (Vite compatibility)
+- Socket.IO mock'ları
+- Global mocks (localStorage, matchMedia, IntersectionObserver)
+
+---
+
+## 🎯 Sıradaki Görev: E2E Tests (Gün 3)
+
+**Hedef:** Playwright ile end-to-end testler yaz
+
+**Test Edilecek Flow'lar:**
+1. Auth Flow: Login → Dashboard yönlendirmesi
+2. Game Flow: Masa bağla → Oyun kur → Oyuna katıl → Lobiye dön
+3. Shop Flow: Ödül satın al → Envanterde gör
+
+**Komutlar:**
+```bash
+npm init playwright@latest
+npx playwright test
 ```
 
 ---
 
-## 🎯 Sıradaki Görev: Faz 3 Planlaması
+## 📋 Faz 5 Roadmap (Kalan)
 
-**Hedef:** Database optimizasyon için profesyonel bir plan oluştur
+### Gün 3: E2E Tests (Playwright)
+- [ ] Playwright kurulumu
+- [ ] Auth flow testleri
+- [ ] Game flow testleri
+- [ ] Shop flow testleri
+- [ ] Screenshots/GIF'ler
 
-**Gerekli Analizler:**
-1. Mevcut schema review (schema.sql + initDb)
-2. Index analizi (eksikler)
-3. Migration stratejisi belirleme
-4. Enum standardizasyonu
-5. Soft delete implementasyonu
-
-**Çıktı:**
-- Detaylı teknik plan (ADRs dahil)
-- Migration dosyaları taslağı
-- Implementation sıralaması
+### Gün 4: CI/CD & Coverage
+- [ ] GitHub Actions workflow
+- [ ] Her PR'da test çalıştırma
+- [ ] Coverage reporting (%70 target)
+- [ ] Coverage badges (README)
 
 ---
 
 ## 💬 Son Konuşma Özeti
 
 Kullanıcı:
-- Faz 2'nin başarılı olduğunu onayladı ✅
-- Faz 3 ve sonrası için profesyonel plan istedi ✅
-- Senior developer yaklaşımı bekliyor ✅
+- Dashboard integration testlerinin tamamlandığını onayladı ✅
+- 22/22 test geçti ✅
+- MD dosyalarını güncellememi istedi ✅
+- Commit & push yapılacak ✅
 
 Ben (AI):
-- AGENTS.md'yi güncelledim ✅
-- Faz 2'yi "tamamlandı" olarak işaretledim ✅
-- Faz 3-4-5-6 planlarını ekledim ✅
-
----
-
-## 📋 Faz 3 Detaylı Planlama Checklist
-
-- [ ] Mevcut schema analizi
-- [ ] Index eksiklikleri belirleme
-- [ ] Migration tool seçimi (node-pg-migrate vs knex)
-- [ ] Enum standardizasyon planı
-- [ ] Soft delete stratejisi
-- [ ] ADR (Architecture Decision Record) yazımı
-- [ ] Implementation sıralaması
-
----
-
-## ⚠️ Bilinen Teknik Borçlar (Faz 3 İçin)
-
-1. **Tip Tutarsızlıkları:**
-   - `table_number` (INTEGER vs VARCHAR)
-   - `total_tables` vs `table_count`
-
-2. **Redundancy:**
-   - `is_admin` ve `role` sütunları
-   - Hangisi canonical olacak?
-
-3. **Eksik Index'ler:**
-   - `users(cafe_id)`
-   - `games(status, created_at)`
-   - `user_items(user_id)`
-
-4. **Hard Delete:**
-   - Tüm tablolarda hard delete
-   - Soft delete eklenmeli
-
-5. **Audit Trail:**
-   - `updated_at` eksik
-   - `created_by`, `updated_by` eksik
-
----
-
-## 🛠️ Önerilen Araçlar (Faz 3)
-
-**Migration:** node-pg-migrate (PostgreSQL native)
-**Linting:** ESLint + Prettier (zaten var)
-**Testing:** Jest + Supertest (API tests)
+- CONTEXT.md ve AGENTS.md'yi güncelleyeceğim ✅
+- Tüm değişiklikleri commit edeceğim ✅
 
 ---
 
 ## 📝 Notlar
 
-Planlama tamamlandıktan sonra:
-1. `feat/phase-3-database-optimization` branch'i oluştur
-2. Migration dosyalarını yaz
-3. Index'leri ekle
-4. Enum'ları düzenle
-5. Test et
+**Test Komutları:**
+```bash
+npm test                    # Tüm testleri çalıştır
+npm test -- --watch       # Watch mode
+npm test -- --coverage    # Coverage raporu
+npm test -- RetroButton   # Spesifik test
+```
+
+**Önemli Mock'lar:**
+- `test-setup.ts`: Global mocks (localStorage, matchMedia, import.meta.env)
+- `lib/socket.ts`: Socket.IO mock'u
+- `framer-motion`: Basit mock'lar
 
 ---
 
-*Bu dosya planlama tamamlandığında güncellenecek*
+*Bu dosya her session sonunda güncellenecek*

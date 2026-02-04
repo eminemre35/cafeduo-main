@@ -190,18 +190,49 @@
 
 ### 🚧 Devam Eden Faz
 
-#### Faz 5: Testing & QA ⏳ (SIRADAKİ)
-**Branch:** `feat/phase-5-database-optimization` (oluşturulacak)
+#### Faz 5: Testing & QA ⏳ (DEVAM EDİYOR - Gün 2/4)
+**Branch:** `feat/phase-5-testing`
+**Başlangıç:** 2026-02-03
 
-#### Faz 5: Testing & QA ⏳ (PLANLANIYOR)
-**Branch:** `feat/phase-5-testing` (oluşturulacak)
+**Gün 1: Component & Hook Tests** ✅ (Tamamlandı)
+- [x] Jest + ts-jest + React Testing Library setup
+- [x] `test-setup.ts` global mocks
+- [x] RetroButton tests (7 test)
+- [x] AuthModal tests (5 test)
+- [x] useGames hook tests (9 test)
+- [x] ToastContext tests (11 test)
+- [x] useRewards hook tests (8 test)
+**Toplam: 40 test ✅**
 
-**Hedefler:**
-- [ ] Jest + React Testing Library setup
-- [ ] Unit test coverage: %70
-- [ ] Integration tests (API)
-- [ ] E2E tests (Playwright - kritik flow'lar)
-- [ ] Test coverage reporting
+**Gün 2: Integration Tests** ✅ (Tamamlandı)
+- [x] Dashboard Integration tests (22 test)
+  - Initial render
+  - Tab navigation (Games/Leaderboard/Achievements)
+  - Game flow (loading, create, join, active game)
+  - Reward flow (shop, inventory, buy)
+  - Error handling
+  - User without table connection
+**Toplam: 62 test ✅**
+
+**Mock'lar Kuruldu:**
+- `import.meta.env` (Vite compatibility)
+- Socket.IO (`lib/socket.ts`)
+- Framer Motion
+- Sub-components (StatusBar, GameSection, RewardSection)
+
+**Gün 3: E2E Tests** ⏳ (Sırada)
+- [ ] Playwright kurulumu
+- [ ] Auth flow: Login → Dashboard
+- [ ] Game flow: Masa bağla → Oyun kur → Katıl
+- [ ] Shop flow: Ödül al → Envanterde gör
+
+**Gün 4: CI/CD & Coverage** ⏳ (Planlandı)
+- [ ] GitHub Actions workflow
+- [ ] Her PR'da otomatik test
+- [ ] Coverage reporting (%70 target)
+- [ ] Coverage badge
+
+**Hedef:** Toplam 62+ test, %70 coverage
 
 #### Faz 6: Dokümantasyon ⏳ (PLANLANIYOR)
 **Branch:** `feat/phase-6-documentation` (oluşturulacak)
