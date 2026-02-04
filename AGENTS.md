@@ -106,17 +106,23 @@
   - CreateGameModal: Puan input, min/max limitler, preset butonlar, özet panel
   - Toast entegrasyonu ile hata/başarı bildirimleri
   
-- [ ] Demo Data (3h) - SONRAKİ
-- [ ] Empty States (3h) - SONRAKİ
+- [x] Empty States (3h)
+  - EmptyState.tsx: Reusable component (default + compact varyantları)
+  - GameSection: "Henüz Oyun Yok" durumu
+  - RewardSection: Mağaza ve envanter boş durumları
+  - İkon, başlık, açıklama ve aksiyon butonları
+  
+- [ ] Demo Data (3h) - SONRAKİ (Faz 4'te)
 
 **Dosyalar Değişti:**
 - `contexts/ToastContext.tsx` - Yeni
 - `components/Toast.tsx` - Yeni
 - `components/Skeleton.tsx` - Yeni
+- `components/EmptyState.tsx` - Yeni
 - `components/AuthModal.tsx` - Validation + toast entegrasyonu
 - `components/CreateGameModal.tsx` - Validation + puan input
-- `components/dashboard/GameSection.tsx` - Loading states
-- `components/dashboard/RewardSection.tsx` - Loading states
+- `components/dashboard/GameSection.tsx` - Loading states + Empty state
+- `components/dashboard/RewardSection.tsx` - Loading states + Empty states
 - `types.ts` - `isUsed` eklendi
 - `backend/server.js` - `is_used` mapping
 
@@ -126,6 +132,7 @@
 ✅ Skeleton loading görünüyor
 ✅ Form validation anlık kontrol ediyor
 ✅ CreateGameModal puan seçimi çalışıyor
+✅ Empty states görünüyor (oyun/mağaza/envanter)
 ```
 
 ---
