@@ -153,7 +153,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     // Validate all fields
     if (!validateForm()) {
-      toast.showToast('Lütfen form hatalarını düzeltin', 'error');
+      toast.error('Lütfen form hatalarını düzeltin');
       return;
     }
 
@@ -162,11 +162,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       if (mode === 'register') {
         const user = await api.auth.register(username, email, password);
-        toast.showToast('Kayıt başarılı! Hoş geldiniz 🎉', 'success');
+        toast.success('Kayıt başarılı! Hoş geldiniz 🎉');
         onLoginSuccess(user);
       } else {
         const user = await api.auth.login(email, password);
-        toast.showToast(`Hoş geldin ${user.username}!`, 'success');
+        toast.success(`Hoş geldin ${user.username}!`);
         onLoginSuccess(user);
       }
     } catch (err: any) {
@@ -187,7 +187,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       setError(errorMessage);
-      toast.showToast(errorMessage, 'error');
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -393,5 +393,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
       </motion.div>
     </motion.div>
+  </AnimatePresence>
   );
 };

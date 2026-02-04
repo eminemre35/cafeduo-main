@@ -94,7 +94,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     // Auto-adjust points if below minimum
     if (points < newMinPoints) {
       setPoints(newMinPoints);
-      toast.showToast(`${newGameType} için minimum ${newMinPoints} puan ayarlandı`, 'warning');
+      toast.warning(`${newGameType} için minimum ${newMinPoints} puan ayarlandı`);
     }
     
     // Clear game type error
@@ -109,7 +109,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     setTouched({ gameType: true, points: true });
     
     if (!validate()) {
-      toast.showToast('Lütfen form hatalarını düzeltin', 'error');
+      toast.error('Lütfen form hatalarını düzeltin');
       return;
     }
 
@@ -117,10 +117,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
     try {
       onSubmit(gameType, points);
-      toast.showToast(`${gameType} oyunu oluşturuldu!`, 'success');
+      toast.success(`${gameType} oyunu oluşturuldu!`);
       onClose();
     } catch (err: any) {
-      toast.showToast(err.message || 'Oyun oluşturulamadı', 'error');
+      toast.error(err.message || 'Oyun oluşturulamadı');
     } finally {
       setIsSubmitting(false);
     }
