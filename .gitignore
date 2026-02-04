@@ -36,3 +36,6 @@ temp_assets/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Jest coverage outputs
+/coverage/
