@@ -12,6 +12,7 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
+    "esModuleInterop": true,
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
@@ -32,6 +33,8 @@
     "types.ts",
     "constants.ts",
     "components",
+    "hooks",
+    "contexts",
     "lib",
     "vite.config.ts"
   ]

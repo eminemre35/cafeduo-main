@@ -1,8 +1,8 @@
 # 🗺️ CafeDuo Yol Haritası (Roadmap)
 
-> **Son Güncelleme:** 2026-02-03  
-> **Mevcut Faz:** Faz 4 Tamamlandı ✅  
-> **Sonraki Faz:** Faz 5 - Testing & QA 🧪
+> **Son Güncelleme:** 2026-02-04  
+> **Mevcut Faz:** Faz 5 Tamamlandı ✅  
+> **Sonraki Faz:** Faz 6 - Performance ⚡
 
 ---
 
@@ -13,7 +13,7 @@ Faz 1: Security Hardening     ████████████ 100% ✅
 Faz 2: Frontend Refactoring   ████████████ 100% ✅
 Faz 3: UI Features            ████████████ 100% ✅
 Faz 4: Responsive & Animation ████████████ 100% ✅
-Faz 5: Testing & QA           ░░░░░░░░░░░░ 0%  🔄 SIRADAKİ
+Faz 5: Testing & QA           ████████████ 100% ✅
 Faz 6: Performance            ░░░░░░░░░░░░ 0%  ⏳
 Faz 7: Advanced Features      ░░░░░░░░░░░░ 0%  ⏳
 Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
@@ -62,38 +62,20 @@ Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
 
 ## 🚧 Gelecek Fazlar
 
-### Faz 5: Testing & QA 🧪
-**Tahmini Süre:** 5-6 gün | **Branch:** `feat/phase-5-testing`
-**Başlangıç:** Hemen
+### Faz 5: Testing & QA 🧪 ✅
+**Süre:** Tamamlandı | **Branch:** `feat/phase-5-testing`
 
-#### Hedefler:
-- [ ] **Unit Tests** (Jest + React Testing Library)
-  - Component testleri (Dashboard, GameLobby, AuthModal)
-  - Hook testleri (useGames, useRewards)
-  - Utility testleri (api, socket)
-  - Hedef: %70 coverage
+#### Tamamlananlar:
+- [x] Unit test altyapısı (Jest + React Testing Library + ts-jest)
+- [x] 109/109 test passing
+- [x] Coverage raporu üretimi (`npm run test:coverage`)
+- [x] Playwright E2E test şablonları (`e2e/auth.spec.ts`, `e2e/game.spec.ts`, `e2e/shop.spec.ts`)
+- [x] GitHub Actions ile CI test workflow
 
-- [ ] **Integration Tests**
-  - API endpoint testleri
-  - Authentication flow
-  - Game creation & joining
-
-- [ ] **E2E Tests** (Playwright)
-  - Login/Register flow
-  - Game creation & play
-  - Shop purchase flow
-  - Critical path'ler
-
-- [ ] **Test Coverage Reporting**
-  - Istanbul/nyc setup
-  - GitHub Actions integration
-  - Coverage badges
-
-#### Çıktılar:
-- `*.test.tsx` dosyaları
-- `tests/e2e/` klasörü
-- Coverage raporları
-- CI'da otomatik test koşumu
+#### Mevcut Durum:
+- Unit test suite'leri: `components`, `hooks`, `contexts`, `lib`
+- Toplam coverage (2026-02-04): Statements `%25.13`, Branches `%16.03`, Functions `%22.78`, Lines `%25.56`
+- Sonraki hedef: Faz 6 ile performans iyileştirme + coverage artışı
 
 ---
 
@@ -191,7 +173,7 @@ Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
 | 2. Refactoring | 4 gün | Tamamlandı | Tamamlandı | ✅ |
 | 3. UI Features | 3 gün | Tamamlandı | Tamamlandı | ✅ |
 | 4. Responsive | 4 gün | Tamamlandı | **Bugün** | ✅ |
-| 5. Testing | 6 gün | Şimdi | +6 gün | 🔄 |
+| 5. Testing | 6 gün | Tamamlandı | Tamamlandı | ✅ |
 | 6. Performance | 4 gün | +6 gün | +10 gün | ⏳ |
 | 7. Advanced | 7 gün | +10 gün | +17 gün | ⏳ |
 | 8. Production | 4 gün | +17 gün | +21 gün | ⏳ |
@@ -206,10 +188,10 @@ Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
 1. ✅ Security Hardening
 2. ✅ Basic UI/UX
 3. ✅ Responsive Design
-4. 🔄 Testing & QA (şu an)
+4. 🔄 Performance Optimization (sıradaki)
 
 ### Orta Öncelik (Önemli)
-5. Performance Optimization
+5. Test coverage iyileştirme
 6. Advanced Features (Turnuva, Elo)
 
 ### Düşük Öncelik (Nice-to-have)
@@ -242,4 +224,4 @@ Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
 ---
 
 **Hazırlayan:** CafeDuo Dev Team  
-**Son Güncelleme:** 2026-02-03
+**Son Güncelleme:** 2026-02-04

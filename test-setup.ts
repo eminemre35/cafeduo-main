@@ -38,6 +38,17 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
+// Mock browser dialogs used by UI actions
+Object.defineProperty(window, 'alert', {
+  writable: true,
+  value: jest.fn(),
+});
+
+Object.defineProperty(window, 'confirm', {
+  writable: true,
+  value: jest.fn(() => true),
+});
+
 // Mock import.meta.env for Vite compatibility
 Object.defineProperty(global, 'import', {
   value: {

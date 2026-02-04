@@ -5,7 +5,7 @@
 
 ---
 
-## 📊 Proje Durumu (Son Güncelleme: 2026-02-03)
+## 📊 Proje Durumu (Son Güncelleme: 2026-02-04)
 
 ### ✅ Tamamlanan Fazlar
 
@@ -190,9 +190,9 @@
 
 ### ✅ Tamamlanan Faz
 
-#### Faz 5: Testing & QA ✅ (TAMAMLANDI - 2026-02-03)
+#### Faz 5: Testing & QA ✅ (TAMAMLANDI - 2026-02-04)
 **Branch:** `feat/phase-5-testing`
-**Status:** 100 test passing, CI/CD active
+**Status:** 109 test passing, CI/CD active
 
 **Gün 1: Component & Hook Tests** ✅
 - [x] Jest + ts-jest + React Testing Library setup
@@ -222,8 +222,8 @@
 - [x] GameLobby component tests (13 test)
 - [x] CreateGameModal tests (25 test)
 
-**Toplam: 100 test ✅**
-**Coverage: ~%40-50 (başlangıç %19'dan)**
+**Toplam: 109 test ✅**
+**Coverage: %25.56 lines (2026-02-04)**
 
 **Mock'lar:**
 - `import.meta.env` (Vite)

@@ -1,4 +1,4 @@
-# 🧪 Phase 3 Test Checklist
+# 🧪 Phase 5 Test Checklist (Guncel)
 
 ## Test Edilecek Özellikler
 
@@ -27,13 +27,12 @@
 - [ ] Mağaza boşsa → "Mağaza Boş" mesajı
 - [ ] Envanter boşsa → "Envanterin Boş" + "Mağazaya Git" butonu
 
-## Manuel Test Adımları
+## Manuel Test Adimlari
 
 ```bash
-# 1. Geliştirme sunucularını başlat
+# 1. Gelistirme sunucularini baslat
 cd /home/emin/cafeduo-main
-npm run dev          # Frontend: http://localhost:3000
-node backend/server.js  # Backend: http://localhost:3001
+npm run dev          # Frontend: http://localhost:3000 + Backend: http://localhost:3001
 
 # 2. Login testi
 - http://localhost:3000'a git
