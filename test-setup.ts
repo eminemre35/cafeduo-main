@@ -38,6 +38,20 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
+// Mock import.meta.env for Vite compatibility
+Object.defineProperty(global, 'import', {
+  value: {
+    meta: {
+      env: {
+        VITE_API_URL: 'http://localhost:3001',
+        DEV: true,
+        PROD: false,
+      }
+    }
+  },
+  writable: true
+});
+
 // Suppress console errors during tests
 global.console = {
   ...console,
