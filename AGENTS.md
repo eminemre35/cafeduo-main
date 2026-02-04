@@ -170,10 +170,12 @@
 - [x] Card hover lift effect - RewardSection: lift + glow + border
 - [x] Modal open/close animations - AuthModal: slide up/down
 - [x] Toast slide-in/out animations - Stack layout + AnimatePresence
-- [ ] Loading spinner enhancements
+- [x] Loading spinner enhancements - Shimmer, LoadingSpinner, DotLoader
 
 **Bonus:**
 - [x] Inventory coupon shake effect - Retro kupon hissi
+- [x] Staggered grid animations - Skeleton cards
+- [x] LoadingOverlay component
 
 **3. Touch & Mobile UX (4h)**
 - [ ] Swipe gestures (modal kapatma, tab değiştirme)
