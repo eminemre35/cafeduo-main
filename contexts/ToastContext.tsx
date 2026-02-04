@@ -106,6 +106,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <ToastIcon type={t.type} />
               <p className="text-white text-sm flex-1">{t.message}</p>
               <motion.button
+                data-testid="toast-close"
                 onClick={() => dismissToast(t.id)}
                 className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
                 whileHover={{ scale: 1.1 }}
