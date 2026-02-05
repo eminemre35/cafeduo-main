@@ -54,7 +54,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   onTabChange,
   onBuyReward
 }) => {
-  const canAfford = (cost: number) => currentUser.points >= cost;
+  const canAfford = (cost: number) => (currentUser?.points ?? 0) >= cost;
 
   return (
     <div className="bg-[#151921] border border-gray-800 rounded-xl p-6">
@@ -81,14 +81,14 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            Envanter ({inventory.length})
+            Envanter ({inventory?.length ?? 0})
           </button>
         </div>
         
         <div className="text-right">
           <span className="text-gray-400 text-sm">Bakiye:</span>
           <span className="text-yellow-500 font-bold text-xl ml-2">
-            {currentUser.points} puan
+            {(currentUser?.points ?? 0)} puan
           </span>
         </div>
       </div>
@@ -98,7 +98,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
         <div>
           {rewardsLoading ? (
             <SkeletonGrid count={3} columns={1} />
-          ) : rewards.length > 0 ? (
+          ) : (rewards?.length ?? 0) > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {rewards.map((reward) => {
                 const affordable = canAfford(reward.cost);
@@ -178,7 +178,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
         <div>
           {inventoryLoading ? (
             <SkeletonGrid count={4} columns={1} />
-          ) : inventory.length > 0 ? (
+          ) : (inventory?.length ?? 0) > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {inventory.map((item) => {
                 const expirationDate = new Date(
