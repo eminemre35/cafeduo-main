@@ -8,7 +8,11 @@ const { logger } = require('../utils/logger'); // Assuming logger structure
 // For now, we will assume DB usage mostly, or copy the fallback logic if needed.
 // To keep it simple, I will focus on DB logic first as per production standards.
 
-const JWT_SECRET = process.env.JWT_SECRET || 'cafeduo_super_secret_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
+}
 
 const generateToken = (user) => {
     return jwt.sign(

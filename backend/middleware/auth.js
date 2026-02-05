@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'cafeduo_super_secret_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
+}
 
 const isDbConnected = async () => {
     try {
