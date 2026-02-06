@@ -11,9 +11,9 @@ interface CreateGameModalProps {
 }
 
 const GAME_TYPES = [
-  { id: 'rps', name: 'Taş Kağıt Makas', description: 'Klasik oyun, hızlı eğlence', minPoints: 0 },
-  { id: 'arena', name: 'Arena Savaşı', description: 'Strateji savaşı', minPoints: 50 },
-  { id: 'dungeon', name: 'Zindan Savaşı', description: 'RPG tarzı mücadele', minPoints: 100 }
+  { id: 'rps', name: 'Refleks Avı', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
+  { id: 'arena', name: 'Ritim Kopyala', description: 'Diziyi doğru sırada tekrar et', minPoints: 40 },
+  { id: 'dungeon', name: 'Çift Tek Sprint', description: '5 turda çift-tek tahmin yarışı', minPoints: 80 }
 ];
 
 interface ValidationError {
@@ -27,7 +27,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   onSubmit,
   maxPoints
 }) => {
-  const [gameType, setGameType] = useState('Taş Kağıt Makas');
+  const [gameType, setGameType] = useState('Refleks Avı');
   const [points, setPoints] = useState(0);
   const [errors, setErrors] = useState<ValidationError>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -38,7 +38,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setGameType('Taş Kağıt Makas');
+      setGameType('Refleks Avı');
       setPoints(0);
       setErrors({});
       setTouched({});

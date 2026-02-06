@@ -1,0 +1,14 @@
+{$SITE_ADDRESS} {
+  encode zstd gzip
+
+  @api path /api* /socket.io* /health
+  reverse_proxy @api api:3001
+  reverse_proxy web:80
+
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  }
+}

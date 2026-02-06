@@ -59,18 +59,18 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
       
       // Game types appear in selection list
-      const gameTypes = screen.getAllByText('Taş Kağıt Makas');
+      const gameTypes = screen.getAllByText('Refleks Avı');
       expect(gameTypes.length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Arena Savaşı').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Zindan Savaşı').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Ritim Kopyala').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Çift Tek Sprint').length).toBeGreaterThan(0);
     });
 
     it('shows game descriptions', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      expect(screen.getByText('Klasik oyun, hızlı eğlence')).toBeInTheDocument();
-      expect(screen.getByText('Strateji savaşı')).toBeInTheDocument();
-      expect(screen.getByText('RPG tarzı mücadele')).toBeInTheDocument();
+      expect(screen.getByText('Işık yandığında en hızlı tıkla')).toBeInTheDocument();
+      expect(screen.getByText('Diziyi doğru sırada tekrar et')).toBeInTheDocument();
+      expect(screen.getByText('5 turda çift-tek tahmin yarışı')).toBeInTheDocument();
     });
 
     it('renders preset point buttons', () => {
@@ -95,36 +95,36 @@ describe('CreateGameModal', () => {
     it('selects game type when clicked', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Click on Arena Savaşı (first occurrence in game list)
-      const arenaButtons = screen.getAllByText('Arena Savaşı');
+      // Click on Ritim Kopyala (first occurrence in game list)
+      const arenaButtons = screen.getAllByText('Ritim Kopyala');
       fireEvent.click(arenaButtons[0]);
       
       // Should show checkmark or be selected
-      expect(screen.getAllByText('Arena Savaşı').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Ritim Kopyala').length).toBeGreaterThan(0);
     });
 
     it('shows minimum points requirement for each game type', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Arena requires min 50
-      expect(screen.getByText('Min 50 Puan')).toBeInTheDocument();
+      // Arena requires min 40
+      expect(screen.getByText('Min 40 Puan')).toBeInTheDocument();
       
-      // Zindan requires min 100
-      expect(screen.getByText('Min 100 Puan')).toBeInTheDocument();
+      // Zindan requires min 80
+      expect(screen.getByText('Min 80 Puan')).toBeInTheDocument();
     });
 
     it('auto-adjusts points when switching to higher minimum game', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Initially Taş Kağıt Makas (min 0)
+      // Initially Refleks Avı (min 0)
       expect(screen.getByDisplayValue('0')).toBeInTheDocument();
       
-      // Switch to Zindan Savaşı (min 100)
-      fireEvent.click(screen.getByText('Zindan Savaşı'));
+      // Switch to Çift Tek Sprint (min 80)
+      fireEvent.click(screen.getByText('Çift Tek Sprint'));
       
       // Should show warning and auto-adjust
       expect(mockToast.warning).toHaveBeenCalledWith(
-        expect.stringContaining('minimum 100 puan')
+        expect.stringContaining('minimum 80 puan')
       );
     });
   });
@@ -165,13 +165,13 @@ describe('CreateGameModal', () => {
     it('shows validation error for points below minimum', async () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Switch to Arena (min 50) - click first occurrence
-      const arenaButtons = screen.getAllByText('Arena Savaşı');
+      // Switch to Arena (min 40) - click first occurrence
+      const arenaButtons = screen.getAllByText('Ritim Kopyala');
       fireEvent.click(arenaButtons[0]);
       
-      // Wait for auto-adjust to 50
+      // Wait for auto-adjust to 40
       await waitFor(() => {
-        const input = screen.queryByDisplayValue('50');
+        const input = screen.queryByDisplayValue('40');
         expect(input || screen.queryByDisplayValue('0')).toBeTruthy();
       }, { timeout: 1000 });
     });
@@ -274,14 +274,14 @@ describe('CreateGameModal', () => {
     it('updates summary when game type changes', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Initially Taş Kağıt Makas (summary section)
-      expect(screen.getAllByText('Taş Kağıt Makas')[0]).toBeInTheDocument();
+      // Initially Refleks Avı (summary section)
+      expect(screen.getAllByText('Refleks Avı')[0]).toBeInTheDocument();
       
       // Switch to Arena
-      fireEvent.click(screen.getByText('Arena Savaşı'));
+      fireEvent.click(screen.getByText('Ritim Kopyala'));
       
       // Summary should update - check first occurrence
-      expect(screen.getAllByText('Arena Savaşı')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Ritim Kopyala')[0]).toBeInTheDocument();
     });
 
     it('updates summary when points change', () => {
@@ -312,7 +312,7 @@ describe('CreateGameModal', () => {
       
       // Should reset to default values
       expect(screen.getByDisplayValue('0')).toBeInTheDocument();
-      expect(screen.getAllByText('Taş Kağıt Makas')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Refleks Avı')[0]).toBeInTheDocument();
     });
 
     it('handles zero max points', () => {

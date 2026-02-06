@@ -47,6 +47,8 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-cafeduo}
+      DB_SSL: ${DB_SSL:-false}
+      DB_SSL_REJECT_UNAUTHORIZED: ${DB_SSL_REJECT_UNAUTHORIZED:-false}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -55,6 +57,7 @@ services:
       RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
     ports:
       - "3001:3001"
     depends_on:
@@ -73,9 +76,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-}
     container_name: cafeduo-web
-    environment:
-      VITE_API_URL: http://localhost:3001
     ports:
       - "3000:80"
     depends_on:

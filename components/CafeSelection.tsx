@@ -26,9 +26,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
     const loadCafes = async () => {
         try {
-            console.log('Loading cafes...');
             const data = await api.cafes.list();
-            console.log('Loaded cafes:', data);
             setCafes(data);
             if (data.length > 0 && !localStorage.getItem('last_cafe_id')) {
                 setSelectedCafeId(String(data[0].id));

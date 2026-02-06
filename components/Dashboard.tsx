@@ -171,7 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           </div>
 
           {/* Oyun component'leri */}
-          {activeGameType === 'Taş Kağıt Makas' ? (
+          {activeGameType === 'Refleks Avı' || activeGameType === 'Taş Kağıt Makas' ? (
             <RockPaperScissors
               gameId={String(activeGameId)}
               currentUser={currentUser}
@@ -179,7 +179,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
             />
-          ) : activeGameType === 'Zindan Savaşı' ? (
+          ) : activeGameType === 'Çift Tek Sprint' || activeGameType === 'Zindan Savaşı' ? (
             <DungeonClash
               gameId={activeGameId}
               currentUser={currentUser}

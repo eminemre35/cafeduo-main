@@ -3,6 +3,13 @@ import { motion } from 'framer-motion';
 import { Users, Gamepad2, Search, Swords } from 'lucide-react';
 import { GameRequest, User } from '../types';
 
+const gameIcon = (gameType: string) => {
+  if (gameType === 'Refleks Avı' || gameType === 'Taş Kağıt Makas') return '⚡';
+  if (gameType === 'Ritim Kopyala' || gameType === 'Arena Savaşı') return '🎵';
+  if (gameType === 'Çift Tek Sprint' || gameType === 'Zindan Savaşı') return '🔢';
+  return '🎮';
+};
+
 interface GameLobbyProps {
   currentUser: User;
   requests: GameRequest[];
@@ -135,9 +142,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                       </span>
                     </div>
                     <div className="text-xs md:text-sm text-gray-400 flex items-center gap-2">
-                      {req.gameType === 'Taş Kağıt Makas' && <span>✂️</span>}
-                      {req.gameType === 'Arena Savaşı' && <span>⚔️</span>}
-                      {req.gameType === 'Zindan Savaşı' && <span>🏰</span>}
+                      <span>{gameIcon(req.gameType)}</span>
                       <span className="truncate">{req.gameType}</span>
                     </div>
                   </div>

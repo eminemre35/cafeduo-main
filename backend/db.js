@@ -1,12 +1,34 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Database configuration
-const isLocalDev = !process.env.DATABASE_URL || process.env.DB_HOST === 'localhost';
+const parseBool = (value) => {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true' || normalized === '1') return true;
+  if (normalized === 'false' || normalized === '0') return false;
+  return undefined;
+};
+
+const getHostFromDatabaseUrl = (databaseUrl) => {
+  if (!databaseUrl) return undefined;
+  try {
+    return new URL(databaseUrl).hostname;
+  } catch {
+    return undefined;
+  }
+};
+
+const isLocalHost = (host) => ['localhost', '127.0.0.1', 'postgres', 'db'].includes(host || '');
+const dbHostFromUrl = getHostFromDatabaseUrl(process.env.DATABASE_URL);
+const resolvedHost = process.env.DB_HOST || dbHostFromUrl || 'localhost';
+const explicitSsl = parseBool(process.env.DB_SSL);
+const useSslByDefault = process.env.NODE_ENV === 'production' && !isLocalHost(resolvedHost);
+const useSsl = explicitSsl ?? useSslByDefault;
+const sslRejectUnauthorized = parseBool(process.env.DB_SSL_REJECT_UNAUTHORIZED) ?? false;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: isLocalDev ? false : { rejectUnauthorized: false },
+  ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
   // Fallback for local dev if DATABASE_URL is not set
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
