@@ -697,7 +697,75 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
-// 4.2 GET ALL GAMES (Admin only) - PROTECTED
+// 4.2 CREATE USER (Admin only) - PROTECTED
+app.post('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  const { username, email, password, department, role, cafe_id, points } = req.body || {};
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'Kullanıcı adı, e-posta ve şifre zorunludur.' });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const nextRole = ['user', 'admin', 'cafe_admin'].includes(role) ? role : 'user';
+  const nextPoints = Number.isFinite(Number(points)) ? Math.max(0, Math.floor(Number(points))) : 100;
+  const nextCafeId = nextRole === 'cafe_admin' ? Number(cafe_id) : null;
+
+  if (nextRole === 'cafe_admin' && !nextCafeId) {
+    return res.status(400).json({ error: 'Kafe yöneticisi için kafe seçimi zorunludur.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
+      if (existingUser.rows.length > 0) {
+        return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
+      }
+
+      const hashedPassword = await bcrypt.hash(String(password), 10);
+      const result = await pool.query(
+        `INSERT INTO users (
+          username, email, password_hash, points, wins, games_played, department, role, is_admin, cafe_id
+        ) VALUES ($1, $2, $3, $4, 0, 0, $5, $6, $7, $8)
+        RETURNING
+          id, username, email, points, wins, games_played as "gamesPlayed",
+          department, role, is_admin as "isAdmin", cafe_id`,
+        [
+          String(username).trim(),
+          normalizedEmail,
+          hashedPassword,
+          nextPoints,
+          department || '',
+          nextRole,
+          nextRole === 'admin',
+          nextRole === 'cafe_admin' ? nextCafeId : null
+        ]
+      );
+
+      return res.status(201).json(result.rows[0]);
+    } catch (err) {
+      console.error('Admin create user error:', err);
+      return res.status(500).json({ error: 'Kullanıcı oluşturulamadı.' });
+    }
+  }
+
+  const nextId = (MEMORY_USERS.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) || 0) + 1;
+  const createdUser = {
+    id: nextId,
+    username: String(username).trim(),
+    email: normalizedEmail,
+    points: nextPoints,
+    wins: 0,
+    gamesPlayed: 0,
+    department: department || '',
+    role: nextRole,
+    isAdmin: nextRole === 'admin',
+    cafe_id: nextRole === 'cafe_admin' ? nextCafeId : null
+  };
+  MEMORY_USERS.unshift(createdUser);
+  return res.status(201).json(createdUser);
+});
+
+// 4.3 GET ALL GAMES (Admin only) - PROTECTED
 app.get('/api/admin/games', authenticateToken, requireAdmin, async (req, res) => {
   if (await isDbConnected()) {
     try {
@@ -721,7 +789,7 @@ app.get('/api/admin/games', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
-// 4.3 UPDATE USER ROLE (Admin only) - PROTECTED
+// 4.4 UPDATE USER ROLE (Admin only) - PROTECTED
 app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { role, cafe_id } = req.body;
@@ -779,7 +847,47 @@ app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req
   }
 });
 
-// 4.4 UPDATE CAFE (Admin only) - PROTECTED
+// 4.5 UPDATE USER POINTS (Admin only) - PROTECTED
+app.patch('/api/admin/users/:id/points', authenticateToken, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const points = Math.floor(Number(req.body?.points));
+
+  if (!Number.isFinite(points) || points < 0) {
+    return res.status(400).json({ error: 'Puan 0 veya daha büyük bir sayı olmalıdır.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        `UPDATE users
+         SET points = $1
+         WHERE id = $2
+         RETURNING
+           id, username, email, points, wins, games_played as "gamesPlayed",
+           department, role, is_admin as "isAdmin", cafe_id`,
+        [points, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+      }
+
+      return res.json(result.rows[0]);
+    } catch (err) {
+      console.error('Admin update points error:', err);
+      return res.status(500).json({ error: 'Puan güncellenemedi.' });
+    }
+  }
+
+  const userIndex = MEMORY_USERS.findIndex((user) => Number(user.id) === Number(id));
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+  }
+  MEMORY_USERS[userIndex] = { ...MEMORY_USERS[userIndex], points };
+  return res.json(MEMORY_USERS[userIndex]);
+});
+
+// 4.6 UPDATE CAFE (Admin only) - PROTECTED
 app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { address, total_tables, pin } = req.body;
@@ -829,7 +937,7 @@ app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, async (req, res
   }
 });
 
-// 4.5 CREATE CAFE (Admin only) - PROTECTED
+// 4.7 CREATE CAFE (Admin only) - PROTECTED
 app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
   const { name, address, total_tables, pin } = req.body;
 
@@ -1336,6 +1444,9 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // 10. ADMIN: DELETE USER - PROTECTED
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
+  if (Number(id) === Number(req.user.id)) {
+    return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz.' });
+  }
   if (await isDbConnected()) {
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
     res.json({ success: true });

@@ -105,6 +105,49 @@ describe('API Layer additional coverage', () => {
     );
   });
 
+  it('admin user management wrappers call expected endpoints', async () => {
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 11 }) }) // create user
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 11, points: 777 }) }) // update points
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) }); // delete user
+
+    await api.admin.createUser({
+      username: 'new-user',
+      email: 'new-user@test.com',
+      password: 'secret123',
+      role: 'user',
+    });
+    await api.admin.updateUserPoints(11, 777);
+    await api.admin.deleteUser(11);
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/admin/users',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          username: 'new-user',
+          email: 'new-user@test.com',
+          password: 'secret123',
+          role: 'user',
+        }),
+      })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/admin/users/11/points',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ points: 777 }),
+      })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      3,
+      '/api/admin/users/11',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
   it('shop.buy sends reward id only', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,

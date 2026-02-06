@@ -15,6 +15,9 @@ jest.mock('../lib/api', () => ({
   api: {
     admin: {
       getUsers: jest.fn(),
+      createUser: jest.fn(),
+      deleteUser: jest.fn(),
+      updateUserPoints: jest.fn(),
       getGames: jest.fn(),
       updateUserRole: jest.fn(),
       updateCafe: jest.fn(),
@@ -143,7 +146,7 @@ describe('AdminDashboard', () => {
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
-    const searchInput = screen.getByPlaceholderText('Ara...');
+    const searchInput = screen.getByPlaceholderText('Kullanıcı adı / e-posta ara...');
     fireEvent.change(searchInput, { target: { value: 'cafe' } });
 
     await waitFor(() => {
@@ -297,6 +300,74 @@ describe('AdminDashboard', () => {
       expect(apiModule.api.admin.getUsers).toHaveBeenCalled();
       expect(apiModule.api.admin.getGames).toHaveBeenCalled();
       expect(apiModule.api.cafes.list).toHaveBeenCalled();
+    });
+  });
+
+  it('updates user points from users table', async () => {
+    (apiModule.api.admin.updateUserPoints as jest.Mock).mockResolvedValue({});
+
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('user1')).toBeInTheDocument();
+    });
+
+    const pointsInput = screen.getByLabelText('user1 puan');
+    fireEvent.change(pointsInput, { target: { value: '875' } });
+
+    const saveButtons = screen.getAllByRole('button', { name: /kaydet/i });
+    fireEvent.click(saveButtons[0]);
+
+    await waitFor(() => {
+      expect(apiModule.api.admin.updateUserPoints).toHaveBeenCalledWith(1, 875);
+    });
+  });
+
+  it('deletes user when confirmed', async () => {
+    (window.confirm as jest.Mock).mockReturnValue(true);
+    (apiModule.api.admin.deleteUser as jest.Mock).mockResolvedValue({});
+
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('user1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /KULLANICIYI SİL/i })[1]);
+
+    await waitFor(() => {
+      expect(apiModule.api.admin.deleteUser).toHaveBeenCalledWith(2);
+    });
+  });
+
+  it('creates new user from modal', async () => {
+    (apiModule.api.admin.createUser as jest.Mock).mockResolvedValue({ id: 99 });
+
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Kullanıcı Listesi')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Yeni Kullanıcı/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Yeni Kullanıcı Ekle' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Kullanıcı Adı *'), { target: { value: 'newguy' } });
+    fireEvent.change(screen.getByLabelText('E-posta *'), { target: { value: 'newguy@test.com' } });
+    fireEvent.change(screen.getByLabelText('Şifre *'), { target: { value: 'secret123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Kullanıcı Ekle' }));
+
+    await waitFor(() => {
+      expect(apiModule.api.admin.createUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: 'newguy',
+          email: 'newguy@test.com',
+          password: 'secret123',
+          role: 'user',
+        })
+      );
     });
   });
 });

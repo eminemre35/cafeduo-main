@@ -18,9 +18,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
     useEffect(() => {
         loadCafes();
-        const savedCafeId = localStorage.getItem('last_cafe_id');
         const savedTable = localStorage.getItem('last_table_number');
-        if (savedCafeId) setSelectedCafeId(savedCafeId);
         if (savedTable) setTableNumber(savedTable);
     }, []);
 
@@ -28,8 +26,22 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
         try {
             const data = await api.cafes.list();
             setCafes(data);
-            if (data.length > 0 && !localStorage.getItem('last_cafe_id')) {
-                setSelectedCafeId(String(data[0].id));
+            if (data.length > 0) {
+                const savedCafeId = localStorage.getItem('last_cafe_id');
+                const hasSavedCafe = savedCafeId
+                    ? data.some((cafe) => String(cafe.id) === String(savedCafeId))
+                    : false;
+
+                if (hasSavedCafe) {
+                    setSelectedCafeId(String(savedCafeId));
+                } else {
+                    setSelectedCafeId(String(data[0].id));
+                    if (savedCafeId) {
+                        localStorage.removeItem('last_cafe_id');
+                    }
+                }
+            } else {
+                setSelectedCafeId(null);
             }
         } catch (err: any) {
             console.error("Failed to load cafes:", err);
@@ -48,6 +60,14 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             return;
         }
 
+        const selectedCafe = cafes.find(c => String(c.id) === String(selectedCafeId));
+        const maxTableCount = Number(selectedCafe?.table_count ?? selectedCafe?.total_tables ?? 20);
+        const parsedTableNumber = Number(tableNumber);
+        if (!Number.isInteger(parsedTableNumber) || parsedTableNumber < 1 || parsedTableNumber > maxTableCount) {
+            setError(`Masa numarası 1 ile ${maxTableCount} arasında olmalıdır.`);
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -55,13 +75,16 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             const res = await api.cafes.checkIn({
                 // userId kaldırıldı - backend token'dan alıyor
                 cafeId: selectedCafeId,
-                tableNumber: parseInt(tableNumber),
+                tableNumber: parsedTableNumber,
                 pin: pin
             });
 
-            onCheckInSuccess(res.cafeName, res.table, selectedCafeId);
+            const resolvedCafeName = res?.cafeName || res?.cafe?.name || selectedCafe?.name || 'Kafe';
+            const resolvedTable = res?.table || `MASA${String(parsedTableNumber).padStart(2, '0')}`;
+
+            onCheckInSuccess(resolvedCafeName, resolvedTable, selectedCafeId);
             localStorage.setItem('last_cafe_id', selectedCafeId.toString());
-            localStorage.setItem('last_table_number', tableNumber);
+            localStorage.setItem('last_table_number', String(parsedTableNumber));
         } catch (err: any) {
             let msg = err.message || 'Check-in başarısız.';
             if (msg === 'Failed to fetch' || msg === 'Load failed') {
@@ -74,7 +97,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
         }
     };
 
-    const selectedCafe = cafes.find(c => c.id === selectedCafeId);
+    const selectedCafe = cafes.find(c => String(c.id) === String(selectedCafeId));
     const isPinValid = pin.length >= 4;
 
     // PIN digit display component - clickable to focus hidden input

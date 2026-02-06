@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Trash2, Shield, Search, Coffee, Gamepad2, Save } from 'lucide-react';
+import { Users, Trash2, Shield, Search, Coffee, Gamepad2, Save, UserPlus, Coins } from 'lucide-react';
 import { User, GameRequest } from '../types';
 import { api } from '../lib/api';
 
@@ -14,6 +14,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'users' | 'games' | 'cafes'>('users');
     const [searchTerm, setSearchTerm] = useState('');
+    const [userPointDrafts, setUserPointDrafts] = useState<Record<string, string>>({});
+    const [showAddUserModal, setShowAddUserModal] = useState(false);
+    const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
     // Cafe Management State
     const [selectedCafe, setSelectedCafe] = useState<any>(null);
@@ -38,13 +41,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             setUsers(usersData);
             setGames(gamesData);
             setCafes(cafesData);
+            setUserPointDrafts(
+                usersData.reduce((acc: Record<string, string>, user: User) => {
+                    acc[String(user.id)] = String(user.points ?? 0);
+                    return acc;
+                }, {})
+            );
 
             if (cafesData.length > 0 && !selectedCafe) {
                 setSelectedCafe(cafesData[0]);
                 setEditCafeData({
                     address: cafesData[0].address || '',
-                    total_tables: cafesData[0].total_tables || 20,
-                    pin: cafesData[0].pin || '1234'
+                    total_tables: cafesData[0].total_tables || cafesData[0].table_count || 20,
+                    pin: cafesData[0].pin || cafesData[0].daily_pin || '1234'
                 });
             }
         } catch (error) {
@@ -71,8 +80,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             setSelectedCafe(cafe);
             setEditCafeData({
                 address: cafe.address || '',
-                total_tables: cafe.total_tables || 20,
-                pin: cafe.pin || '1234'
+                total_tables: cafe.total_tables || cafe.table_count || 20,
+                pin: cafe.pin || cafe.daily_pin || '1234'
             });
         }
     };
@@ -81,6 +90,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const [showRoleModal, setShowRoleModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [selectedCafeForAdmin, setSelectedCafeForAdmin] = useState<string>('');
+    const [newUserData, setNewUserData] = useState({
+        username: '',
+        email: '',
+        password: '',
+        department: '',
+        role: 'user' as 'user' | 'admin' | 'cafe_admin',
+        cafe_id: ''
+    });
 
     const [newCafeData, setNewCafeData] = useState({
         name: '',
@@ -131,6 +148,90 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         }
     };
 
+    const handlePointDraftChange = (userId: string | number, value: string) => {
+        const sanitized = value.replace(/[^\d]/g, '');
+        setUserPointDrafts((prev) => ({
+            ...prev,
+            [String(userId)]: sanitized
+        }));
+    };
+
+    const handleUpdateUserPoints = async (user: User) => {
+        const draftValue = userPointDrafts[String(user.id)] ?? String(user.points ?? 0);
+        const numericPoints = Number(draftValue);
+
+        if (!Number.isFinite(numericPoints) || numericPoints < 0) {
+            alert('Puan 0 veya daha büyük olmalıdır.');
+            return;
+        }
+
+        try {
+            await api.admin.updateUserPoints(user.id, numericPoints);
+            alert(`${user.username} için puan güncellendi.`);
+            loadData();
+        } catch (error) {
+            alert('Puan güncellenemedi.');
+        }
+    };
+
+    const handleDeleteUser = async (user: User) => {
+        if (Number(user.id) === Number(currentUser.id)) {
+            alert('Kendi hesabını bu panelden silemezsin.');
+            return;
+        }
+
+        if (!window.confirm(`${user.username} kullanıcısını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+            return;
+        }
+
+        try {
+            await api.admin.deleteUser(user.id);
+            alert('Kullanıcı silindi.');
+            loadData();
+        } catch (error) {
+            alert('Kullanıcı silinemedi.');
+        }
+    };
+
+    const handleAddUser = async () => {
+        if (!newUserData.username || !newUserData.email || !newUserData.password) {
+            alert('Kullanıcı adı, e-posta ve şifre zorunludur.');
+            return;
+        }
+        if (newUserData.role === 'cafe_admin' && !newUserData.cafe_id) {
+            alert('Kafe yöneticisi için kafe seçimi zorunludur.');
+            return;
+        }
+
+        setIsSubmittingUser(true);
+        try {
+            await api.admin.createUser({
+                username: newUserData.username.trim(),
+                email: newUserData.email.trim(),
+                password: newUserData.password,
+                department: newUserData.department.trim(),
+                role: newUserData.role,
+                cafe_id: newUserData.role === 'cafe_admin' ? Number(newUserData.cafe_id) : null
+            });
+
+            alert('Yeni kullanıcı oluşturuldu.');
+            setShowAddUserModal(false);
+            setNewUserData({
+                username: '',
+                email: '',
+                password: '',
+                department: '',
+                role: 'user',
+                cafe_id: ''
+            });
+            loadData();
+        } catch (error: any) {
+            alert(error?.message || 'Kullanıcı oluşturulamadı.');
+        } finally {
+            setIsSubmittingUser(false);
+        }
+    };
+
     const handleDeleteGame = async (gameId: number) => {
         if (window.confirm('Bu oyunu silmek istediğinize emin misiniz? (Geri alınamaz)')) {
             try {
@@ -158,6 +259,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             alert('Kafe eklenirken hata oluştu.');
         }
     };
+
+    const filteredUsers = users.filter((user) => {
+        const term = searchTerm.trim().toLowerCase();
+        if (!term) return true;
+        return (
+            user.username.toLowerCase().includes(term) ||
+            user.email.toLowerCase().includes(term)
+        );
+    });
 
     return (
         <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 px-4 pb-12 font-sans relative overflow-hidden">
@@ -206,15 +316,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 <h2 className="text-2xl text-white font-bold flex items-center gap-2">
                                     <Users className="text-blue-400" /> Kullanıcı Listesi
                                 </h2>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Ara..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-black/40 border border-gray-600 rounded-full py-2 pl-10 pr-6 text-white outline-none focus:border-blue-500 w-64 transition-all"
-                                    />
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder="Kullanıcı adı / e-posta ara..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="bg-black/40 border border-gray-600 rounded-full py-2 pl-10 pr-6 text-white outline-none focus:border-blue-500 w-72 transition-all"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => setShowAddUserModal(true)}
+                                        className="bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <UserPlus size={16} />
+                                        Yeni Kullanıcı
+                                    </button>
                                 </div>
                             </div>
                             <div className="overflow-x-auto rounded-xl border border-gray-700/50">
@@ -231,12 +350,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-700/50">
-                                        {users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase())).map(user => (
+                                        {filteredUsers.map(user => (
                                             <tr key={user.id} className="hover:bg-white/5 transition-colors">
                                                 <td className="p-4 font-bold text-white">{user.username}</td>
                                                 <td className="p-4 text-sm">{user.email}</td>
                                                 <td className="p-4 text-sm">{user.department || '-'}</td>
-                                                <td className="p-4 text-center font-mono text-yellow-500">{user.points}</td>
+                                                <td className="p-4 text-center">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="font-mono text-yellow-400">{user.points}</div>
+                                                        {!user.isAdmin && (
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    value={userPointDrafts[String(user.id)] ?? String(user.points ?? 0)}
+                                                                    onChange={(e) => handlePointDraftChange(user.id, e.target.value)}
+                                                                    className="w-20 bg-black/45 border border-gray-600 rounded px-2 py-1 text-center text-sm text-white outline-none focus:border-cyan-400"
+                                                                    aria-label={`${user.username} puan`}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleUpdateUserPoints(user)}
+                                                                    className="text-xs bg-yellow-900/30 text-yellow-300 px-2 py-1 rounded hover:bg-yellow-900/50 flex items-center gap-1"
+                                                                >
+                                                                    <Coins size={12} />
+                                                                    Kaydet
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
                                                 <td className="p-4 text-center">
                                                     <span className={`px-2 py-1 rounded text-xs border ${user.isAdmin ? 'bg-red-900/30 border-red-800 text-red-300' :
                                                         user.role === 'cafe_admin' ? 'bg-orange-900/30 border-orange-800 text-orange-300' :
@@ -249,17 +391,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                                     {user.cafe_name || '-'}
                                                 </td>
                                                 <td className="p-4 text-right">
-                                                    {!user.isAdmin && (
-                                                        <button
-                                                            onClick={() => handleToggleRole(user)}
-                                                            className={`text-xs font-bold px-3 py-1 rounded transition-colors ${user.role === 'cafe_admin'
-                                                                ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                                                                : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
-                                                                }`}
-                                                        >
-                                                            {user.role === 'cafe_admin' ? 'YÖNETİCİLİĞİ AL' : 'YÖNETİCİ YAP'}
-                                                        </button>
-                                                    )}
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {!user.isAdmin && (
+                                                            <button
+                                                                onClick={() => handleToggleRole(user)}
+                                                                className={`text-xs font-bold px-3 py-1 rounded transition-colors ${user.role === 'cafe_admin'
+                                                                    ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
+                                                                    : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                                                                    }`}
+                                                            >
+                                                                {user.role === 'cafe_admin' ? 'YÖNETİCİLİĞİ AL' : 'YÖNETİCİ YAP'}
+                                                            </button>
+                                                        )}
+                                                        {!user.isAdmin && (
+                                                            <button
+                                                                onClick={() => handleDeleteUser(user)}
+                                                                className="text-xs font-bold px-3 py-1 rounded bg-red-900/30 text-red-300 hover:bg-red-900/50 flex items-center gap-1"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                                KULLANICIYI SİL
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -400,6 +553,121 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
                 </div>
             </div>
+
+            {/* Add User Modal */}
+            {showAddUserModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
+                        <h2 className="text-2xl font-bold text-white mb-6">Yeni Kullanıcı Ekle</h2>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="new-user-username" className="block text-gray-400 text-sm mb-2">Kullanıcı Adı *</label>
+                                <input
+                                    id="new-user-username"
+                                    type="text"
+                                    value={newUserData.username}
+                                    onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
+                                    placeholder="Örn: yeni_kullanici"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="new-user-email" className="block text-gray-400 text-sm mb-2">E-posta *</label>
+                                <input
+                                    id="new-user-email"
+                                    type="email"
+                                    value={newUserData.email}
+                                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
+                                    placeholder="ornek@mail.com"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="new-user-password" className="block text-gray-400 text-sm mb-2">Şifre *</label>
+                                <input
+                                    id="new-user-password"
+                                    type="password"
+                                    value={newUserData.password}
+                                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
+                                    placeholder="En az 6 karakter"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Bölüm</label>
+                                <input
+                                    type="text"
+                                    value={newUserData.department}
+                                    onChange={(e) => setNewUserData({ ...newUserData, department: e.target.value })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
+                                    placeholder="Opsiyonel"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Rol</label>
+                                <select
+                                    value={newUserData.role}
+                                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as 'user' | 'admin' | 'cafe_admin' })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
+                                >
+                                    <option value="user">Kullanıcı</option>
+                                    <option value="cafe_admin">Kafe Yöneticisi</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+
+                            {newUserData.role === 'cafe_admin' && (
+                                <div>
+                                    <label className="block text-gray-400 text-sm mb-2">Kafe *</label>
+                                    <select
+                                        value={newUserData.cafe_id}
+                                        onChange={(e) => setNewUserData({ ...newUserData, cafe_id: e.target.value })}
+                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
+                                    >
+                                        <option value="">Kafe seçin</option>
+                                        {cafes.map((cafe) => (
+                                            <option key={cafe.id} value={String(cafe.id)}>
+                                                {cafe.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    onClick={() => {
+                                        setShowAddUserModal(false);
+                                        setNewUserData({
+                                            username: '',
+                                            email: '',
+                                            password: '',
+                                            department: '',
+                                            role: 'user',
+                                            cafe_id: ''
+                                        });
+                                    }}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleAddUser}
+                                    disabled={isSubmittingUser}
+                                    className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-bold py-3 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmittingUser ? 'Ekleniyor...' : 'Kullanıcı Ekle'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Add Cafe Modal */}
             {showAddCafeModal && (
