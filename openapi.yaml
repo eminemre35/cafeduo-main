@@ -8,7 +8,7 @@ info:
     ödüller satın almayı sağlayan bir platformun backend API'sidir.
     
     ## Özellikler
-    - 🎮 Oyun lobisi (Taş Kağıt Makas)
+    - 🎮 Oyun lobisi (Refleks Avı, Ritim Kopyala, Çift Tek Sprint)
     - 🏆 Liderlik tablosu
     - 🎁 Ödül mağazası
     - ☕ Kafe check-in sistemi
@@ -376,8 +376,8 @@ paths:
                   example: "GamerTr_99"
                 gameType:
                   type: string
-                  enum: ["Taş Kağıt Makas"]
-                  example: "Taş Kağıt Makas"
+                  enum: ["Refleks Avı", "Ritim Kopyala", "Çift Tek Sprint"]
+                  example: "Refleks Avı"
                 points:
                   type: integer
                   minimum: 50
@@ -486,7 +486,7 @@ paths:
                 move:
                   type: string
                   enum: ["rock", "paper", "scissors"]
-                  description: Taş Kağıt Makas hamlesi
+                  description: Refleks Avı hamlesi
                 gameState:
                   type: object
                   description: Oyun durumu (JSON)
@@ -1303,7 +1303,7 @@ components:
           example: "Rival_Pro"
         gameType:
           type: string
-          example: "Taş Kağıt Makas"
+          example: "Refleks Avı"
         points:
           type: integer
           example: 150

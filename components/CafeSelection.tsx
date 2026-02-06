@@ -125,9 +125,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     };
 
     return (
-        <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] flex items-center justify-center p-4 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 pb-10 px-4 font-sans relative overflow-hidden">
             <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
-            <div className="max-w-md w-full bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden">
+            <div className="max-w-md w-full mx-auto bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden">
 
                 {/* Background Glow */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60 blur-sm"></div>

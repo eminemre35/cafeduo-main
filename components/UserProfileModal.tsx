@@ -23,9 +23,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
     // Mock history
     const recentHistory = [
-        { result: 'WIN', game: 'Taş Kağıt Makas', points: '+50', time: '10dk önce' },
+        { result: 'WIN', game: 'Refleks Avı', points: '+50', time: '10dk önce' },
         { result: 'LOSS', game: 'Kelime Eşleştirme', points: '-20', time: '25dk önce' },
-        { result: 'WIN', game: 'Taş Kağıt Makas', points: '+100', time: '1sa önce' },
+        { result: 'WIN', game: 'Refleks Avı', points: '+100', time: '1sa önce' },
     ];
 
     const handleSave = async () => {

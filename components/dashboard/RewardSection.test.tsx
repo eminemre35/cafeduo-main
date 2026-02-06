@@ -156,7 +156,7 @@ describe('RewardSection', () => {
 
       // Shop tab aktif görünüyor mu?
       const shopTab = screen.getByTestId('shop-tab');
-      expect(shopTab).toHaveClass('bg-blue-500');
+      expect(shopTab).toHaveClass('from-cyan-600');
       expect(shopTab).toHaveTextContent('Mağaza');
       
       // Inventory tab görünüyor mu?
@@ -220,8 +220,8 @@ describe('RewardSection', () => {
       );
 
       // Shop aktif
-      expect(screen.getByTestId('shop-tab')).toHaveClass('bg-blue-500');
-      expect(screen.getByTestId('inventory-tab')).not.toHaveClass('bg-blue-500');
+      expect(screen.getByTestId('shop-tab')).toHaveClass('from-cyan-600');
+      expect(screen.getByTestId('inventory-tab')).not.toHaveClass('from-cyan-600');
 
       // Inventory'e geç
       rerender(
@@ -238,8 +238,8 @@ describe('RewardSection', () => {
       );
 
       // Inventory aktif
-      expect(screen.getByTestId('inventory-tab')).toHaveClass('bg-blue-500');
-      expect(screen.getByTestId('shop-tab')).not.toHaveClass('bg-blue-500');
+      expect(screen.getByTestId('inventory-tab')).toHaveClass('from-cyan-600');
+      expect(screen.getByTestId('shop-tab')).not.toHaveClass('from-cyan-600');
     });
   });
 

@@ -20,9 +20,9 @@
 
 ## Oyun Modulu Durumu
 
-- `components/RockPaperScissors.tsx`: Lines `%98.3`
+- `components/ReflexRush.tsx`: Lines `%98.3`
 - `components/ArenaBattle.tsx`: Lines `%90.76`
-- `components/DungeonClash.tsx`: Lines `%96.87`
+- `components/OddEvenSprint.tsx`: Lines `%96.87`
 - `components/CafeDashboard.tsx`: Lines `%89.24`
 - `components/CafeSelection.tsx`: Lines `%82.81`
 - `components/Navbar.tsx`: Lines `%80.85`

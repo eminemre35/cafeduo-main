@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Gamepad2, Search, Swords } from 'lucide-react';
+import { Users, Gamepad2, Swords } from 'lucide-react';
 import { GameRequest, User } from '../types';
 
 const gameIcon = (gameType: string) => {
-  if (gameType === 'Refleks Avı' || gameType === 'Taş Kağıt Makas') return '⚡';
-  if (gameType === 'Ritim Kopyala' || gameType === 'Arena Savaşı') return '🎵';
-  if (gameType === 'Çift Tek Sprint' || gameType === 'Zindan Savaşı') return '🔢';
+  if (gameType === 'Refleks Avı') return '⚡';
+  if (gameType === 'Ritim Kopyala') return '🎵';
+  if (gameType === 'Çift Tek Sprint') return '🔢';
   return '🎮';
 };
 
@@ -32,7 +32,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <motion.button
           onClick={onCreateGameClick}
-          className="group relative bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 transition-all duration-200 h-24 md:h-32 rounded-xl border-b-4 md:border-b-8 border-blue-800 active:border-b-0 active:translate-y-1 md:active:translate-y-2 overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
+          className="group relative bg-gradient-to-b from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 transition-all duration-200 h-24 md:h-32 rounded-xl border-b-4 md:border-b-8 border-cyan-900/70 active:border-b-0 active:translate-y-1 md:active:translate-y-2 overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -47,7 +47,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </motion.button>
 
         <motion.button 
-          className="group relative bg-gradient-to-b from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 transition-all duration-200 h-24 md:h-32 rounded-xl border-b-4 md:border-b-8 border-purple-800 active:border-b-0 active:translate-y-1 md:active:translate-y-2 overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
+          className="group relative bg-gradient-to-b from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all duration-200 h-24 md:h-32 rounded-xl border-b-4 md:border-b-8 border-slate-900 active:border-b-0 active:translate-y-1 md:active:translate-y-2 overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -63,8 +63,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       </div>
 
       {/* Active Requests List */}
-      <div className="flex-1 bg-[#151921] border-2 border-gray-700 rounded-xl overflow-hidden flex flex-col min-h-[300px] md:min-h-[400px] shadow-inner">
-        <div className="p-3 md:p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+      <div className="flex-1 rf-panel border-cyan-400/20 rounded-xl overflow-hidden flex flex-col min-h-[300px] md:min-h-[400px] shadow-inner">
+        <div className="p-3 md:p-4 bg-[#0a1732]/85 border-b border-cyan-400/20 flex justify-between items-center">
           <h3 className="font-pixel text-white text-sm md:text-base flex items-center gap-2">
             <Users size={16} className="md:w-[18px] md:h-[18px] text-green-400" />
             <span className="hidden sm:inline">AKTİF İSTEKLER (LOBİ)</span>
@@ -94,9 +94,9 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 animate={{ y: [0, -5, 0] }}
                 transition={{ repeat: Infinity, duration: 2 }}
               >
-                <Gamepad2 size={36} className="md:w-12 md:h-12 mb-4 text-gray-600" />
+                <Gamepad2 size={36} className="md:w-12 md:h-12 mb-4 text-slate-500" />
               </motion.div>
-              <span className="text-center font-pixel text-gray-500 text-xs md:text-sm">
+              <span className="text-center font-pixel text-[var(--rf-muted)] text-xs md:text-sm">
                 ŞU AN AKTİF OYUN YOK...<br />
                 İLK OYUNU SEN KUR!
               </span>
@@ -109,7 +109,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ x: 4 }}
-                className="bg-[#1f2937] hover:bg-[#2d3748] p-3 md:p-4 rounded-lg border border-gray-700 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
+                className="bg-[#0c1b38]/80 hover:bg-[#10234a]/85 p-3 md:p-4 rounded-lg border border-cyan-400/18 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
               >
                 {/* Hover highlight */}
                 <motion.div 
@@ -121,7 +121,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 <div className="flex items-center gap-3 w-full sm:w-auto pl-2">
                   <motion.button
                     onClick={() => onViewProfile(req.hostName)}
-                    className="w-9 h-9 md:w-10 md:h-10 bg-gray-700 rounded flex items-center justify-center font-pixel text-base md:text-lg relative hover:bg-gray-600 transition-colors cursor-pointer flex-shrink-0"
+                    className="w-9 h-9 md:w-10 md:h-10 bg-[#0a1732] rounded flex items-center justify-center font-pixel text-base md:text-lg relative hover:bg-[#102447] transition-colors cursor-pointer flex-shrink-0 border border-cyan-400/20"
                     title="Profili Görüntüle"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -141,7 +141,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                         {req.table}
                       </span>
                     </div>
-                    <div className="text-xs md:text-sm text-gray-400 flex items-center gap-2">
+                    <div className="text-xs md:text-sm text-[var(--rf-muted)] flex items-center gap-2">
                       <span>{gameIcon(req.gameType)}</span>
                       <span className="truncate">{req.gameType}</span>
                     </div>
@@ -151,14 +151,14 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 {req.hostName !== currentUser.username ? (
                   <motion.button
                     onClick={() => onJoinGame(Number(req.id))}
-                    className="w-full sm:w-auto px-4 md:px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-pixel text-xs tracking-wider rounded border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all shadow-lg shadow-green-900/20 flex-shrink-0"
+                    className="w-full sm:w-auto px-4 md:px-6 py-2 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-pixel text-xs tracking-wider rounded border-b-4 border-emerald-900 active:border-b-0 active:translate-y-1 transition-all shadow-lg shadow-emerald-900/20 flex-shrink-0"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     KATIL
                   </motion.button>
                 ) : (
-                  <span className="text-gray-500 font-pixel text-xs px-4 py-2 border border-gray-700 rounded flex-shrink-0">
+                  <span className="text-[var(--rf-muted)] font-pixel text-xs px-4 py-2 border border-cyan-400/18 rounded flex-shrink-0">
                     SENİN OYUNUN
                   </span>
                 )}

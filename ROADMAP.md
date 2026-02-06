@@ -84,7 +84,7 @@ Faz 8: Production Ready       ███░░░░░░░░░ 25% ⏳
 - Unit test suite'leri: `components`, `hooks`, `contexts`, `lib`
 - Toplam coverage (2026-02-06): Statements `%71.87`, Branches `%63.57`, Functions `%68.57`, Lines `%72.11`
 - Modül durumu (2026-02-06):
-  - Oyun modülü: `RockPaperScissors` `%98.3`, `ArenaBattle` `%90.76`, `DungeonClash` `%96.87` (line coverage)
+  - Oyun modülü: `ReflexRush` `%98.3`, `ArenaBattle` `%90.76`, `OddEvenSprint` `%96.87` (line coverage)
   - Kafe paneli: `CafeDashboard` `%89.24`, `CafeSelection` `%82.81`
   - Çekirdek UI: `Navbar` `%80.85`, `StatusBar` `%100`
 - Toplam coverage (2026-02-06, son tur): Statements `%75.34`, Branches `%66.44`, Functions `%73.80`, Lines `%75.79`

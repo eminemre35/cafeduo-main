@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { HowItWorks } from './components/HowItWorks';
@@ -37,6 +37,8 @@ interface ProtectedRouteProps {
   requiredRole?: string;
 }
 
+const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_user';
+
 // Protected Route Component
 const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
   if (!user) {
@@ -64,7 +66,6 @@ const App: React.FC = () => {
   const toast = useToast();
 
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Socket IO Connection
   useEffect(() => {
@@ -78,7 +79,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const restoreSession = async () => {
       const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('cafe_user');
 
       if (token) {
         try {
@@ -94,19 +94,6 @@ const App: React.FC = () => {
         } catch (e) {
           console.error("Token verification failed", e);
           localStorage.removeItem('token');
-          localStorage.removeItem('cafe_user');
-        }
-      }
-
-      // Fallback to saved user (for backwards compatibility)
-      if (savedUser) {
-        try {
-          const user = JSON.parse(savedUser);
-          console.log("Restoring session from localStorage:", user.username);
-          setCurrentUser(user);
-          setIsLoggedIn(true);
-        } catch (e) {
-          console.error("Failed to parse saved user", e);
           localStorage.removeItem('cafe_user');
         }
       }
@@ -138,6 +125,7 @@ const App: React.FC = () => {
     setIsLoggedIn(true);
     setIsAuthOpen(false);
     localStorage.setItem('cafe_user', JSON.stringify(user));
+    sessionStorage.removeItem(CHECKIN_SESSION_KEY);
 
     // Check for Daily Bonus
     if ((user as any).bonusReceived) {
@@ -166,6 +154,7 @@ const App: React.FC = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     localStorage.removeItem('cafe_user');
+    sessionStorage.removeItem(CHECKIN_SESSION_KEY);
     navigate('/');
   };
 
@@ -187,8 +176,21 @@ const App: React.FC = () => {
       // Ideally we should fetch the full updated user from backend, but this is enough for UI
       setCurrentUser(updatedUser);
       localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
+      sessionStorage.setItem(CHECKIN_SESSION_KEY, String(currentUser.id));
       navigate('/dashboard');
     }
+  };
+
+  const requiresCheckIn = (user: User | null): boolean => {
+    if (!user) return false;
+    if (user.isAdmin || user.role === 'cafe_admin') return false;
+
+    const hasCafe = Boolean(user.cafe_id);
+    const table = String(user.table_number || '').trim().toUpperCase();
+    const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
+    const hasSessionCheckIn = sessionStorage.getItem(CHECKIN_SESSION_KEY) === String(user.id);
+
+    return !(hasCafe && hasTable && hasSessionCheckIn);
   };
 
   return (
@@ -215,8 +217,7 @@ const App: React.FC = () => {
 
             <Route path="/dashboard" element={
               <ProtectedRoute user={currentUser}>
-                {/* CHECK-IN LOGIC: If user has no cafe_id, show CafeSelection */}
-                {!currentUser?.isAdmin && currentUser?.role !== 'cafe_admin' && !currentUser?.cafe_id ? (
+                {requiresCheckIn(currentUser) ? (
                   <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
                 ) : (
                   <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />

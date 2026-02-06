@@ -74,7 +74,7 @@ jest.mock('./dashboard/GameSection', () => ({
         <span data-testid="games-loading">{gamesLoading ? 'Loading' : 'Loaded'}</span>
         <button 
           data-testid="create-game-btn" 
-          onClick={() => onCreateGame('Taş Kağıt Makas', 50)}
+          onClick={() => onCreateGame('Refleks Avı', 50)}
           disabled={!isMatched}
         >
           Oyun Kur
@@ -153,29 +153,29 @@ jest.mock('./Achievements', () => ({
 }));
 
 // Mock game components (they use socket internally)
-jest.mock('./RockPaperScissors', () => ({
-  RockPaperScissors: ({ gameId, username, opponent }: any) => (
+jest.mock('./ReflexRush', () => ({
+  ReflexRush: ({ gameId, currentUser, opponentName }: any) => (
     <div data-testid="rock-paper-scissors">
-      <span>Taş Kağıt Makas - {username} vs {opponent || '?'}</span>
+      <span>Refleks Avı - {currentUser?.username} vs {opponentName || '?'}</span>
       <span data-testid="game-id">{gameId}</span>
     </div>
   )
 }));
 
 jest.mock('./ArenaBattle', () => ({
-  ArenaBattle: ({ gameId, currentUser, onFinish }: any) => (
+  ArenaBattle: ({ gameId, currentUser, onGameEnd }: any) => (
     <div data-testid="arena-battle">
-      <span>Arena Savaşı - {currentUser.username}</span>
-      <button onClick={onFinish}>Savaşı Bitir</button>
+      <span>Ritim Kopyala - {currentUser.username}</span>
+      <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
   )
 }));
 
-jest.mock('./DungeonClash', () => ({
-  DungeonClash: ({ gameId, currentUser, onFinish }: any) => (
+jest.mock('./OddEvenSprint', () => ({
+  OddEvenSprint: ({ gameId, currentUser, onGameEnd }: any) => (
     <div data-testid="dungeon-clash">
-      <span>Zindan Savaşı - {currentUser.username}</span>
-      <button onClick={onFinish}>Savaşı Bitir</button>
+      <span>Çift Tek Sprint - {currentUser.username}</span>
+      <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
   )
 }));
@@ -338,16 +338,16 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         games: [
-          { id: 1, gameType: 'Taş Kağıt Makas', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
-          { id: 2, gameType: 'Zindan Savaşı', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
+          { id: 1, gameType: 'Refleks Avı', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
+          { id: 2, gameType: 'Çift Tek Sprint', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
         ],
       });
 
       renderDashboard();
 
       expect(screen.getByTestId('games-count')).toHaveTextContent('2');
-      expect(screen.getByTestId('join-game-1')).toHaveTextContent('Katıl: Taş Kağıt Makas');
-      expect(screen.getByTestId('join-game-2')).toHaveTextContent('Katıl: Zindan Savaşı');
+      expect(screen.getByTestId('join-game-1')).toHaveTextContent('Katıl: Refleks Avı');
+      expect(screen.getByTestId('join-game-2')).toHaveTextContent('Katıl: Çift Tek Sprint');
     });
 
     it('allows creating game when table is matched', async () => {
@@ -362,7 +362,7 @@ describe('Dashboard Integration', () => {
       fireEvent.click(screen.getByTestId('create-game-btn'));
 
       await waitFor(() => {
-        expect(mockCreateGame).toHaveBeenCalledWith('Taş Kağıt Makas', 50);
+        expect(mockCreateGame).toHaveBeenCalledWith('Refleks Avı', 50);
       });
     });
 
@@ -370,7 +370,7 @@ describe('Dashboard Integration', () => {
       const mockJoinGame = jest.fn().mockResolvedValue(undefined);
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
-        games: [{ id: 1, gameType: 'Taş Kağıt Makas', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' }],
+        games: [{ id: 1, gameType: 'Refleks Avı', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' }],
         joinGame: mockJoinGame,
       });
 
@@ -387,7 +387,7 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'game123',
-        activeGameType: 'Taş Kağıt Makas',
+        activeGameType: 'Refleks Avı',
         opponentName: 'opponent1',
       });
 
@@ -398,7 +398,7 @@ describe('Dashboard Integration', () => {
       
       // Should show the active game component
       expect(screen.getByTestId('rock-paper-scissors')).toBeInTheDocument();
-      expect(screen.getByText(/Taş Kağıt Makas/)).toBeInTheDocument();
+      expect(screen.getByText(/Refleks Avı/)).toBeInTheDocument();
       
       // Should show lobby return button (with arrow character ←)
       expect(screen.getByText('← Lobiye Dön')).toBeInTheDocument();
@@ -588,7 +588,7 @@ describe('Dashboard Integration', () => {
         ...defaultGamesState,
         serverActiveGame: {
           id: 1,
-          gameType: 'Taş Kağıt Makas',
+          gameType: 'Refleks Avı',
           hostName: 'TestHost',
           points: 50,
           table: 'A1',

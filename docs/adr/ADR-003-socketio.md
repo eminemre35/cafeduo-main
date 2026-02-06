@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Anlık oyun durumu senkronizasyonu gerekiyordu (Taş Kağıt Makas, Arena).
+Anlık oyun durumu senkronizasyonu gerekiyordu (Refleks Avı, Ritim Kopyala, Çift Tek Sprint).
 
 ## Decision
 **Socket.IO** kullanıldı.

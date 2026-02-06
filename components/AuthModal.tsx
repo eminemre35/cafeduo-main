@@ -162,11 +162,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       if (mode === 'register') {
         const user = await api.auth.register(username, email, password);
-        toast.success('Kayıt başarılı! Hoş geldiniz 🎉');
         onLoginSuccess(user);
       } else {
         const user = await api.auth.login(email, password);
-        toast.success(`Hoş geldin ${user.username}!`);
         onLoginSuccess(user);
       }
     } catch (err: any) {

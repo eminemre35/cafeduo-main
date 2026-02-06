@@ -61,15 +61,15 @@ export const GameSection: React.FC<GameSectionProps> = ({
         : serverActiveGame.hostName;
 
     return (
-      <div className="bg-[#151921] border border-blue-500/30 rounded-xl p-6 mb-6">
+      <div className="rf-panel border-cyan-400/25 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-white mb-1">
               🎮 Aktif Oyunun Var!
             </h3>
-            <p className="text-gray-400 text-sm">
-              <span className="text-blue-400 font-semibold">{opponentLabel}</span> ile 
-              <span className="text-yellow-400 font-semibold"> {serverActiveGame.gameType}</span> oyunun devam ediyor.
+            <p className="text-[var(--rf-muted)] text-sm">
+              <span className="text-cyan-300 font-semibold">{opponentLabel}</span> ile 
+              <span className="text-amber-300 font-semibold"> {serverActiveGame.gameType}</span> oyunun devam ediyor.
             </p>
           </div>
           <RetroButton onClick={onRejoinGame} variant="primary">
@@ -86,10 +86,10 @@ export const GameSection: React.FC<GameSectionProps> = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-white flex items-center gap-3">
-            <Gamepad2 className="text-blue-500" size={32} />
+            <Gamepad2 className="text-cyan-300" size={32} />
             Oyun Lobisi
           </h2>
-          <p className="text-gray-400 mt-1">
+          <p className="text-[var(--rf-muted)] mt-1">
             {isMatched 
               ? `Masan: ${tableCode} - Rakiplerini bekle veya oyun kur!`
               : 'Oyun oynamak için önce bir masaya bağlanmalısın!'
