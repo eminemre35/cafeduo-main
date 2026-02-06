@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { RockPaperScissors } from './RockPaperScissors';
+import { ReflexRush } from './ReflexRush';
 import { User } from '../types';
 
 jest.mock('./RetroButton', () => ({
@@ -9,7 +9,7 @@ jest.mock('./RetroButton', () => ({
   ),
 }));
 
-describe('RockPaperScissors', () => {
+describe('ReflexRush', () => {
   const mockUser: User = {
     id: 1,
     username: 'emin',
@@ -34,7 +34,7 @@ describe('RockPaperScissors', () => {
   it('awards round to opponent when clicked too early', () => {
     const onGameEnd = jest.fn();
     render(
-      <RockPaperScissors
+      <ReflexRush
         currentUser={mockUser}
         isBot={true}
         onGameEnd={onGameEnd}
@@ -52,7 +52,7 @@ describe('RockPaperScissors', () => {
   it('finishes match after 3 winning rounds', () => {
     const onGameEnd = jest.fn();
     render(
-      <RockPaperScissors
+      <ReflexRush
         currentUser={mockUser}
         isBot={true}
         onGameEnd={onGameEnd}

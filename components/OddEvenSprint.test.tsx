@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { DungeonClash } from './DungeonClash';
+import { OddEvenSprint } from './OddEvenSprint';
 import { User } from '../types';
 
-describe('DungeonClash', () => {
+describe('OddEvenSprint', () => {
   const mockUser: User = {
     id: 1,
     username: 'emin',
@@ -27,7 +27,7 @@ describe('DungeonClash', () => {
   it('plays 5 rounds and emits winner callback', () => {
     const onGameEnd = jest.fn();
     render(
-      <DungeonClash
+      <OddEvenSprint
         currentUser={mockUser}
         gameId={1}
         isBot={true}
@@ -51,7 +51,7 @@ describe('DungeonClash', () => {
   it('calls onLeave from header button', () => {
     const onLeave = jest.fn();
     render(
-      <DungeonClash
+      <OddEvenSprint
         currentUser={mockUser}
         gameId={1}
         isBot={true}

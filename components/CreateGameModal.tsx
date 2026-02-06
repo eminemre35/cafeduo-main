@@ -141,21 +141,21 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       {/* Modal Content */}
-      <div className="relative bg-[#1a1f2e] border-4 border-blue-500 p-6 w-full max-w-md shadow-[0_0_50px_rgba(59,130,246,0.3)] transform transition-all scale-100 opacity-100" data-testid="create-game-modal">
+      <div className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-6 w-full max-w-md shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100" data-testid="create-game-modal">
 
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 border-b-2 border-gray-700 pb-4">
+        <div className="flex justify-between items-center mb-6 border-b border-cyan-400/20 pb-4">
           <h3 className="font-pixel text-xl text-white tracking-wider">YENİ OYUN KUR</h3>
-          <button onClick={onClose} className="text-red-500 hover:text-red-400 transition-colors p-1 hover:bg-red-500/10 rounded">
+          <button onClick={onClose} className="text-red-300 hover:text-red-200 transition-colors p-1 hover:bg-red-500/10 rounded">
             <X size={24} />
           </button>
         </div>
 
         {/* Points Info */}
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3 mb-6 flex items-center justify-between">
-          <span className="text-blue-400 text-sm">Mevcut Puanınız:</span>
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-3 mb-6 flex items-center justify-between">
+          <span className="text-cyan-300 text-sm">Mevcut Puanınız:</span>
           <span className="text-white font-bold text-lg flex items-center gap-1">
-            <Trophy size={16} className="text-yellow-500" />
+            <Trophy size={16} className="text-amber-300" />
             {maxPoints}
           </span>
         </div>
@@ -165,7 +165,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           
           {/* Game Type Selection */}
           <div>
-            <label className="block text-blue-400 font-pixel text-xs mb-3 tracking-widest">OYUN TÜRÜ SEÇ</label>
+            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">OYUN TÜRÜ SEÇ</label>
             <div className="space-y-2">
               {GAME_TYPES.map((game) => (
                 <button
@@ -175,22 +175,22 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   data-testid={`game-type-${game.id}`}
                   className={`w-full p-3 border-2 rounded transition-all text-left ${
                     gameType === game.name
-                      ? 'border-blue-500 bg-blue-500/20'
-                      : 'border-gray-600 hover:border-gray-500 bg-black/30'
+                      ? 'border-cyan-500 bg-cyan-500/16'
+                      : 'border-cyan-400/20 hover:border-cyan-400/35 bg-black/30'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-white font-retro text-lg">{game.name}</div>
-                      <div className="text-gray-400 text-xs">{game.description}</div>
+                      <div className="text-[var(--rf-muted)] text-xs">{game.description}</div>
                     </div>
                     {game.minPoints > 0 && (
-                      <div className="text-yellow-500 text-xs font-pixel">
+                      <div className="text-amber-300 text-xs font-pixel">
                         Min {game.minPoints} Puan
                       </div>
                     )}
                     {gameType === game.name && (
-                      <Check size={20} className="text-blue-400" />
+                      <Check size={20} className="text-cyan-300" />
                     )}
                   </div>
                 </button>
@@ -205,7 +205,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
           {/* Points Input */}
           <div>
-            <label className="block text-blue-400 font-pixel text-xs mb-3 tracking-widest">KATILIM PUANI</label>
+            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">KATILIM PUANI</label>
             <div className="relative">
               <input
                 type="number"
@@ -215,9 +215,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 min={minPoints}
                 max={maxPoints}
                 data-testid="game-points-input"
-                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-gray-600'} text-white p-3 font-retro text-2xl text-center focus:border-blue-500 outline-none transition-colors`}
+                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-cyan-400/25'} text-white p-3 font-retro text-2xl text-center focus:border-cyan-300 outline-none transition-colors`}
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Puan</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] text-sm">Puan</span>
             </div>
             
             {/* Preset Buttons */}
@@ -229,8 +229,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   onClick={() => handlePointsChange(preset.value.toString())}
                   className={`flex-1 py-1 px-2 text-xs border-2 transition-colors ${
                     points === preset.value
-                      ? 'border-blue-500 bg-blue-500/20 text-blue-400'
-                      : 'border-gray-600 hover:border-gray-500 text-gray-400'
+                      ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
+                      : 'border-cyan-400/20 hover:border-cyan-400/35 text-[var(--rf-muted)]'
                   }`}
                 >
                   {preset.label}
@@ -246,17 +246,17 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           </div>
 
           {/* Summary */}
-          <div className="bg-gray-800/50 rounded p-3 border border-gray-700">
+          <div className="bg-[#0a1732]/80 rounded p-3 border border-cyan-400/20">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Oyun:</span>
+              <span className="text-[var(--rf-muted)]">Oyun:</span>
               <span className="text-white">{gameType}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-400">Katılım Puanı:</span>
-              <span className="text-yellow-400">{points} Puan</span>
+              <span className="text-[var(--rf-muted)]">Katılım Puanı:</span>
+              <span className="text-amber-300">{points} Puan</span>
             </div>
-            <div className="flex justify-between text-sm mt-1 pt-1 border-t border-gray-700">
-              <span className="text-gray-400">Kalan:</span>
+            <div className="flex justify-between text-sm mt-1 pt-1 border-t border-cyan-400/20">
+              <span className="text-[var(--rf-muted)]">Kalan:</span>
               <span className={`${maxPoints - points < 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {maxPoints - points} Puan
               </span>

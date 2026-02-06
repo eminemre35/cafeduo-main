@@ -8,9 +8,9 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { UserProfileModal } from './UserProfileModal';
-import { RockPaperScissors } from './RockPaperScissors';
+import { ReflexRush } from './ReflexRush';
 import { ArenaBattle } from './ArenaBattle';
-import { DungeonClash } from './DungeonClash';
+import { OddEvenSprint } from './OddEvenSprint';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
@@ -25,7 +25,7 @@ import { GameSection } from './dashboard/GameSection';
 import { RewardSection } from './dashboard/RewardSection';
 
 // Icons
-import { Trophy, Gift, Gamepad2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Gift, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DashboardProps {
@@ -182,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   
   if (activeGameId) {
     return (
-      <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] py-8 px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 pb-12 px-4 relative overflow-hidden">
         <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
@@ -193,16 +193,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           </div>
 
           {/* Oyun component'leri */}
-          {activeGameType === 'Refleks Avı' || activeGameType === 'Taş Kağıt Makas' ? (
-            <RockPaperScissors
+          {activeGameType === 'Refleks Avı' ? (
+            <ReflexRush
               gameId={String(activeGameId)}
               currentUser={currentUser}
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
             />
-          ) : activeGameType === 'Çift Tek Sprint' || activeGameType === 'Zindan Savaşı' ? (
-            <DungeonClash
+          ) : activeGameType === 'Çift Tek Sprint' ? (
+            <OddEvenSprint
               gameId={activeGameId}
               currentUser={currentUser}
               opponentName={opponentName || 'Rakip'}
@@ -230,7 +230,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   // ==========================================
   
   return (
-    <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] py-8 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 pb-12 px-4 relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
         
@@ -242,12 +242,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
         />
 
         {/* Main Navigation Tabs */}
-        <div className="relative bg-[#151921] p-1.5 md:p-2 rounded-xl">
+        <div className="relative rf-panel p-1.5 md:p-2 rounded-xl border-cyan-400/20">
           <div className="flex items-center gap-1 md:gap-2">
             {[
-              { id: 'games', label: 'Oyunlar', icon: Gamepad2, color: 'blue' },
-              { id: 'leaderboard', label: 'Sıralama', icon: Trophy, color: 'yellow' },
-              { id: 'achievements', label: 'Başarımlar', icon: Gift, color: 'purple' }
+              { id: 'games', label: 'Oyunlar', icon: Gamepad2, color: 'cyan' },
+              { id: 'leaderboard', label: 'Sıralama', icon: Trophy, color: 'amber' },
+              { id: 'achievements', label: 'Başarımlar', icon: Gift, color: 'slate' }
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = mainTab === tab.id;
@@ -259,7 +259,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   data-testid={`dashboard-tab-${tab.id}`}
                   className={`relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
                     isActive
-                      ? tab.color === 'blue' ? 'text-white' : tab.color === 'yellow' ? 'text-black' : 'text-white'
+                      ? tab.color === 'amber' ? 'text-[#07101f]' : 'text-white'
                       : 'text-gray-400 hover:text-white'
                   }`}
                   whileTap={{ scale: 0.98 }}
@@ -268,9 +268,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                     <motion.div
                       layoutId="activeTab"
                       className={`absolute inset-0 rounded-lg ${
-                        tab.color === 'blue' ? 'bg-blue-500' : 
-                        tab.color === 'yellow' ? 'bg-yellow-500' : 
-                        'bg-purple-500'
+                        tab.color === 'cyan' ? 'bg-gradient-to-r from-cyan-600 to-sky-500' : 
+                        tab.color === 'amber' ? 'bg-gradient-to-r from-amber-400 to-orange-300' : 
+                        'bg-gradient-to-r from-slate-700 to-slate-600'
                       }`}
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     />

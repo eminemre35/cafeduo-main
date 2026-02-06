@@ -4,7 +4,7 @@ import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 
-interface DungeonClashProps {
+interface OddEvenSprintProps {
   currentUser: User;
   gameId: string | number | null;
   opponentName?: string;
@@ -18,7 +18,7 @@ type Guess = 'cift' | 'tek';
 
 const MAX_ROUNDS = 5;
 
-export const DungeonClash: React.FC<DungeonClashProps> = ({
+export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
   currentUser,
   gameId,
   opponentName,
@@ -101,35 +101,35 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-[#151921] border border-gray-700 rounded-xl p-6 text-white" data-testid="odd-even-sprint">
+    <div className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white" data-testid="odd-even-sprint">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-pixel text-lg">Çift Tek Sprint</h2>
-        <button onClick={onLeave} className="text-gray-300 hover:text-white text-sm">Oyundan Çık</button>
+        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
-          <div className="text-xs text-gray-400">Tur</div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
           <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
         </div>
-        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
-          <div className="text-xs text-gray-400">Sen</div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
           <div className="font-bold">{playerScore}</div>
         </div>
-        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
-          <div className="text-xs text-gray-400">Rakip</div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
           <div className="font-bold">{opponentScore}</div>
         </div>
       </div>
 
-      <p className="text-sm text-gray-300 mb-4">{message}</p>
+      <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
 
       <div className="flex gap-3">
         <button
           data-testid="guess-even"
           onClick={() => handleGuess('cift')}
           disabled={done || resolvingMatch}
-          className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl p-4 font-semibold"
+          className="flex-1 bg-gradient-to-r from-cyan-600 to-sky-500 hover:from-cyan-500 hover:to-sky-400 disabled:opacity-50 rounded-xl p-4 font-semibold"
         >
           ÇİFT
         </button>
@@ -137,13 +137,13 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
           data-testid="guess-odd"
           onClick={() => handleGuess('tek')}
           disabled={done || resolvingMatch}
-          className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 rounded-xl p-4 font-semibold"
+          className="flex-1 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 disabled:opacity-50 rounded-xl p-4 font-semibold"
         >
           TEK
         </button>
       </div>
 
-      <div className="mt-4 text-sm text-gray-300">
+      <div className="mt-4 text-sm text-[var(--rf-muted)]">
         Açılan sayı: {lastNumber ?? '-'}
       </div>
 

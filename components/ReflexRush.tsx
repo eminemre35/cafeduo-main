@@ -4,7 +4,7 @@ import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 
-interface RockPaperScissorsProps {
+interface ReflexRushProps {
   currentUser: User;
   isBot: boolean;
   gameId?: string;
@@ -16,7 +16,7 @@ type Phase = 'ready' | 'wait' | 'go' | 'result' | 'done';
 
 const MAX_ROUNDS = 3;
 
-export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
+export const ReflexRush: React.FC<ReflexRushProps> = ({
   currentUser,
   isBot,
   gameId,
@@ -146,28 +146,28 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-[#151921] border border-gray-700 rounded-xl p-6 text-white" data-testid="reflex-rush">
+    <div className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white" data-testid="reflex-rush">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-pixel text-lg">Refleks Avı</h2>
-        <button onClick={onLeave} className="text-gray-300 hover:text-white text-sm">Oyundan Çık</button>
+        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
-          <div className="text-xs text-gray-400">Tur</div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
           <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
         </div>
-        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
-          <div className="text-xs text-gray-400">Sen</div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
           <div className="font-bold">{playerWins}</div>
         </div>
-        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
-          <div className="text-xs text-gray-400">Rakip</div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
           <div className="font-bold">{opponentWins}</div>
         </div>
       </div>
 
-      <p className="text-sm text-gray-300 mb-4">{message}</p>
+      <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
 
       <button
         onClick={handleTap}
@@ -178,14 +178,14 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
             ? 'bg-green-500/30 border-green-400'
             : phase === 'wait'
               ? 'bg-amber-500/20 border-amber-400'
-              : 'bg-[#0f141a] border-gray-700'
+              : 'bg-[#08152f] border-cyan-400/22'
         }`}
       >
         {phase === 'go' ? 'TIKLA!' : phase === 'wait' ? 'BEKLE' : 'HEDEF'}
       </button>
 
       {(lastPlayerMs !== null || lastOpponentMs !== null) && (
-        <div className="mt-4 text-sm text-gray-300">
+        <div className="mt-4 text-sm text-[var(--rf-muted)]">
           <div>Son tur süreleri:</div>
           <div>Sen: {lastPlayerMs}ms</div>
           <div>Rakip: {lastOpponentMs}ms</div>

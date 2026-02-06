@@ -57,17 +57,17 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   const canAfford = (cost: number) => (currentUser?.points ?? 0) >= cost;
 
   return (
-    <div className="bg-[#151921] border border-gray-800 rounded-xl p-6">
+    <div className="rf-panel border-cyan-400/20 rounded-xl p-6">
       {/* Tab Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2 bg-[#0f141a] p-1 rounded-lg">
+        <div className="flex items-center gap-2 bg-[#08152f] p-1 rounded-lg border border-cyan-400/20">
           <button
             onClick={() => onTabChange('shop')}
             data-testid="shop-tab"
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'shop'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-cyan-600 to-sky-500 text-white'
+                : 'text-[var(--rf-muted)] hover:text-white'
             }`}
           >
             Mağaza
@@ -77,8 +77,8 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
             data-testid="inventory-tab"
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'inventory'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-cyan-600 to-sky-500 text-white'
+                : 'text-[var(--rf-muted)] hover:text-white'
             }`}
           >
             Envanter ({inventory?.length ?? 0})
@@ -86,8 +86,8 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
         </div>
         
         <div className="text-right">
-          <span className="text-gray-400 text-sm">Bakiye:</span>
-          <span className="text-yellow-500 font-bold text-xl ml-2">
+          <span className="text-[var(--rf-muted)] text-sm">Bakiye:</span>
+          <span className="text-amber-300 font-bold text-xl ml-2">
             {(currentUser?.points ?? 0)} puan
           </span>
         </div>
@@ -106,27 +106,27 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 return (
                   <motion.div
                     key={reward.id}
-                    className={`relative group bg-[#1a1f2e] border-2 rounded-xl p-5 flex flex-col justify-between h-full cursor-pointer ${
+                    className={`relative group bg-[#0b1834]/82 border-2 rounded-xl p-5 flex flex-col justify-between h-full cursor-pointer ${
                       affordable
-                        ? 'border-yellow-500/30'
-                        : 'border-gray-700 opacity-60'
+                        ? 'border-amber-300/30'
+                        : 'border-cyan-400/15 opacity-60'
                     }`}
                     whileHover={affordable ? { 
                       y: -6, 
-                      boxShadow: '0 20px 40px rgba(245, 193, 108, 0.15)',
-                      borderColor: 'rgba(245, 193, 108, 0.6)'
+                      boxShadow: '0 20px 40px rgba(10, 215, 255, 0.12)',
+                      borderColor: 'rgba(10, 215, 255, 0.5)'
                     } : {}}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
                         <div className={`p-2 rounded-lg ${
-                          affordable ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700/50 text-gray-500'
+                          affordable ? 'bg-cyan-400/18 text-cyan-300' : 'bg-slate-700/45 text-slate-400'
                         }`}>
                           {getRewardIcon(reward.icon)}
                         </div>
                         <span className={`font-bold text-xl ${
-                          affordable ? 'text-white' : 'text-red-400'
+                          affordable ? 'text-white' : 'text-red-300'
                         }`}>
                           {reward.cost}
                         </span>
@@ -135,7 +135,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                       <h4 className="text-lg font-bold text-white mb-1">
                         {reward.title}
                       </h4>
-                      <p className="text-xs text-gray-400 mb-4">
+                      <p className="text-xs text-[var(--rf-muted)] mb-4">
                         {reward.description}
                       </p>
                     </div>
@@ -201,8 +201,8 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                   >
                     <div className="bg-[#fff8dc] text-black p-4 rounded h-full flex flex-col justify-between">
                       {/* Delikler */}
-                      <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#151921] rounded-full" />
-                      <div className="absolute right-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#151921] rounded-full" />
+                      <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#08152f] rounded-full" />
+                      <div className="absolute right-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#08152f] rounded-full" />
 
                       <div className="border-2 border-black border-dashed p-3 h-full flex flex-col justify-between relative">
                         {isUsed && (

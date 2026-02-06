@@ -55,7 +55,7 @@ describe('useGames', () => {
 
   it('fetches games on mount', async () => {
     const mockGames = [
-      { id: 1, hostName: 'user1', gameType: 'Taş Kağıt Makas', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
     ];
     (api.games.list as jest.Mock).mockResolvedValue(mockGames);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -81,7 +81,7 @@ describe('useGames', () => {
 
   it('filters out unknown users', async () => {
     const mockGames = [
-      { id: 1, hostName: 'user1', gameType: 'Taş Kağıt Makas', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
       { id: 2, hostName: 'Unknown', gameType: 'Arena', points: 100, table: 'MASA02', status: 'waiting' },
       { id: 3, hostName: 'unknown', gameType: 'Zindan', points: 150, table: 'MASA03', status: 'waiting' },
     ];
@@ -139,11 +139,11 @@ describe('useGames', () => {
     );
 
     await act(async () => {
-      await result.current.createGame('Taş Kağıt Makas', 50);
+      await result.current.createGame('Refleks Avı', 50);
     });
 
     expect(api.games.create).toHaveBeenCalledWith({
-      gameType: 'Taş Kağıt Makas',
+      gameType: 'Refleks Avı',
       points: 50,
       hostName: 'testuser',
       table: 'MASA01',
@@ -154,7 +154,7 @@ describe('useGames', () => {
     const joinedGame = { 
       id: 1, 
       hostName: 'otheruser', 
-      gameType: 'Taş Kağıt Makas',
+      gameType: 'Refleks Avı',
       status: 'active'
     };
     (api.games.list as jest.Mock).mockResolvedValue([]);
@@ -185,11 +185,11 @@ describe('useGames', () => {
     );
 
     act(() => {
-      result.current.setActiveGame(1, 'Taş Kağıt Makas', 'opponent123', false);
+      result.current.setActiveGame(1, 'Refleks Avı', 'opponent123', false);
     });
 
     expect(result.current.activeGameId).toBe(1);
-    expect(result.current.activeGameType).toBe('Taş Kağıt Makas');
+    expect(result.current.activeGameType).toBe('Refleks Avı');
     expect(result.current.opponentName).toBe('opponent123');
     expect(result.current.isBot).toBe(false);
   });
@@ -204,7 +204,7 @@ describe('useGames', () => {
 
     // Set active game first
     act(() => {
-      result.current.setActiveGame(1, 'Taş Kağıt Makas', 'opponent', false);
+      result.current.setActiveGame(1, 'Refleks Avı', 'opponent', false);
     });
 
     expect(result.current.activeGameId).toBe(1);

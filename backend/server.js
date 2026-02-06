@@ -456,7 +456,7 @@ let MEMORY_USERS = [
   { id: 1, username: 'DemoUser', email: 'demo@cafe.com', password: '123', points: 1250, wins: 12, gamesPlayed: 25 }
 ];
 let MEMORY_GAMES = [
-  { id: 1, hostName: 'GamerTr_99', gameType: 'Taş Kağıt Makas', points: 150, table: 'MASA04', status: 'waiting' }
+  { id: 1, hostName: 'GamerTr_99', gameType: 'Refleks Avı', points: 150, table: 'MASA04', status: 'waiting' }
 ];
 let MEMORY_REWARDS = [];
 
