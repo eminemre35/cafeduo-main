@@ -69,6 +69,19 @@ const parseAllowedOrigins = (originsValue) => {
   return parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS;
 };
 
+const parseAdminEmails = (emailsValue, fallback = []) => {
+  const source = emailsValue || fallback.join(',');
+  return source
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+};
+
+const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
+  process.env.BOOTSTRAP_ADMIN_EMAILS || process.env.ADMIN_EMAILS,
+  ['emin3619@gmail.com']
+);
+
 const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
 
 const app = express();
@@ -455,6 +468,34 @@ const isDbConnected = async () => {
     return true;
   } catch (e) {
     return false;
+  }
+};
+
+const promoteBootstrapAdmins = async () => {
+  if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
+
+  if (!(await isDbConnected())) {
+    logger.warn('Skipping bootstrap admin sync: database is not connected.');
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET role = 'admin',
+           is_admin = true,
+           cafe_id = NULL
+       WHERE LOWER(email) = ANY($1::text[])
+         AND (role <> 'admin' OR is_admin = false)`,
+      [BOOTSTRAP_ADMIN_EMAILS]
+    );
+
+    logger.info('Bootstrap admin sync completed.', {
+      targetEmails: BOOTSTRAP_ADMIN_EMAILS,
+      affectedRows: result.rowCount
+    });
+  } catch (error) {
+    logger.error('Bootstrap admin sync failed.', error);
   }
 };
 
@@ -1632,7 +1673,9 @@ process.on('SIGTERM', () => {
 });
 
 // Initialize DB and start server
-initDb().then(() => {
+initDb().then(async () => {
+  await promoteBootstrapAdmins();
+
   const startServer = (portToUse) => {
     server.listen(portToUse, () => {
       console.log(`🚀 Server running on http://localhost:${portToUse}`);
