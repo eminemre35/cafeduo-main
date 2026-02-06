@@ -9,6 +9,17 @@ const { logger } = require('../utils/logger'); // Assuming logger structure
 // To keep it simple, I will focus on DB logic first as per production standards.
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const parseAdminEmails = (emailsValue, fallback = []) => {
+    const source = emailsValue || fallback.join(',');
+    return source
+        .split(',')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean);
+};
+const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
+    process.env.BOOTSTRAP_ADMIN_EMAILS || process.env.ADMIN_EMAILS,
+    ['emin3619@gmail.com']
+);
 
 if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
@@ -47,14 +58,26 @@ const authController = {
         }
 
         try {
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const shouldBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.includes(normalizedEmail);
+
             // DB Check
-            const check = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+            const check = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
             if (check.rows.length > 0) return res.status(400).json({ error: 'E-posta kullanımda.' });
 
             const hashedPassword = await bcrypt.hash(password, 10);
             const result = await pool.query(
-                'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-                [username, email, hashedPassword, department || '']
+                `INSERT INTO users (username, email, password_hash, points, department, role, is_admin) 
+                 VALUES ($1, $2, $3, 100, $4, $5, $6) 
+                 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id`,
+                [
+                    username,
+                    normalizedEmail,
+                    hashedPassword,
+                    department || '',
+                    shouldBootstrapAdmin ? 'admin' : 'user',
+                    shouldBootstrapAdmin
+                ]
             );
             res.json(result.rows[0]);
         } catch (err) {
@@ -72,15 +95,37 @@ const authController = {
         if (!isHuman) return res.status(400).json({ error: 'Robot doğrulaması başarısız.' });
 
         try {
-            const result = await pool.query('SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id FROM users WHERE email = $1', [email]);
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const result = await pool.query(
+                'SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id FROM users WHERE LOWER(email) = $1',
+                [normalizedEmail]
+            );
 
             if (result.rows.length > 0) {
-                const user = result.rows[0];
+                let user = result.rows[0];
                 const match = await bcrypt.compare(password, user.password_hash);
 
                 if (match) {
+                    const shouldBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.includes(normalizedEmail);
+
+                    if (shouldBootstrapAdmin && (!user.isAdmin || user.role !== 'admin')) {
+                        const promoted = await pool.query(
+                            `UPDATE users
+                             SET role = 'admin',
+                                 is_admin = true,
+                                 cafe_id = NULL
+                             WHERE id = $1
+                             RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id`,
+                            [user.id]
+                        );
+                        if (promoted.rows.length > 0) {
+                            user = promoted.rows[0];
+                            logger.info('Bootstrap admin promoted on login', { email: normalizedEmail });
+                        }
+                    }
+
                     // Daily Bonus Logic (Simplified)
-                    const isEligibleForBonus = !user.is_admin && user.role !== 'cafe_admin' && user.role !== 'admin';
+                    const isEligibleForBonus = !user.isAdmin && user.role !== 'cafe_admin' && user.role !== 'admin';
                     // ... (Bonus logic omitted for brevity in first pass, should be in Service)
 
                     delete user.password_hash;
