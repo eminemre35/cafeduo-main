@@ -60,6 +60,7 @@ const cafeController = {
         const { id } = req.params;
         const { latitude, longitude, pin, tableNumber } = req.body;
         const userId = req.user.id;
+        const normalizedPin = String(pin || '').trim();
 
         try {
             // 1. Get Cafe Details
@@ -83,18 +84,30 @@ const cafeController = {
 
             // 3. PIN Check
             // Check both 'daily_pin' and 'pin' columns for backward compatibility logic from report
-            const activePin = cafe.daily_pin || cafe.pin;
-            if (activePin && activePin !== pin) {
+            const activePin = String(cafe.daily_pin || cafe.pin || '').trim();
+            if (activePin && activePin !== normalizedPin) {
                 return res.status(400).json({ error: 'Hatalı PIN kodu.' });
+            }
+
+            const maxTableCount = Number(cafe.table_count || cafe.total_tables || 20);
+            const parsedTableNumber = Number(tableNumber);
+            if (!Number.isInteger(parsedTableNumber) || parsedTableNumber < 1 || parsedTableNumber > maxTableCount) {
+                return res.status(400).json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
             }
 
             // 4. Update User
             await pool.query(
                 'UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3',
-                [id, parseInt(tableNumber) || null, userId]
+                [id, parsedTableNumber, userId]
             );
 
-            res.json({ success: true, message: 'Giriş başarılı!', cafe });
+            res.json({
+                success: true,
+                message: 'Giriş başarılı!',
+                cafe,
+                cafeName: cafe.name,
+                table: `MASA${String(parsedTableNumber).padStart(2, '0')}`
+            });
 
         } catch (err) {
             console.error(err);

@@ -303,6 +303,34 @@ export const api = {
       return await fetchAPI('/admin/users');
     },
 
+    createUser: async (data: {
+      username: string;
+      email: string;
+      password: string;
+      department?: string;
+      role?: 'user' | 'admin' | 'cafe_admin';
+      cafe_id?: number | null;
+      points?: number;
+    }): Promise<User> => {
+      return await fetchAPI('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    deleteUser: async (userId: number | string): Promise<void> => {
+      await fetchAPI(`/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+    },
+
+    updateUserPoints: async (userId: number | string, points: number): Promise<User> => {
+      return await fetchAPI(`/admin/users/${userId}/points`, {
+        method: 'PATCH',
+        body: JSON.stringify({ points }),
+      });
+    },
+
     getGames: async (): Promise<GameRequest[]> => {
       return await fetchAPI('/admin/games');
     },
