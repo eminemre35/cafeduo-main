@@ -52,20 +52,47 @@ const logger = {
   debug: (...args) => process.env.NODE_ENV === 'development' && console.log(new Date().toISOString(), '[DEBUG]', ...args)
 };
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://cafeduotr.com',
+  'https://www.cafeduotr.com',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://cafeduo-api.onrender.com'
+];
+
+const parseAllowedOrigins = (originsValue) => {
+  if (!originsValue) return DEFAULT_ALLOWED_ORIGINS;
+  const parsed = originsValue
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  return parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS;
+};
+
+const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
+
 const app = express();
 const server = http.createServer(app); // Wrap Express
 const PORT = process.env.PORT || 3001;
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100);
+
+if (process.env.TRUST_PROXY) {
+  const trustProxyEnv = process.env.TRUST_PROXY.trim();
+  const parsedTrustProxy = Number.isNaN(Number(trustProxyEnv))
+    ? (trustProxyEnv === 'true' ? true : trustProxyEnv)
+    : Number(trustProxyEnv);
+  app.set('trust proxy', parsedTrustProxy);
+} else if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+logger.info('Allowed CORS origins:', allowedOrigins);
 
 // Socket.IO Setup
 const io = new Server(server, {
   cors: {
-    origin: [
-      'https://cafeduotr.com',
-      'https://www.cafeduotr.com',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://cafeduo-api.onrender.com'
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -221,24 +248,15 @@ app.use(helmet()); // Secure HTTP headers
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX_REQUESTS,
   message: 'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin.'
 });
 app.use(limiter);
 
-// Middleware
-const allowedOrigins = [
-  'https://cafeduotr.com',
-  'https://www.cafeduotr.com',
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://cafeduo-api.onrender.com'
-];
-
 app.use(cors({
   origin: (origin, callback) => {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+    if (allowedOrigins.includes(origin) || !origin) {
       callback(null, true);
     } else {
       console.warn(`Blocked CORS request from: ${origin}`);

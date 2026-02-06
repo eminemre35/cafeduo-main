@@ -1,273 +1,153 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { User } from '../types';
-import { X } from 'lucide-react';
-import { socketService } from '../lib/socket';
+import { RetroButton } from './RetroButton';
 
 interface RockPaperScissorsProps {
-    currentUser: User;
-    isBot: boolean;
-    gameId?: string;
-    onGameEnd: (winner: string, points: number) => void;
-    onLeave: () => void;
+  currentUser: User;
+  isBot: boolean;
+  gameId?: string;
+  onGameEnd: (winner: string, points: number) => void;
+  onLeave: () => void;
 }
 
-type Choice = 'rock' | 'paper' | 'scissors' | null;
+type Phase = 'ready' | 'wait' | 'go' | 'result' | 'done';
 
-const CHOICES = {
-    rock: { name: 'TAŞ', color: 'from-pink-500 to-red-600', border: 'border-red-500', icon: '/rps/icon-rock.svg' },
-    paper: { name: 'KAĞIT', color: 'from-blue-400 to-blue-600', border: 'border-blue-500', icon: '/rps/icon-paper.svg' },
-    scissors: { name: 'MAKAS', color: 'from-yellow-400 to-yellow-600', border: 'border-yellow-500', icon: '/rps/icon-scissors.svg' },
-};
+const MAX_ROUNDS = 3;
 
-export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({ currentUser, isBot, gameId, onGameEnd, onLeave }) => {
-    const [playerChoice, setPlayerChoice] = useState<Choice>(null);
-    const [opponentChoice, setOpponentChoice] = useState<Choice>(null);
-    const [playerScore, setPlayerScore] = useState(0);
-    const [opponentScore, setOpponentScore] = useState(0);
-    const [round, setRound] = useState(1);
-    const [phase, setPhase] = useState<'waiting_for_opponent' | 'select' | 'waiting_reveal' | 'reveal'>('select');
-    const [result, setResult] = useState('');
-    const [gameOver, setGameOver] = useState(false);
-    const [opponentName, setOpponentName] = useState(isBot ? 'BOT' : 'Rakip Bekleniyor...');
-    const [opponentConnected, setOpponentConnected] = useState(isBot ? true : false);
-    const [opponentMoved, setOpponentMoved] = useState(false);
+export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
+  currentUser,
+  isBot,
+  onGameEnd,
+  onLeave,
+}) => {
+  const [phase, setPhase] = useState<Phase>('ready');
+  const [round, setRound] = useState(1);
+  const [playerWins, setPlayerWins] = useState(0);
+  const [opponentWins, setOpponentWins] = useState(0);
+  const [message, setMessage] = useState('Hazır olduğunda başla. Hedef yeşil olduğunda en hızlı tıklayan kazanır.');
+  const [lastPlayerMs, setLastPlayerMs] = useState<number | null>(null);
+  const [lastOpponentMs, setLastOpponentMs] = useState<number | null>(null);
 
-    const MAX_ROUNDS = 5;
-    const WIN_SCORE = 3;
+  const roundStartRef = useRef<number>(0);
+  const goTimerRef = useRef<number | null>(null);
 
-    // --- SOCKET & GAME LOGIC ---
-    useEffect(() => {
-        if (isBot || !gameId) return;
-
-        const socket = socketService.getSocket();
-        socket.emit('rps_join', { gameId, username: currentUser.username });
-        setPhase('waiting_for_opponent');
-
-        const handleUpdatePlayers = (players: any[]) => {
-            if (players.length === 2) {
-                const opponent = players.find(p => p.username !== currentUser.username);
-                if (opponent) {
-                    setOpponentName(opponent.username);
-                    setOpponentConnected(true);
-                    if (phase === 'waiting_for_opponent') setPhase('select');
-                }
-            }
-        };
-
-        const handleOpponentMoved = () => setOpponentMoved(true);
-
-        const handleRoundResult = (data: any) => {
-            const myData = data.p1.id === socket.id ? data.p1 : data.p2;
-            const oppData = data.p1.id === socket.id ? data.p2 : data.p1;
-
-            setPlayerChoice(myData.move);
-            setOpponentChoice(oppData.move);
-            setPlayerScore(myData.score);
-            setOpponentScore(oppData.score);
-            setPhase('reveal');
-            setResult(data.winner === 'draw' ? 'BERABERE' : data.winner === socket.id ? 'KAZANDIN' : 'KAYBETTİN');
-
-            setTimeout(() => nextRound(myData.score, oppData.score, myData.score > oppData.score), 3000);
-        };
-
-        const handleDisconnect = () => {
-            setOpponentConnected(false);
-            setResult('Rakip Ayrıldı');
-            setGameOver(true);
-        };
-
-        socket.on('rps_update_players', handleUpdatePlayers);
-        socket.on('rps_opponent_moved', handleOpponentMoved);
-        socket.on('rps_round_result', handleRoundResult);
-        socket.on('rps_player_disconnected', handleDisconnect);
-
-        return () => {
-            socket.off('rps_update_players', handleUpdatePlayers);
-            socket.off('rps_opponent_moved', handleOpponentMoved);
-            socket.off('rps_round_result', handleRoundResult);
-            socket.off('rps_player_disconnected', handleDisconnect);
-        };
-    }, [isBot, gameId]);
-
-    const nextRound = (pScore: number, oScore: number, didWin?: boolean) => {
-        if (pScore >= WIN_SCORE || oScore >= WIN_SCORE || round >= MAX_ROUNDS) {
-            setGameOver(true);
-            setTimeout(() => onGameEnd(didWin ? currentUser.username : opponentName, didWin ? 10 : 0), 2000);
-        } else {
-            setRound(r => r + 1);
-            setPlayerChoice(null);
-            setOpponentChoice(null);
-            setOpponentMoved(false);
-            setPhase('select');
-            setResult('');
-        }
+  useEffect(() => {
+    return () => {
+      if (goTimerRef.current) {
+        window.clearTimeout(goTimerRef.current);
+      }
     };
+  }, []);
 
-    const handleChoice = (choice: Choice) => {
-        if (gameOver || phase !== 'select') return;
+  const beginRound = () => {
+    if (phase !== 'ready' && phase !== 'result') return;
+    setPhase('wait');
+    setLastPlayerMs(null);
+    setLastOpponentMs(null);
+    setMessage('Bekle... Erken tıklarsan turu kaybedersin.');
 
-        if (isBot) {
-            setPlayerChoice(choice);
-            const botPick = (['rock', 'paper', 'scissors'] as const)[Math.floor(Math.random() * 3)];
+    const delay = 800 + Math.floor(Math.random() * 1400);
+    goTimerRef.current = window.setTimeout(() => {
+      roundStartRef.current = performance.now();
+      setPhase('go');
+      setMessage('Şimdi!');
+    }, delay);
+  };
 
-            // Allow a small delay for "drama" even in bot mode
-            setTimeout(() => {
-                setOpponentChoice(botPick);
-                setPhase('reveal');
+  const finishRound = (playerMs: number, opponentMs: number, early = false) => {
+    const playerWon = !early && playerMs < opponentMs;
+    const nextPlayerWins = playerWins + (playerWon ? 1 : 0);
+    const nextOpponentWins = opponentWins + (playerWon ? 0 : 1);
 
-                let win = false;
-                if (choice === botPick) setResult('BERABERE');
-                else if (
-                    (choice === 'rock' && botPick === 'scissors') ||
-                    (choice === 'paper' && botPick === 'rock') ||
-                    (choice === 'scissors' && botPick === 'paper')
-                ) {
-                    setResult('KAZANDIN');
-                    setPlayerScore(s => s + 1);
-                    win = true;
-                } else {
-                    setResult('KAYBETTİN');
-                    setOpponentScore(s => s + 1);
-                }
+    setPlayerWins(nextPlayerWins);
+    setOpponentWins(nextOpponentWins);
+    setLastPlayerMs(playerMs);
+    setLastOpponentMs(opponentMs);
+    setPhase('result');
 
-                const newPScore = win ? playerScore + 1 : playerScore;
-                const newOScore = !win && choice !== botPick ? opponentScore + 1 : opponentScore;
+    if (early) {
+      setMessage('Erken tıkladın! Tur rakibe yazıldı.');
+    } else if (playerWon) {
+      setMessage('Turu kazandın.');
+    } else {
+      setMessage('Rakip daha hızlı.');
+    }
 
-                setTimeout(() => nextRound(newPScore, newOScore, win), 2000);
-            }, 500);
+    const isLastRound = round >= MAX_ROUNDS;
+    if (!isLastRound) {
+      setRound(prev => prev + 1);
+      return;
+    }
 
-        } else {
-            setPlayerChoice(choice);
-            setPhase('waiting_reveal');
-            socketService.emitMove(gameId!, choice);
-        }
-    };
+    setPhase('done');
+    const overallWinner = nextPlayerWins >= nextOpponentWins ? currentUser.username : (isBot ? 'BOT' : 'Rakip');
+    const points = overallWinner === currentUser.username ? 10 : 0;
+    setTimeout(() => onGameEnd(overallWinner, points), 900);
+  };
 
-    const ChoiceButton = ({ type, onClick, size = 'normal', winner = false }: { type: Choice, onClick?: () => void, size?: 'normal' | 'large', winner?: boolean }) => {
-        if (!type) return null;
-        const info = CHOICES[type];
-        const sizeClasses = size === 'large' ? 'w-32 h-32 sm:w-48 sm:h-48 border-[16px] sm:border-[24px]' : 'w-28 h-28 sm:w-36 sm:h-36 border-[12px] sm:border-[16px]';
+  const handleTap = () => {
+    if (phase === 'wait') {
+      finishRound(9999, 300, true);
+      return;
+    }
+    if (phase !== 'go') return;
 
-        return (
-            <button
-                onClick={onClick}
-                disabled={!onClick}
-                className={`${sizeClasses} rounded-full bg-white flex items-center justify-center relative shadow-xl transition-transform hover:scale-105 active:scale-95 ${info.border} ${winner ? 'shadow-[0_0_0_40px_rgba(255,255,255,0.05),0_0_0_80px_rgba(255,255,255,0.03),0_0_0_120px_rgba(255,255,255,0.01)] z-10' : ''}`}
-                style={{ boxShadow: winner ? undefined : 'inset 0px 6px 0px rgba(0,0,0,0.2), 0px 6px 0px rgba(0,0,0,0.2)' }}
-            >
-                <div className="w-full h-full rounded-full flex items-center justify-center bg-gray-200 shadow-[inset_0_4px_4px_rgba(0,0,0,0.2)]">
-                    <img src={info.icon} alt={info.name} className="w-1/2 h-1/2" />
-                </div>
-            </button>
-        );
-    };
+    const playerMs = Math.max(1, Math.floor(performance.now() - roundStartRef.current));
+    const opponentMs = isBot ? 220 + Math.floor(Math.random() * 320) : 260 + Math.floor(Math.random() * 260);
+    finishRound(playerMs, opponentMs);
+  };
 
-    return (
-        <div className="flex flex-col items-center w-full min-h-[600px] bg-[#1f3756] p-4 sm:p-8 rounded-xl relative overflow-hidden font-sans text-white">
-            {/* Header Scoreboard */}
-            <div className="w-full max-w-2xl border-2 border-gray-500 rounded-2xl p-4 flex justify-between items-center mb-12 bg-white/5">
-                <div className="flex flex-col leading-none">
-                    <span className="text-2xl font-bold">ROCK</span>
-                    <span className="text-2xl font-bold">PAPER</span>
-                    <span className="text-2xl font-bold">SCISSORS</span>
-                </div>
-                <div className="bg-white text-[#2a46c0] rounded-lg px-8 py-3 flex flex-col items-center">
-                    <span className="text-xs font-bold tracking-widest text-[#2a46c0]">SKOR</span>
-                    <span className="text-4xl font-bold leading-none text-[#3b4363]">{playerScore} - {opponentScore}</span>
-                </div>
-            </div>
+  return (
+    <div className="max-w-2xl mx-auto bg-[#151921] border border-gray-700 rounded-xl p-6 text-white" data-testid="reflex-rush">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-pixel text-lg">Refleks Avı</h2>
+        <button onClick={onLeave} className="text-gray-300 hover:text-white text-sm">Oyundan Çık</button>
+      </div>
 
-            {/* Connection Status (Multiplayer Only) */}
-            {!isBot && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/30 px-3 py-1 rounded-full text-xs flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${opponentConnected ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
-                    {opponentConnected ? opponentName : 'Bağlantı Bekleniyor...'}
-                </div>
-            )}
-
-            <button onClick={onLeave} className="absolute top-4 right-4 text-white/50 hover:text-white">
-                <X />
-            </button>
-
-            {/* Game Phase : WAITING FOR OPPONENT */}
-            {!isBot && phase === 'waiting_for_opponent' && (
-                <div className="flex flex-col items-center justify-center h-64 gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                    <p className="tracking-widest animate-pulse">RAKİP BEKLENİYOR...</p>
-                </div>
-            )}
-
-            {/* Game Phase : SELECTION */}
-            {(phase === 'select' || (phase === 'waiting_for_opponent' && isBot)) && (
-                <div className="relative w-full max-w-md aspect-square flex items-center justify-center mt-8">
-                    {/* Background Triangle */}
-                    <img src="/rps/bg-triangle.svg" className="absolute w-64 h-64 sm:w-80 sm:h-80" alt="bg" />
-
-                    {/* Buttons positioned absolutely */}
-                    <div className="absolute -top-12 -left-4 sm:-top-16 sm:left-0">
-                        <ChoiceButton type="paper" onClick={() => handleChoice('paper')} />
-                    </div>
-                    <div className="absolute -top-12 -right-4 sm:-top-16 sm:right-0">
-                        <ChoiceButton type="scissors" onClick={() => handleChoice('scissors')} />
-                    </div>
-                    <div className="absolute bottom-16 sm:bottom-0">
-                        <ChoiceButton type="rock" onClick={() => handleChoice('rock')} />
-                    </div>
-                </div>
-            )}
-
-            {/* Game Phase : REVEAL / RESULT */}
-            {(phase === 'waiting_reveal' || phase === 'reveal') && (
-                <div className="w-full max-w-4xl grid grid-cols-2 gap-8 sm:gap-16 items-start justify-center mt-12 relative">
-
-                    {/* Player Choice */}
-                    <div className="flex flex-col items-center gap-8 order-1">
-                        <span className="text-lg tracking-widest font-bold z-10">SEN SEÇTİN</span>
-                        <div className={`relative ${result === 'KAZANDIN' ? 'z-0' : ''}`}>
-                            <ChoiceButton type={playerChoice} size="large" winner={result === 'KAZANDIN'} />
-                        </div>
-                    </div>
-
-                    {/* Result Message (Desktop: Center, Mobile: Bottom) */}
-                    {phase === 'reveal' && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 whitespace-nowrap pointer-events-none sm:pointer-events-auto scale-75 sm:scale-100 mt-24 sm:mt-0">
-                            <span className="text-5xl font-bold mb-4 drop-shadow-lg">{result}</span>
-                            {gameOver ? (
-                                <span className="text-sm bg-black/30 px-4 py-2 rounded-full">Yeni Oyun Başlıyor...</span>
-                            ) : (
-                                <button className="bg-white text-[#3b4363] px-8 py-3 rounded-lg tracking-widest hover:text-red-500 transition-colors pointer-events-auto">
-                                    SONRAKİ TUR
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Opponent Choice */}
-                    <div className="flex flex-col items-center gap-8 order-2">
-                        <span className="text-lg tracking-widest font-bold z-10">
-                            {isBot ? 'BOT' : opponentName.toUpperCase()} SEÇTİ
-                        </span>
-                        <div className="relative">
-                            {phase === 'reveal' ? (
-                                <ChoiceButton type={opponentChoice} size="large" winner={result === 'KAYBETTİN'} />
-                            ) : (
-                                // Placeholder / Waiting State
-                                <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-full bg-black/20 flex items-center justify-center animate-pulse">
-                                    {opponentMoved ? <span className="text-4xl">✅</span> : null}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8">
-                <button
-                    className="border-2 border-white/50 rounded-lg px-6 py-2 tracking-widest hover:bg-white/10 transition-colors text-sm sm:text-base pop"
-                >
-                    KURALLAR
-                </button>
-            </div>
+      <div className="grid grid-cols-3 gap-3 mb-5 text-center">
+        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
+          <div className="text-xs text-gray-400">Tur</div>
+          <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
         </div>
-    );
+        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
+          <div className="text-xs text-gray-400">Sen</div>
+          <div className="font-bold">{playerWins}</div>
+        </div>
+        <div className="bg-[#0f141a] p-3 rounded border border-gray-800">
+          <div className="text-xs text-gray-400">Rakip</div>
+          <div className="font-bold">{opponentWins}</div>
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-300 mb-4">{message}</p>
+
+      <button
+        onClick={handleTap}
+        data-testid="reflex-target"
+        className={`w-full h-40 rounded-xl border-2 transition ${
+          phase === 'go'
+            ? 'bg-green-500/30 border-green-400'
+            : phase === 'wait'
+              ? 'bg-amber-500/20 border-amber-400'
+              : 'bg-[#0f141a] border-gray-700'
+        }`}
+      >
+        {phase === 'go' ? 'TIKLA!' : phase === 'wait' ? 'BEKLE' : 'HEDEF'}
+      </button>
+
+      {(lastPlayerMs !== null || lastOpponentMs !== null) && (
+        <div className="mt-4 text-sm text-gray-300">
+          <div>Son tur süreleri:</div>
+          <div>Sen: {lastPlayerMs}ms</div>
+          <div>Rakip: {lastOpponentMs}ms</div>
+        </div>
+      )}
+
+      <div className="mt-5 flex gap-2">
+        <RetroButton onClick={beginRound} disabled={phase === 'wait' || phase === 'go' || phase === 'done'}>
+          Yeni Tur
+        </RetroButton>
+      </div>
+    </div>
+  );
 };

@@ -1,8 +1,8 @@
 # 🗺️ CafeDuo Yol Haritası (Roadmap)
 
-> **Son Güncelleme:** 2026-02-04  
-> **Mevcut Faz:** Faz 5 Tamamlandı ✅  
-> **Sonraki Faz:** Faz 6 - Performance ⚡
+> **Son Güncelleme:** 2026-02-06  
+> **Mevcut Faz:** Faz 6 + Faz 8 hazırlıkları 🔄  
+> **Sonraki Faz:** Production Cutover (VPS + Domain) 🚀
 
 ---
 
@@ -16,12 +16,20 @@ Faz 4: Responsive & Animation ████████████ 100% ✅
 Faz 5: Testing & QA           ████████████ 100% ✅
 Faz 6: Performance            ░░░░░░░░░░░░ 0%  ⏳
 Faz 7: Advanced Features      ░░░░░░░░░░░░ 0%  ⏳
-Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
+Faz 8: Production Ready       ███░░░░░░░░░ 25% ⏳
 ```
 
 ---
 
 ## ✅ Tamamlanan Fazlar
+
+### 2026-02-06 Production Baseline (In Progress) 🔄
+
+- `render.yaml` blueprint eklendi (API + static web + Postgres + Redis).
+- `deploy/docker-compose.prod.yml` eklendi (VPS icin production stack).
+- `deploy/Caddyfile` eklendi (domain + TLS + reverse proxy + socket route).
+- `.github/workflows/deploy-vps.yml` eklendi (SSH + rsync + docker compose deploy).
+- `docs/deployment_runbook.md` lokalden canliya adim adim guncellendi.
 
 ### Faz 1: Güvenlik Hardening ✅
 **Süre:** 5 gün | **Branch:** `feat/phase-1-security-hardening`
@@ -67,15 +75,21 @@ Faz 8: Production Ready       ░░░░░░░░░░░░ 0%  ⏳
 
 #### Tamamlananlar:
 - [x] Unit test altyapısı (Jest + React Testing Library + ts-jest)
-- [x] 109/109 test passing
+- [x] 261/261 test passing
 - [x] Coverage raporu üretimi (`npm run test:coverage`)
 - [x] Playwright E2E test şablonları (`e2e/auth.spec.ts`, `e2e/game.spec.ts`, `e2e/shop.spec.ts`)
 - [x] GitHub Actions ile CI test workflow
 
 #### Mevcut Durum:
 - Unit test suite'leri: `components`, `hooks`, `contexts`, `lib`
-- Toplam coverage (2026-02-04): Statements `%25.13`, Branches `%16.03`, Functions `%22.78`, Lines `%25.56`
-- Sonraki hedef: Faz 6 ile performans iyileştirme + coverage artışı
+- Toplam coverage (2026-02-06): Statements `%71.87`, Branches `%63.57`, Functions `%68.57`, Lines `%72.11`
+- Modül durumu (2026-02-06):
+  - Oyun modülü: `RockPaperScissors` `%98.3`, `ArenaBattle` `%90.76`, `DungeonClash` `%96.87` (line coverage)
+  - Kafe paneli: `CafeDashboard` `%89.24`, `CafeSelection` `%82.81`
+  - Çekirdek UI: `Navbar` `%80.85`, `StatusBar` `%100`
+- Toplam coverage (2026-02-06, son tur): Statements `%75.34`, Branches `%66.44`, Functions `%73.80`, Lines `%75.79`
+- Son eklenen kalite testleri: `ErrorBoundary`, `UserProfileModal`, `Toast`
+- Sonraki hedef: Global coverage `%85` + Faz 6 performans iyileştirmeleri
 
 ---
 

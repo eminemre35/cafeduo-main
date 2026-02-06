@@ -1,0 +1,301 @@
+import { api } from './api';
+
+global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+};
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+});
+
+const flush = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
+describe('API Layer additional coverage', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorageMock.getItem.mockReturnValue(null);
+  });
+
+  it('verifyToken returns null when token is missing', async () => {
+    localStorageMock.getItem.mockReturnValue(null);
+
+    const result = await api.auth.verifyToken();
+
+    expect(result).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('verifyToken removes token on fetch failure', async () => {
+    localStorageMock.getItem.mockReturnValue('bad-token');
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Unauthorized' }),
+    });
+
+    const result = await api.auth.verifyToken();
+
+    expect(result).toBeNull();
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token');
+  });
+
+  it('users.get returns null on request error', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    });
+
+    await expect(api.users.get('404')).resolves.toBeNull();
+  });
+
+  it('cafes.checkIn sends expected payload', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    await api.cafes.checkIn({ cafeId: 7, tableNumber: 3, pin: '1234' });
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/cafes/7/check-in',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ cafeId: 7, tableNumber: 3, pin: '1234' }),
+      })
+    );
+  });
+
+  it('rewards.list appends cafeId query when provided', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    await api.rewards.list(9);
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/rewards?cafeId=9',
+      expect.any(Object)
+    );
+  });
+
+  it('admin.updateUserRole sends role with optional cafe id', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    await api.admin.updateUserRole(5, 'cafe_admin', 2);
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/admin/users/5/role',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ role: 'cafe_admin', cafe_id: 2 }),
+      })
+    );
+  });
+
+  it('shop.buy sends reward id only', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, newPoints: 100 }),
+    });
+
+    await api.shop.buy(42);
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/shop/buy',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ rewardId: 42 }),
+      })
+    );
+  });
+
+  it('coupons.use posts code payload', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    await api.coupons.use('ABC');
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/coupons/use',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ code: 'ABC' }),
+      })
+    );
+  });
+
+  it('throws fallback error when error body is not json', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => {
+        throw new Error('bad json');
+      },
+    });
+
+    await expect(api.games.list()).rejects.toThrow('Network error');
+  });
+
+  it('onGameChange polls and unsubscribe stops further polling', async () => {
+    const setIntervalSpy = jest
+      .spyOn(global, 'setInterval')
+      .mockImplementation((fn: TimerHandler) => {
+        (fn as Function)();
+        return 123 as unknown as NodeJS.Timeout;
+      });
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval').mockImplementation(() => {});
+
+    const getSpy = jest.spyOn(api.games, 'get').mockResolvedValue({ id: 1, status: 'playing' } as any);
+    const callback = jest.fn();
+
+    const unsubscribe = api.games.onGameChange('1', callback);
+    await flush();
+
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 2000);
+
+    unsubscribe();
+    expect(clearIntervalSpy).toHaveBeenCalledWith(123);
+
+    getSpy.mockRestore();
+    setIntervalSpy.mockRestore();
+    clearIntervalSpy.mockRestore();
+  });
+
+  it('users.getActiveGame returns active match for username', async () => {
+    const listSpy = jest.spyOn(api.games, 'list').mockResolvedValue([
+      { id: 1, hostName: 'emin', status: 'waiting' },
+      { id: 2, hostName: 'other', status: 'finished' },
+    ] as any);
+
+    const result = await api.users.getActiveGame('emin');
+    expect(result).toEqual(expect.objectContaining({ id: 1 }));
+
+    listSpy.mockRestore();
+  });
+
+  it('users.getActiveGame returns null when no active match exists', async () => {
+    const listSpy = jest.spyOn(api.games, 'list').mockResolvedValue([
+      { id: 2, hostName: 'other', status: 'finished' },
+    ] as any);
+
+    const result = await api.users.getActiveGame('emin');
+    expect(result).toBeNull();
+
+    listSpy.mockRestore();
+  });
+
+  it('cafes.get returns null on API error', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    });
+
+    await expect(api.cafes.get('1')).resolves.toBeNull();
+  });
+
+  it('games CRUD wrappers send expected endpoints', async () => {
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 11 }) }) // get
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 12 }) }) // create
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 12 }) }) // join
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // move
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // finish
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // delete
+
+    await api.games.get(11);
+    await api.games.create({ gameType: 'Refleks Avı', points: 50 });
+    await api.games.join(12, 'guest');
+    await api.games.move(12, { gameState: { turn: 1 } });
+    await api.games.finish(12, 'emin');
+    await api.games.delete(12);
+
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/games/11', expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/games', expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenNthCalledWith(
+      3,
+      '/api/games/12/join',
+      expect.objectContaining({ body: JSON.stringify({ guestName: 'guest' }) })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(4, '/api/games/12/move', expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(5, '/api/games/12/finish', expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(6, '/api/games/12', expect.objectContaining({ method: 'DELETE' }));
+  });
+
+  it('onLobbyChange polls and unsubscribe clears interval', async () => {
+    const setIntervalSpy = jest
+      .spyOn(global, 'setInterval')
+      .mockImplementation((fn: TimerHandler) => {
+        (fn as Function)();
+        return 456 as unknown as NodeJS.Timeout;
+      });
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval').mockImplementation(() => {});
+    const listSpy = jest.spyOn(api.games, 'list').mockResolvedValue([{ id: 1 }] as any);
+    const callback = jest.fn();
+
+    const unsubscribe = api.games.onLobbyChange(callback);
+    await flush();
+
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 3000);
+
+    unsubscribe();
+    expect(clearIntervalSpy).toHaveBeenCalledWith(456);
+
+    listSpy.mockRestore();
+    setIntervalSpy.mockRestore();
+    clearIntervalSpy.mockRestore();
+  });
+
+  it('rewards and inventory wrappers call expected endpoints', async () => {
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 90 }) }) // rewards.create
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // rewards.delete
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'inv1' }] }); // inventory
+
+    await api.rewards.create({ title: 'X', cost: 10, description: 'D', icon: 'coffee' });
+    await api.rewards.delete(90);
+    await api.shop.inventory(1);
+
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/rewards', expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/rewards/90', expect.objectContaining({ method: 'DELETE' }));
+    expect(fetch).toHaveBeenNthCalledWith(3, '/api/shop/inventory/1', expect.any(Object));
+  });
+
+  it('leaderboard and admin wrappers call expected endpoints', async () => {
+    (fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // leaderboard
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // admin users
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // admin games
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // update cafe
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 5 }) }); // create cafe
+
+    await api.leaderboard.get();
+    await api.admin.getUsers();
+    await api.admin.getGames();
+    await api.admin.updateCafe(2, { name: 'Yeni Kafe' });
+    await api.admin.createCafe({ name: 'A Kafe' });
+
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/leaderboard', expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/admin/users', expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(3, '/api/admin/games', expect.any(Object));
+    expect(fetch).toHaveBeenNthCalledWith(4, '/api/admin/cafes/2', expect.objectContaining({ method: 'PUT' }));
+    expect(fetch).toHaveBeenNthCalledWith(5, '/api/admin/cafes', expect.objectContaining({ method: 'POST' }));
+  });
+});

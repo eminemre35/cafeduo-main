@@ -17,6 +17,20 @@
 
 ---
 
+## Quick Paths (2026-02-06)
+
+- Fast VPS path (recommended now):
+  - `deploy/docker-compose.prod.yml`
+  - `deploy/Caddyfile`
+  - `deploy/.env.production.example`
+  - `docs/deployment_runbook.md`
+- Render blueprint path:
+  - `render.yaml`
+- CI based VPS deploy path:
+  - `.github/workflows/deploy-vps.yml`
+
+---
+
 ## System Requirements
 
 ### Minimum Requirements

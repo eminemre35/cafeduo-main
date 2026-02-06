@@ -14,6 +14,27 @@
 
 ## Decisions
 
+### 2026-02-06 Production Deployment Track
+- **🚀 VOLT**: Otomatik deploy hatti kurulsun, release hizi dusmesin.
+- **🛡️ AEGIS**: Reverse proxy + TLS + trust proxy + CORS explicit origins zorunlu.
+- **🎨 MUSE**: Lokalden canliya tek runbook ve environment template ile operasyon sade kalmali.
+- **⚖️ VERDICT**: Approved and applied.
+  1. `render.yaml` eklendi (Render blueprint).
+  2. `deploy/docker-compose.prod.yml` ve `deploy/Caddyfile` eklendi (VPS stack).
+  3. `.github/workflows/deploy-vps.yml` eklendi (SSH tabanli otomatik deploy).
+  4. `.env` ve Vite base URL/sockets konfigurasyonu production odakli guncellendi.
+
+### 2026-02-05 Fast Game Module Refresh
+- **🚀 VOLT**: Keep game loops under 60-90 seconds for fast cafe sessions.
+- **🛡️ AEGIS**: Preserve backward compatibility for old game names in active-game rendering.
+- **🎨 MUSE**: Replace generic loops with 3 distinct interactions and measurable test coverage.
+- **⚖️ VERDICT**: Approved and applied.
+  1. New game set: `Refleks Avı`, `Ritim Kopyala`, `Çift Tek Sprint`.
+  2. `CreateGameModal` now creates only new game types.
+  3. `GameLobby` icon mapping supports both new and old game labels.
+  4. Added direct unit tests for all 3 game components.
+  5. Global coverage improved to lines `%54.39`; game components each reached `%90+`.
+
 ### 2026-02-05 P1 Reliability and Test Hygiene
 - **🚀 VOLT**: Keep CI fast by separating Jest unit tests from Playwright e2e scope.
 - **🛡️ AEGIS**: Remove dead auth surface (`/auth/verify`) and reduce fallback ambiguity in cafes endpoint.

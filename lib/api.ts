@@ -4,7 +4,30 @@
  */
 import type { User, GameRequest, Reward, Cafe } from '../types';
 
-const API_URL = '/api';
+const withProtocol = (url: string): string => {
+  if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
+  const isLocal = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url);
+  return `${isLocal ? 'http' : 'https'}://${url}`;
+};
+
+export const normalizeApiBaseUrl = (url: string): string => {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  return withProtocol(trimmed).replace(/\/+$/, '').replace(/\/api$/, '');
+};
+
+const resolveApiBaseUrl = (): string => {
+  try {
+    const viteBaseUrl = new Function('return import.meta.env?.VITE_API_BASE_URL || import.meta.env?.VITE_API_URL || ""')();
+    if (viteBaseUrl) return normalizeApiBaseUrl(String(viteBaseUrl));
+  } catch {
+    // ignore and continue with fallback
+  }
+  return '';
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
+const API_URL = API_BASE_URL ? `${API_BASE_URL}/api` : '/api';
 
 /**
  * Generic API fetch wrapper with authentication

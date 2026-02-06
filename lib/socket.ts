@@ -1,7 +1,42 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const withProtocol = (url: string): string => {
+    if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
+    const isLocal = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url);
+    return `${isLocal ? 'http' : 'https'}://${url}`;
+};
+
+export const normalizeBaseUrl = (url: string): string =>
+    withProtocol(url.trim()).replace(/\/+$/, '').replace(/\/api$/, '');
+
+const resolveSocketUrl = () => {
+    try {
+        const envValues = new Function(
+            'return {' +
+            'socketUrl: import.meta.env?.VITE_SOCKET_URL,' +
+            'apiBaseUrl: import.meta.env?.VITE_API_BASE_URL,' +
+            'apiUrl: import.meta.env?.VITE_API_URL' +
+            '}'
+        )();
+
+        if (envValues.socketUrl) return normalizeBaseUrl(String(envValues.socketUrl));
+        if (envValues.apiBaseUrl) return normalizeBaseUrl(String(envValues.apiBaseUrl));
+        if (envValues.apiUrl) return normalizeBaseUrl(String(envValues.apiUrl));
+    } catch {
+        // ignore and continue with fallback resolution
+    }
+
+    if (typeof window !== 'undefined' && window.location) {
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            return window.location.origin;
+        }
+    }
+
+    return 'http://localhost:3001';
+};
+
+const SOCKET_URL = resolveSocketUrl();
 
 class SocketService {
     private socket: Socket | null = null;
