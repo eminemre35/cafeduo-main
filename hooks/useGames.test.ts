@@ -82,8 +82,8 @@ describe('useGames', () => {
   it('filters out unknown users', async () => {
     const mockGames = [
       { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
-      { id: 2, hostName: 'Unknown', gameType: 'Arena', points: 100, table: 'MASA02', status: 'waiting' },
-      { id: 3, hostName: 'unknown', gameType: 'Zindan', points: 150, table: 'MASA03', status: 'waiting' },
+      { id: 2, hostName: 'Unknown', gameType: 'Ritim Kopyala', points: 100, table: 'MASA02', status: 'waiting' },
+      { id: 3, hostName: 'unknown', gameType: 'Çift Tek Sprint', points: 150, table: 'MASA03', status: 'waiting' },
     ];
     (api.games.list as jest.Mock).mockResolvedValue(mockGames);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -174,6 +174,124 @@ describe('useGames', () => {
     expect(api.games.get).toHaveBeenCalledWith(1);
     expect(result.current.activeGameId).toBe(1);
     expect(result.current.opponentName).toBe('otheruser');
+  });
+
+  it('uses table_number fallback when tableCode is empty during game creation', async () => {
+    const tableUser: User = {
+      ...mockUser,
+      table_number: 'MASA08',
+    };
+
+    (api.games.list as jest.Mock).mockResolvedValue([]);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+    (api.games.create as jest.Mock).mockResolvedValue({ id: 1, success: true });
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: tableUser, tableCode: '' })
+    );
+
+    await act(async () => {
+      await result.current.createGame('Ritim Kopyala', 75);
+    });
+
+    expect(api.games.create).toHaveBeenCalledWith({
+      gameType: 'Ritim Kopyala',
+      points: 75,
+      hostName: 'testuser',
+      table: 'MASA08',
+    });
+  });
+
+  it('falls back to lobby snapshot when joined game detail is partial', async () => {
+    const listSnapshot = [
+      {
+        id: 45,
+        hostName: 'lobbyHost',
+        gameType: 'Çift Tek Sprint',
+        points: 120,
+        table: 'MASA02',
+        status: 'waiting',
+      },
+    ];
+
+    (api.games.list as jest.Mock).mockResolvedValue(listSnapshot);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+    (api.games.join as jest.Mock).mockResolvedValue({ success: true });
+    (api.games.get as jest.Mock).mockResolvedValue({ id: 45 }); // Missing hostName/gameType on purpose
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(result.current.games.length).toBe(1);
+    });
+
+    await act(async () => {
+      await result.current.joinGame(45);
+    });
+
+    expect(result.current.activeGameId).toBe(45);
+    expect(result.current.activeGameType).toBe('Çift Tek Sprint');
+    expect(result.current.opponentName).toBe('lobbyHost');
+  });
+
+  it('does not overwrite local active game with server polling', async () => {
+    (api.games.list as jest.Mock).mockResolvedValue([]);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue({
+      id: 99,
+      gameType: 'Ritim Kopyala',
+    });
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(api.users.getActiveGame).toHaveBeenCalledTimes(1);
+    });
+
+    act(() => {
+      result.current.setActiveGame(501, 'Refleks Avı', 'bot-1', true);
+    });
+
+    (api.users.getActiveGame as jest.Mock).mockClear();
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    expect(api.users.getActiveGame).not.toHaveBeenCalled();
+    expect(result.current.activeGameId).toBe(501);
+    expect(result.current.activeGameType).toBe('Refleks Avı');
+  });
+
+  it('keeps polling healthy and clears interval on unmount', async () => {
+    (api.games.list as jest.Mock).mockResolvedValue([]);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+
+    const { unmount } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(api.games.list).toHaveBeenCalledTimes(1);
+      expect(api.users.getActiveGame).toHaveBeenCalledTimes(1);
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(10000);
+      await Promise.resolve();
+    });
+
+    expect(api.games.list).toHaveBeenCalledTimes(3); // initial + 2 polls
+    expect(api.users.getActiveGame).toHaveBeenCalledTimes(3);
+
+    unmount();
+    expect(clearIntervalSpy).toHaveBeenCalled();
+    clearIntervalSpy.mockRestore();
   });
 
   it('setActiveGame updates state', () => {
