@@ -108,6 +108,9 @@ API_RATE_LIMIT_MAX_REQUESTS=600   # Global API limiter budget
 AUTH_RATE_LIMIT_WINDOW_MS=900000  # Auth limiter window
 AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=20
 AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=10
+RATE_LIMIT_STORE=redis            # redis | memory
+RATE_LIMIT_REDIS_PREFIX=cafeduo:ratelimit
+RATE_LIMIT_PASS_ON_STORE_ERROR=true
 ```
 
 ### Optional Integrations
