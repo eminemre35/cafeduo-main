@@ -171,6 +171,35 @@ body::after {
   }
 }
 
+@keyframes aurora-pan {
+  0% {
+    transform: translate3d(-8%, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(8%, -2%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-8%, 0, 0) scale(1);
+  }
+}
+
+@keyframes horizon-scan {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.75;
+  }
+  80% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
 @keyframes shake {
   0%, 100% {
     transform: translateX(0);
@@ -201,8 +230,26 @@ body::after {
   animation: neon-pulse 2.4s ease-in-out infinite;
 }
 
+.animate-aurora-pan {
+  animation: aurora-pan 16s ease-in-out infinite;
+}
+
 .animate-shake {
   animation: shake 0.35s ease-in-out;
+}
+
+.rf-horizon {
+  position: relative;
+  overflow: hidden;
+}
+
+.rf-horizon::after {
+  content: "";
+  position: absolute;
+  inset: auto -30% 0 -30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(10, 215, 255, 0.8), transparent);
+  animation: horizon-scan 5.8s linear infinite;
 }
 
 @media (min-width: 768px) {

@@ -64,12 +64,21 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: '-60px' }}
     transition={{ duration: 0.5 }}
+    whileHover={disabled ? {} : { y: -8, rotateX: 2, rotateY: -2 }}
     className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${
       disabled
         ? 'border-slate-700/75 bg-[#090f22]/72'
-        : 'border-cyan-300/25 bg-[linear-gradient(170deg,rgba(8,14,30,0.94),rgba(10,24,52,0.88))] hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(0,0,0,0.48)]'
+        : 'group border-cyan-300/25 bg-[linear-gradient(170deg,rgba(8,14,30,0.94),rgba(10,24,52,0.88))] hover:shadow-[0_22px_56px_rgba(0,0,0,0.5)]'
     }`}
   >
+    {!disabled && (
+      <motion.div
+        className="pointer-events-none absolute -left-24 top-0 h-24 w-48 -rotate-12 bg-cyan-300/20 blur-2xl"
+        animate={{ x: ['0%', '220%'] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    )}
+
     <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accent} text-white px-3 py-1.5 shadow-lg`}>
       {icon}
       <span className="font-pixel text-[11px] tracking-[0.16em] uppercase">{badge}</span>
@@ -89,7 +98,7 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
       </div>
     </div>
 
-    <div className="mt-5 text-sm font-semibold text-cyan-200 flex items-center gap-2">
+    <div className="mt-5 text-sm font-semibold text-cyan-200 flex items-center gap-2 group-hover:text-white transition-colors">
       <span>{cta}</span>
       <ArrowUpRight size={16} />
     </div>

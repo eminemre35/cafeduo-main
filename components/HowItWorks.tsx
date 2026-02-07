@@ -38,6 +38,14 @@ export const HowItWorks: React.FC = () => {
           </p>
         </div>
 
+        <motion.div
+          className="hidden md:block h-px mb-6 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"
+          initial={{ opacity: 0.2, scaleX: 0.65 }}
+          whileInView={{ opacity: 1, scaleX: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.8 }}
+        />
+
         <div className="grid md:grid-cols-3 gap-5">
           {steps.map((step, index) => (
             <motion.article

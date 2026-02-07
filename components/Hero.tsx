@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Coffee, ShieldCheck, Gamepad2, Zap } from 'lucide-react';
 import { RetroButton } from './RetroButton';
@@ -15,6 +15,14 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, userRole, isAdmin }) => {
   const navigate = useNavigate();
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const smoothX = useSpring(pointerX, { stiffness: 110, damping: 18 });
+  const smoothY = useSpring(pointerY, { stiffness: 110, damping: 18 });
+  const panelX = useTransform(smoothX, [-0.5, 0.5], [-20, 20]);
+  const panelY = useTransform(smoothY, [-0.5, 0.5], [-14, 14]);
+  const glowX = useTransform(smoothX, [-0.5, 0.5], ['20%', '80%']);
+  const glowY = useTransform(smoothY, [-0.5, 0.5], ['26%', '72%']);
 
   const handlePanelClick = () => {
     if (isAdmin) {
@@ -26,8 +34,24 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
     }
   };
 
+  const handlePointerMove = (event: React.MouseEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    pointerX.set(x);
+    pointerY.set(y);
+  };
+
   return (
-    <section id="home" className="relative min-h-[calc(100vh-72px)] md:min-h-screen pt-24 md:pt-32 overflow-hidden">
+    <section
+      id="home"
+      className="relative min-h-[calc(100vh-72px)] md:min-h-screen pt-24 md:pt-32 overflow-hidden"
+      onMouseMove={handlePointerMove}
+      onMouseLeave={() => {
+        pointerX.set(0);
+        pointerY.set(0);
+      }}
+    >
       <motion.div
         className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"
         animate={{ x: [0, 24, -12, 0], y: [0, -16, 10, 0] }}
@@ -39,6 +63,11 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
         transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
       <div className="absolute inset-0 rf-grid opacity-20" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.18),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.15),transparent_42%)] animate-aurora-pan" />
+      <motion.div
+        className="absolute h-40 w-40 rounded-full pointer-events-none bg-cyan-400/20 blur-3xl"
+        style={{ left: glowX, top: glowY }}
+      />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
@@ -109,7 +138,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </div>
 
             <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
-              <div className="rf-panel p-4 animate-neon-pulse">
+              <div className="rf-panel p-4 animate-neon-pulse rf-horizon">
                 <p className="font-pixel text-[10px] tracking-[0.18em] text-cyan-300 uppercase">Tur süresi</p>
                 <p className="text-3xl font-display text-white mt-1">45 sn</p>
                 <p className="text-sm text-slate-300 mt-1">Kısa ve tekrar eden maç döngüsü</p>
@@ -125,6 +154,21 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 <p className="text-sm text-slate-300 mt-1">Kupon doğrulama ile kapanış</p>
               </div>
             </div>
+
+            <div className="mt-6 overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78">
+              <motion.div
+                className="flex items-center gap-8 whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
+                animate={{ x: ['0%', '-50%'] }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+              >
+                <span>Canlı skor senkronu</span>
+                <span>PIN doğrulama hattı</span>
+                <span>Kupon kapanış kontrolü</span>
+                <span>Canlı skor senkronu</span>
+                <span>PIN doğrulama hattı</span>
+                <span>Kupon kapanış kontrolü</span>
+              </motion.div>
+            </div>
           </motion.div>
 
           <motion.div
@@ -132,6 +176,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.12 }}
+            style={{ x: panelX, y: panelY }}
           >
             <div className="rf-panel p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-x-6 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-70" />
