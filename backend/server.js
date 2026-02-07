@@ -40,6 +40,7 @@ const { Server } = require("socket.io");
 // Local modules
 const { pool } = require('./db');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
+const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const { authenticateToken, requireAdmin, requireOwnership, requireCafeAdmin } = require('./middleware/auth'); // Auth Middleware Imports
@@ -264,13 +265,14 @@ app.use(helmet()); // Secure HTTP headers
 
 // Apply a higher baseline limiter only to API routes.
 // Auth brute-force protection is handled separately in authRoutes.
-const apiLimiter = rateLimit({
-  windowMs: API_RATE_LIMIT_WINDOW_MS,
-  max: API_RATE_LIMIT_MAX_REQUESTS,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Çok fazla API isteği gönderdiniz, lütfen daha sonra tekrar deneyin.' },
-});
+const apiLimiter = rateLimit(
+  buildRateLimiterOptions({
+    scope: 'api',
+    windowMs: API_RATE_LIMIT_WINDOW_MS,
+    limit: API_RATE_LIMIT_MAX_REQUESTS,
+    message: { error: 'Çok fazla API isteği gönderdiniz, lütfen daha sonra tekrar deneyin.' },
+  })
+);
 app.use('/api', apiLimiter);
 
 app.use(cors({
