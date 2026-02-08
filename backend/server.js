@@ -51,6 +51,12 @@ const {
   sanitizeScoreSubmission,
   pickWinnerFromResults,
 } = require('./utils/gameResults');
+const {
+  normalizeCafeCreatePayload,
+  normalizeCafeUpdatePayload,
+} = require('./utils/cafeAdminValidation');
+const { createAdminHandlers } = require('./handlers/adminHandlers');
+const { createCommerceHandlers } = require('./handlers/commerceHandlers');
 const { authenticateToken, requireAdmin, requireOwnership, requireCafeAdmin } = require('./middleware/auth'); // Auth Middleware Imports
 
 // Simple Logger (can be replaced with Winston in production)
@@ -481,6 +487,28 @@ let MEMORY_USERS = memoryState.users;
 let MEMORY_GAMES = memoryState.games;
 let MEMORY_REWARDS = memoryState.rewards;
 
+const adminHandlers = createAdminHandlers({
+  pool,
+  isDbConnected,
+  bcrypt,
+  logger,
+  normalizeCafeCreatePayload,
+  normalizeCafeUpdatePayload,
+  getMemoryUsers: () => MEMORY_USERS,
+  setMemoryUsers: (nextUsers) => {
+    MEMORY_USERS = nextUsers;
+    memoryState.users = nextUsers;
+  },
+});
+
+const commerceHandlers = createCommerceHandlers({
+  pool,
+  isDbConnected,
+  logger,
+  getMemoryItems: () => memoryItems,
+  getMemoryRewards: () => MEMORY_REWARDS,
+});
+
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
 
@@ -700,388 +728,38 @@ app.post('/api/auth/google', async (req, res) => {
 // ===================================
 
 // 4.1 GET ALL USERS (Admin only) - PROTECTED
-app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(`
-        SELECT 
-          u.id, u.username, u.email, u.points, u.wins, u.games_played as "gamesPlayed",
-          u.department, u.role, u.is_admin as "isAdmin", u.cafe_id, u.table_number,
-          c.name as cafe_name
-        FROM users u
-        LEFT JOIN cafes c ON u.cafe_id = c.id
-        ORDER BY u.created_at DESC
-      `);
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      res.status(500).json({ error: 'Kullanıcılar yüklenemedi.' });
-    }
-  } else {
-    res.json(MEMORY_USERS);
-  }
-});
+app.get('/api/admin/users', authenticateToken, requireAdmin, adminHandlers.getUsers);
 
 // 4.2 CREATE USER (Admin only) - PROTECTED
-app.post('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
-  const { username, email, password, department, role, cafe_id, points } = req.body || {};
-
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Kullanıcı adı, e-posta ve şifre zorunludur.' });
-  }
-
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const nextRole = ['user', 'admin', 'cafe_admin'].includes(role) ? role : 'user';
-  const nextPoints = Number.isFinite(Number(points)) ? Math.max(0, Math.floor(Number(points))) : 100;
-  const nextCafeId = nextRole === 'cafe_admin' ? Number(cafe_id) : null;
-
-  if (nextRole === 'cafe_admin' && !nextCafeId) {
-    return res.status(400).json({ error: 'Kafe yöneticisi için kafe seçimi zorunludur.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
-      if (existingUser.rows.length > 0) {
-        return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
-      }
-
-      const hashedPassword = await bcrypt.hash(String(password), 10);
-      const result = await pool.query(
-        `INSERT INTO users (
-          username, email, password_hash, points, wins, games_played, department, role, is_admin, cafe_id
-        ) VALUES ($1, $2, $3, $4, 0, 0, $5, $6, $7, $8)
-        RETURNING
-          id, username, email, points, wins, games_played as "gamesPlayed",
-          department, role, is_admin as "isAdmin", cafe_id`,
-        [
-          String(username).trim(),
-          normalizedEmail,
-          hashedPassword,
-          nextPoints,
-          department || '',
-          nextRole,
-          nextRole === 'admin',
-          nextRole === 'cafe_admin' ? nextCafeId : null
-        ]
-      );
-
-      return res.status(201).json(result.rows[0]);
-    } catch (err) {
-      console.error('Admin create user error:', err);
-      return res.status(500).json({ error: 'Kullanıcı oluşturulamadı.' });
-    }
-  }
-
-  const nextId = (MEMORY_USERS.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) || 0) + 1;
-  const createdUser = {
-    id: nextId,
-    username: String(username).trim(),
-    email: normalizedEmail,
-    points: nextPoints,
-    wins: 0,
-    gamesPlayed: 0,
-    department: department || '',
-    role: nextRole,
-    isAdmin: nextRole === 'admin',
-    cafe_id: nextRole === 'cafe_admin' ? nextCafeId : null
-  };
-  MEMORY_USERS.unshift(createdUser);
-  return res.status(201).json(createdUser);
-});
+app.post('/api/admin/users', authenticateToken, requireAdmin, adminHandlers.createUser);
 
 // 4.3 GET ALL GAMES (Admin only) - PROTECTED
-app.get('/api/admin/games', authenticateToken, requireAdmin, async (req, res) => {
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(`
-        SELECT 
-          g.id, g.host_name, g.guest_name, g.game_type, g.table_code, g.status,
-          g.created_at, c.name as cafe_name
-        FROM games g
-        LEFT JOIN users u ON g.host_name = u.username
-        LEFT JOIN cafes c ON u.cafe_id = c.id
-        ORDER BY g.created_at DESC
-        LIMIT 100
-      `);
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error fetching games:', err);
-      res.status(500).json({ error: 'Oyunlar yüklenemedi.' });
-    }
-  } else {
-    res.json([]);
-  }
-});
+app.get('/api/admin/games', authenticateToken, requireAdmin, adminHandlers.getGames);
 
 // 4.4 UPDATE USER ROLE (Admin only) - PROTECTED
-app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  const { role, cafe_id } = req.body;
-
-  if (!role || !['user', 'cafe_admin', 'admin'].includes(role)) {
-    return res.status(400).json({ error: 'Geçersiz rol.' });
-  }
-
-  // If assigning cafe_admin role, cafe_id is required
-  if (role === 'cafe_admin' && !cafe_id) {
-    return res.status(400).json({ error: 'Kafe yöneticisi için kafe seçimi zorunludur.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      let result;
-
-      if (role === 'cafe_admin') {
-        // Assign cafe_admin with cafe_id
-        result = await pool.query(
-          `UPDATE users SET role = $1, is_admin = $2, cafe_id = $3 WHERE id = $4 RETURNING *`,
-          [role, false, cafe_id, id]
-        );
-      } else {
-        // For user or admin role, clear cafe_id
-        result = await pool.query(
-          `UPDATE users SET role = $1, is_admin = $2, cafe_id = NULL WHERE id = $3 RETURNING *`,
-          [role, role === 'admin', id]
-        );
-      }
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-      }
-
-      res.json({ success: true, user: result.rows[0] });
-    } catch (err) {
-      console.error('Role update error:', err);
-      res.status(500).json({ error: 'Rol güncellenemedi.' });
-    }
-  } else {
-    const userIdx = MEMORY_USERS.findIndex(u => u.id == id);
-    if (userIdx !== -1) {
-      MEMORY_USERS[userIdx].role = role;
-      MEMORY_USERS[userIdx].isAdmin = (role === 'admin');
-      if (role === 'cafe_admin') {
-        MEMORY_USERS[userIdx].cafe_id = cafe_id;
-      } else {
-        MEMORY_USERS[userIdx].cafe_id = null;
-      }
-      res.json({ success: true, user: MEMORY_USERS[userIdx] });
-    } else {
-      res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-    }
-  }
-});
+app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, adminHandlers.updateUserRole);
 
 // 4.5 UPDATE USER POINTS (Admin only) - PROTECTED
-app.patch('/api/admin/users/:id/points', authenticateToken, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  const points = Math.floor(Number(req.body?.points));
-
-  if (!Number.isFinite(points) || points < 0) {
-    return res.status(400).json({ error: 'Puan 0 veya daha büyük bir sayı olmalıdır.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        `UPDATE users
-         SET points = $1
-         WHERE id = $2
-         RETURNING
-           id, username, email, points, wins, games_played as "gamesPlayed",
-           department, role, is_admin as "isAdmin", cafe_id`,
-        [points, id]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-      }
-
-      return res.json(result.rows[0]);
-    } catch (err) {
-      console.error('Admin update points error:', err);
-      return res.status(500).json({ error: 'Puan güncellenemedi.' });
-    }
-  }
-
-  const userIndex = MEMORY_USERS.findIndex((user) => Number(user.id) === Number(id));
-  if (userIndex === -1) {
-    return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-  }
-  MEMORY_USERS[userIndex] = { ...MEMORY_USERS[userIndex], points };
-  return res.json(MEMORY_USERS[userIndex]);
-});
+app.patch('/api/admin/users/:id/points', authenticateToken, requireAdmin, adminHandlers.updateUserPoints);
 
 // 4.6 UPDATE CAFE (Admin only) - PROTECTED
-app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  const { address, total_tables, pin } = req.body;
-
-  if (await isDbConnected()) {
-    try {
-      const updates = [];
-      const values = [];
-      let paramCount = 1;
-
-      if (address !== undefined) {
-        updates.push(`address = $${paramCount++}`);
-        values.push(address);
-      }
-      if (total_tables !== undefined) {
-        updates.push(`total_tables = $${paramCount++}`);
-        values.push(total_tables);
-      }
-      if (pin !== undefined) {
-        if (pin.length !== 4) {
-          return res.status(400).json({ error: 'PIN 4 haneli olmalıdır.' });
-        }
-        updates.push(`pin = $${paramCount++}`);
-        values.push(pin);
-      }
-
-      if (updates.length === 0) {
-        return res.status(400).json({ error: 'Güncellenecek alan bulunamadı.' });
-      }
-
-      values.push(id);
-      const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
-
-      const result = await pool.query(query, values);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Kafe bulunamadı.' });
-      }
-
-      res.json({ success: true, cafe: result.rows[0] });
-    } catch (err) {
-      console.error('Cafe update error:', err);
-      res.status(500).json({ error: 'Kafe güncellenemedi.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Demo modda kafe güncellenemez.' });
-  }
-});
+app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, adminHandlers.updateCafe);
 
 // 4.7 CREATE CAFE (Admin only) - PROTECTED
-app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
-  const { name, address, total_tables, pin } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: 'Kafe adı zorunludur.' });
-  }
-
-  const cafePin = pin || '1234';
-  const cafeTables = total_tables || 20;
-
-  if (cafePin.length !== 4) {
-    return res.status(400).json({ error: 'PIN 4 haneli olmalıdır.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        `INSERT INTO cafes (name, address, total_tables, pin) 
-         VALUES ($1, $2, $3, $4) 
-         RETURNING *`,
-        [name, address || '', cafeTables, cafePin]
-      );
-
-      res.json({ success: true, cafe: result.rows[0] });
-    } catch (err) {
-      console.error('Cafe creation error:', err);
-      if (err.code === '23505') { // Unique violation
-        res.status(409).json({ error: 'Bu isimde bir kafe zaten mevcut.' });
-      } else {
-        res.status(500).json({ error: 'Kafe oluşturulamadı.' });
-      }
-    }
-  } else {
-    res.status(501).json({ error: 'Demo modda kafe oluşturulamaz.' });
-  }
-});
+app.post('/api/admin/cafes', authenticateToken, requireAdmin, adminHandlers.createCafe);
 
 // ===================================
 // 5. REWARDS ENDPOINTS (for Cafe Admins)
 // ===================================
 
 // 5.1 CREATE REWARD (Cafe Admin)
-app.post('/api/rewards', authenticateToken, requireCafeAdmin, async (req, res) => {
-  const { title, cost, description, icon, cafeId } = req.body;
-
-  if (!title || !cost) {
-    return res.status(400).json({ error: 'Başlık ve maliyet zorunludur.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        `INSERT INTO rewards (title, cost, description, icon, cafe_id) 
-         VALUES ($1, $2, $3, $4, $5) 
-         RETURNING *`,
-        [title, cost, description || '', icon || 'coffee', cafeId || null]
-      );
-
-      res.json({ success: true, reward: result.rows[0] });
-    } catch (err) {
-      console.error('Reward creation error:', err);
-      res.status(500).json({ error: 'Ödül oluşturulamadı.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Demo modda ödül oluşturulamaz.' });
-  }
-});
+app.post('/api/rewards', authenticateToken, requireCafeAdmin, commerceHandlers.createReward);
 
 // 5.2 GET REWARDS (optionally by cafe)
-app.get('/api/rewards', cache(600), async (req, res) => {
-  const { cafeId } = req.query;
-
-  if (await isDbConnected()) {
-    try {
-      let query = 'SELECT * FROM rewards WHERE is_active = true';
-      let params = [];
-
-      if (cafeId) {
-        query += ' AND (cafe_id = $1 OR cafe_id IS NULL)';
-        params.push(cafeId);
-      }
-
-      query += ' ORDER BY cost ASC';
-
-      const result = await pool.query(query, params);
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error fetching rewards:', err);
-      res.status(500).json({ error: 'Ödüller yüklenemedi.' });
-    }
-  } else {
-    res.json([]);
-  }
-});
+app.get('/api/rewards', cache(600), commerceHandlers.getRewards);
 
 // 5.3 DELETE REWARD (Cafe Admin)
-app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, res) => {
-  const { id } = req.params;
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        'UPDATE rewards SET is_active = false WHERE id = $1 RETURNING *',
-        [id]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Ödül bulunamadı.' });
-      }
-
-      res.json({ success: true });
-    } catch (err) {
-      console.error('Reward deletion error:', err);
-      res.status(500).json({ error: 'Ödül silinemedi.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Demo modda ödül silinemez.' });
-  }
-});
+app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, commerceHandlers.deleteReward);
 
 // 2.6 FUNCTIONS REMOVED (Moved to backend/utils/geo.js)
 
@@ -1845,195 +1523,21 @@ app.delete('/api/games/:id', authenticateToken, async (req, res) => {
 
 
 // 7. SHOP: BUY ITEM - PROTECTED (Fixed IDOR & Race Condition)
-app.post('/api/shop/buy', authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const { rewardId, item } = req.body;
-  const requestedRewardId = rewardId || item?.id;
-
-  if (!requestedRewardId) {
-    return res.status(400).json({ error: 'rewardId is required' });
-  }
-
-  if (await isDbConnected()) {
-    const client = await pool.connect();
-    try {
-      // Start transaction to prevent race condition
-      await client.query('BEGIN');
-
-      // 1. Lock user row and check points (FOR UPDATE prevents race condition)
-      const userRes = await client.query(
-        'SELECT points FROM users WHERE id = $1 FOR UPDATE',
-        [userId]
-      );
-
-      if (userRes.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      // Always read reward cost/title from DB, do not trust client-provided price/title.
-      const rewardRes = await client.query(
-        'SELECT id, title, cost FROM rewards WHERE id = $1 AND is_active = true',
-        [requestedRewardId]
-      );
-
-      if (rewardRes.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Reward not found' });
-      }
-
-      const reward = rewardRes.rows[0];
-      const currentPoints = userRes.rows[0].points;
-      if (currentPoints < reward.cost) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Yetersiz puan.' });
-      }
-
-      // 2. Deduct points
-      const newPoints = currentPoints - reward.cost;
-      await client.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
-
-      // 3. Add to inventory
-      const crypto = require('crypto');
-      const code = `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-      const redeemRes = await client.query(
-        'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING *',
-        [userId, reward.id, reward.title, code]
-      );
-
-      // Commit transaction
-      await client.query('COMMIT');
-
-      res.json({ success: true, newPoints, reward: redeemRes.rows[0] });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      console.error('Shop buy error:', err);
-      res.status(500).json({ error: 'İşlem başarısız.' });
-    } finally {
-      client.release();
-    }
-  } else {
-    res.status(500).json({ error: 'Veritabanı bağlantısı yok.' });
-  }
-});
+app.post('/api/shop/buy', authenticateToken, commerceHandlers.buyShopItem);
 
 // Get User Items (Coupons) - PROTECTED
-app.get('/api/users/:id/items', authenticateToken, requireOwnership('id'), async (req, res) => {
-  const userId = parseInt(req.params.id);
-  try {
-    if (await isDbConnected()) { // Check DB connection
-      const result = await pool.query(
-        `SELECT id, user_id, item_id, item_title, code, redeemed_at, is_used, used_at FROM user_items 
-         WHERE user_id = $1 
-         AND redeemed_at > NOW() - INTERVAL '5 days'
-         ORDER BY redeemed_at DESC`,
-        [userId]
-      );
-      res.json(result.rows.map(item => ({
-        ...item,
-        status: item.is_used ? 'used' : 'active'
-      })));
-    } else {
-      // Memory fallback
-      const items = memoryItems.filter(item => {
-        const isExpired = new Date(item.redeemed_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
-        return item.user_id === userId && !isExpired;
-      });
-      res.json(items.map(item => ({
-        ...item,
-        status: item.is_used ? 'used' : 'active'
-      })));
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
-  }
-});
+app.get('/api/users/:id/items', authenticateToken, requireOwnership('id'), commerceHandlers.getUserItems);
 
 // Use Coupon (Cafe Admin)
-app.post('/api/coupons/use', authenticateToken, requireCafeAdmin, async (req, res) => {
-  const { code } = req.body;
-  try {
-    if (await isDbConnected()) { // Check DB connection
-      const result = await pool.query(
-        `UPDATE user_items 
-         SET is_used = TRUE, used_at = NOW() 
-         WHERE code = $1 AND is_used = FALSE AND redeemed_at > NOW() - INTERVAL '5 days'
-         RETURNING *`,
-        [code]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(400).json({ error: 'Kupon geçersiz, süresi dolmuş veya zaten kullanılmış.' });
-      }
-
-      res.json({ success: true, item: result.rows[0] });
-    } else {
-      const itemIndex = memoryItems.findIndex(i => i.code === code && !i.is_used && new Date(i.redeemed_at) > new Date(Date.now() - 5 * 24 * 60 * 60 * 1000));
-      if (itemIndex === -1) {
-        return res.status(400).json({ error: 'Kupon bulunamadı, süresi dolmuş veya zaten kullanılmış.' });
-      }
-      memoryItems[itemIndex].is_used = true;
-      memoryItems[itemIndex].used_at = new Date();
-      res.json({ success: true, item: memoryItems[itemIndex] });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
-  }
-});
+app.post('/api/coupons/use', authenticateToken, requireCafeAdmin, commerceHandlers.useCoupon);
 
 // Duplicate Get Cafes (Removed)
 
 // Create Cafe Admin (Super Admin only) - PROTECTED
-app.post('/api/admin/cafe-admins', authenticateToken, requireAdmin, async (req, res) => {
-  const { username, email, password, cafeId } = req.body;
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    if (await isDbConnected()) { // Check DB connection
-      const result = await pool.query(
-        `INSERT INTO users (username, email, password_hash, role, cafe_id) 
-         VALUES ($1, $2, $3, 'cafe_admin', $4) 
-         RETURNING id, username, email, role, cafe_id`,
-        [username, email, hashedPassword, cafeId]
-      );
-      res.json(result.rows[0]);
-    } else {
-      res.status(501).json({ error: 'Not implemented in memory mode' });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
-  }
-});
+app.post('/api/admin/cafe-admins', authenticateToken, requireAdmin, adminHandlers.createCafeAdmin);
 
 // 8. SHOP: GET INVENTORY - PROTECTED
-app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('userId'), async (req, res) => {
-  const userId = req.user.id; // SECURITY FIX: Use authenticated user ID
-  if (await isDbConnected()) {
-    // Filter expired coupons (5 days)
-    const result = await pool.query("SELECT * FROM user_items WHERE user_id = $1 AND redeemed_at > NOW() - INTERVAL '5 days' ORDER BY redeemed_at DESC", [userId]);
-    // Map to frontend format
-    const rewards = result.rows.map(row => ({
-      redeemId: row.id,
-      id: row.item_id,
-      title: row.item_title,
-      code: row.code,
-      redeemedAt: row.redeemed_at,
-      isUsed: row.is_used || false
-    }));
-    res.json(rewards);
-  } else {
-    // Memory Fallback with Expiration
-    const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-
-    // In a real app we might delete them, here we just filter for display
-    const userItems = MEMORY_REWARDS.filter(r => r.userId == userId && new Date(r.redeemedAt) > fiveDaysAgo);
-    res.json(userItems);
-  }
-});
+app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('userId'), commerceHandlers.getShopInventory);
 
 // NOTE: Duplicate admin endpoints removed. Using protected versions above.
 
@@ -2043,26 +1547,7 @@ app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('user
 // userId ile çalışır, cafe_id'yi veritabanından alır
 // 19.5 UPDATE CAFE PIN (Moved to cafeController)
 
-// 20. ADMIN: CREATE CAFE - PROTECTED
-app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
-  const { name, latitude, longitude, table_count, radius } = req.body;
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        'INSERT INTO cafes (name, latitude, longitude, table_count, radius) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [name, latitude, longitude, table_count, radius]
-      );
-      res.json(result.rows[0]);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Kafe oluşturulamadı. İsim benzersiz olmalı.' });
-    }
-  } else {
-    const newCafe = { id: Date.now(), name, latitude, longitude, table_count, radius };
-    res.json(newCafe);
-  }
-});
+// 20. ADMIN: CREATE CAFE -> duplicated route removed.
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../dist')));
@@ -2070,20 +1555,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // ... (keep existing API routes)
 
 // 10. ADMIN: DELETE USER - PROTECTED
-app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  if (Number(id) === Number(req.user.id)) {
-    return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz.' });
-  }
-  if (await isDbConnected()) {
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
-    res.json({ success: true });
-  } else {
-    MEMORY_USERS = MEMORY_USERS.filter(u => u.id != id);
-    memoryState.users = MEMORY_USERS;
-    res.json({ success: true });
-  }
-});
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, adminHandlers.deleteUser);
 
 // Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
 

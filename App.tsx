@@ -128,7 +128,7 @@ const App: React.FC = () => {
       sessionStorage.removeItem(CHECKIN_SESSION_KEY);
 
     // Check for Daily Bonus
-    if ((user as any).bonusReceived) {
+    if (user.bonusReceived) {
       toast.success("🎉 Günlük giriş ödülü: 10 PUAN!");
     } else {
       toast.success(`Hoş geldin, ${user.username}!`);

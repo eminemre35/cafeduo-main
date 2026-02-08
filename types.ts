@@ -34,6 +34,7 @@ export interface User {
   cafe_name?: string;
   table_number?: string;
   avatar_url?: string;
+  bonusReceived?: boolean;
 }
 
 export interface GameRequest {
@@ -46,7 +47,7 @@ export interface GameRequest {
   guestName?: string;
   player1Move?: string;
   player2Move?: string;
-  gameState?: any;
+  gameState?: unknown;
 }
 
 export interface Reward {

@@ -1,16 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Trash2, Shield, Search, Coffee, Gamepad2, Save, UserPlus, Coins } from 'lucide-react';
-import { User, GameRequest } from '../types';
+import { Cafe, User } from '../types';
 import { api } from '../lib/api';
+import { AddUserModal } from './admin/AddUserModal';
+import { AddCafeModal } from './admin/AddCafeModal';
+import { AssignCafeAdminModal } from './admin/AssignCafeAdminModal';
+import {
+    AdminCafeEditData,
+    AdminCafeFormData,
+    AdminGameRow,
+    AdminUserFormData,
+    AdminUserRow,
+} from './admin/types';
 
 interface AdminDashboardProps {
     currentUser: User;
 }
 
+const DASHBOARD_TABS: Array<{ id: 'users' | 'games' | 'cafes'; icon: typeof Users; label: string }> = [
+    { id: 'users', icon: Users, label: 'Kullanıcılar' },
+    { id: 'games', icon: Gamepad2, label: 'Oyunlar' },
+    { id: 'cafes', icon: Coffee, label: 'Kafeler' },
+];
+
+const EMPTY_USER_FORM: AdminUserFormData = {
+    username: '',
+    email: '',
+    password: '',
+    department: '',
+    role: 'user',
+    cafe_id: ''
+};
+
+const EMPTY_CAFE_FORM: AdminCafeFormData = {
+    name: '',
+    address: '',
+    total_tables: 20,
+    pin: '1234'
+};
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
-    const [users, setUsers] = useState<User[]>([]);
-    const [games, setGames] = useState<any[]>([]);
-    const [cafes, setCafes] = useState<any[]>([]);
+    const [users, setUsers] = useState<AdminUserRow[]>([]);
+    const [games, setGames] = useState<AdminGameRow[]>([]);
+    const [cafes, setCafes] = useState<Cafe[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'users' | 'games' | 'cafes'>('users');
     const [searchTerm, setSearchTerm] = useState('');
@@ -19,8 +51,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
     // Cafe Management State
-    const [selectedCafe, setSelectedCafe] = useState<any>(null);
-    const [editCafeData, setEditCafeData] = useState({
+    const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+    const [editCafeData, setEditCafeData] = useState<AdminCafeEditData>({
         address: '',
         total_tables: 20,
         pin: '1234'
@@ -38,9 +70,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 api.admin.getGames(),
                 api.cafes.list()
             ]);
-            setUsers(usersData);
-            setGames(gamesData);
-            setCafes(cafesData);
+            setUsers(usersData as AdminUserRow[]);
+            setGames(gamesData as AdminGameRow[]);
+            setCafes(cafesData as Cafe[]);
             setUserPointDrafts(
                 usersData.reduce((acc: Record<string, string>, user: User) => {
                     acc[String(user.id)] = String(user.points ?? 0);
@@ -75,7 +107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     };
 
     const handleCafeSelect = (cafeId: string) => {
-        const cafe = cafes.find(c => c.id === parseInt(cafeId));
+        const cafe = cafes.find(c => Number(c.id) === Number(cafeId));
         if (cafe) {
             setSelectedCafe(cafe);
             setEditCafeData({
@@ -88,27 +120,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
     const [showAddCafeModal, setShowAddCafeModal] = useState(false);
     const [showRoleModal, setShowRoleModal] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [selectedUser, setSelectedUser] = useState<AdminUserRow | null>(null);
     const [selectedCafeForAdmin, setSelectedCafeForAdmin] = useState<string>('');
-    const [newUserData, setNewUserData] = useState({
-        username: '',
-        email: '',
-        password: '',
-        department: '',
-        role: 'user' as 'user' | 'admin' | 'cafe_admin',
-        cafe_id: ''
-    });
+    const [newUserData, setNewUserData] = useState<AdminUserFormData>(EMPTY_USER_FORM);
 
-    const [newCafeData, setNewCafeData] = useState({
-        name: '',
-        address: '',
-        total_tables: 20,
-        pin: '1234'
-    });
+    const [newCafeData, setNewCafeData] = useState<AdminCafeFormData>(EMPTY_CAFE_FORM);
 
     // ... (existing loadData and other functions)
 
-    const handleToggleRole = async (user: any) => {
+    const handleToggleRole = async (user: AdminUserRow) => {
         const currentRole = user.role;
 
         if (currentRole === 'cafe_admin') {
@@ -216,17 +236,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
             alert('Yeni kullanıcı oluşturuldu.');
             setShowAddUserModal(false);
-            setNewUserData({
-                username: '',
-                email: '',
-                password: '',
-                department: '',
-                role: 'user',
-                cafe_id: ''
-            });
+            setNewUserData(EMPTY_USER_FORM);
             loadData();
-        } catch (error: any) {
-            alert(error?.message || 'Kullanıcı oluşturulamadı.');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Kullanıcı oluşturulamadı.';
+            alert(message);
         } finally {
             setIsSubmittingUser(false);
         }
@@ -253,7 +267,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             await api.admin.createCafe(newCafeData);
             alert('Yeni kafe eklendi!');
             setShowAddCafeModal(false);
-            setNewCafeData({ name: '', address: '', total_tables: 20, pin: '1234' });
+            setNewCafeData(EMPTY_CAFE_FORM);
             loadData();
         } catch (error) {
             alert('Kafe eklenirken hata oluştu.');
@@ -286,14 +300,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        {[
-                            { id: 'users', icon: Users, label: 'Kullanıcılar' },
-                            { id: 'games', icon: Gamepad2, label: 'Oyunlar' },
-                            { id: 'cafes', icon: Coffee, label: 'Kafeler' }
-                        ].map(tab => (
+                        {DASHBOARD_TABS.map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
+                                onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
                                     ? 'bg-cyan-500 text-[#041226] shadow-lg shadow-cyan-500/30 scale-105'
                                     : 'bg-[#0a1630]/70 text-gray-400 hover:bg-[#102447] hover:text-white'
@@ -429,7 +439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 <Gamepad2 className="text-purple-400" /> Oyun Geçmişi
                             </h2>
                             <div className="grid gap-4">
-                                {games.map((game: any) => (
+                                {games.map((game) => (
                                     <div key={game.id} className="bg-black/20 border border-gray-700 rounded-xl p-4 flex items-center justify-between hover:bg-black/40 transition-all">
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${game.game_type === 'tictactoe' ? 'bg-blue-900/20 text-blue-400' : 'bg-green-900/20 text-green-400'
@@ -482,9 +492,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                     <select
                                         className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
                                         onChange={(e) => handleCafeSelect(e.target.value)}
-                                        value={selectedCafe?.id || ''}
+                                        value={selectedCafe ? String(selectedCafe.id) : ''}
                                     >
-                                        {cafes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        {cafes.map(c => <option key={String(c.id)} value={String(c.id)}>{c.name}</option>)}
                                     </select>
                                 </div>
 
@@ -554,237 +564,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 </div>
             </div>
 
-            {/* Add User Modal */}
-            {showAddUserModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
-                        <h2 className="text-2xl font-bold text-white mb-6">Yeni Kullanıcı Ekle</h2>
+            <AddUserModal
+                isOpen={showAddUserModal}
+                cafes={cafes}
+                isSubmitting={isSubmittingUser}
+                formData={newUserData}
+                onFormChange={setNewUserData}
+                onClose={() => {
+                    setShowAddUserModal(false);
+                    setNewUserData(EMPTY_USER_FORM);
+                }}
+                onSubmit={handleAddUser}
+            />
 
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="new-user-username" className="block text-gray-400 text-sm mb-2">Kullanıcı Adı *</label>
-                                <input
-                                    id="new-user-username"
-                                    type="text"
-                                    value={newUserData.username}
-                                    onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
-                                    placeholder="Örn: yeni_kullanici"
-                                />
-                            </div>
+            <AddCafeModal
+                isOpen={showAddCafeModal}
+                formData={newCafeData}
+                onFormChange={setNewCafeData}
+                onClose={() => {
+                    setShowAddCafeModal(false);
+                    setNewCafeData(EMPTY_CAFE_FORM);
+                }}
+                onSubmit={handleAddCafe}
+            />
 
-                            <div>
-                                <label htmlFor="new-user-email" className="block text-gray-400 text-sm mb-2">E-posta *</label>
-                                <input
-                                    id="new-user-email"
-                                    type="email"
-                                    value={newUserData.email}
-                                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
-                                    placeholder="ornek@mail.com"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="new-user-password" className="block text-gray-400 text-sm mb-2">Şifre *</label>
-                                <input
-                                    id="new-user-password"
-                                    type="password"
-                                    value={newUserData.password}
-                                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
-                                    placeholder="En az 6 karakter"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">Bölüm</label>
-                                <input
-                                    type="text"
-                                    value={newUserData.department}
-                                    onChange={(e) => setNewUserData({ ...newUserData, department: e.target.value })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
-                                    placeholder="Opsiyonel"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">Rol</label>
-                                <select
-                                    value={newUserData.role}
-                                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as 'user' | 'admin' | 'cafe_admin' })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
-                                >
-                                    <option value="user">Kullanıcı</option>
-                                    <option value="cafe_admin">Kafe Yöneticisi</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </div>
-
-                            {newUserData.role === 'cafe_admin' && (
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Kafe *</label>
-                                    <select
-                                        value={newUserData.cafe_id}
-                                        onChange={(e) => setNewUserData({ ...newUserData, cafe_id: e.target.value })}
-                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-400"
-                                    >
-                                        <option value="">Kafe seçin</option>
-                                        {cafes.map((cafe) => (
-                                            <option key={cafe.id} value={String(cafe.id)}>
-                                                {cafe.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            <div className="flex gap-3 mt-8">
-                                <button
-                                    onClick={() => {
-                                        setShowAddUserModal(false);
-                                        setNewUserData({
-                                            username: '',
-                                            email: '',
-                                            password: '',
-                                            department: '',
-                                            role: 'user',
-                                            cafe_id: ''
-                                        });
-                                    }}
-                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"
-                                >
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={handleAddUser}
-                                    disabled={isSubmittingUser}
-                                    className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-bold py-3 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmittingUser ? 'Ekleniyor...' : 'Kullanıcı Ekle'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Add Cafe Modal */}
-            {showAddCafeModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
-                        <h2 className="text-2xl font-bold text-white mb-6">Yeni Kafe Ekle</h2>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">Kafe Adı *</label>
-                                <input
-                                    type="text"
-                                    value={newCafeData.name}
-                                    onChange={e => setNewCafeData({ ...newCafeData, name: e.target.value })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
-                                    placeholder="Örn: Kampüs Kafeterya"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">Adres</label>
-                                <input
-                                    type="text"
-                                    value={newCafeData.address}
-                                    onChange={e => setNewCafeData({ ...newCafeData, address: e.target.value })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
-                                    placeholder="Örn: İİBF, Merkez Kampüs"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">Toplam Masa Sayısı *</label>
-                                <input
-                                    type="number"
-                                    value={newCafeData.total_tables}
-                                    onChange={e => setNewCafeData({ ...newCafeData, total_tables: parseInt(e.target.value) })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
-                                    min="1"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">PIN Kodu (4 Haneli) *</label>
-                                <input
-                                    type="text"
-                                    value={newCafeData.pin}
-                                    onChange={e => setNewCafeData({ ...newCafeData, pin: e.target.value.slice(0, 4) })}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono text-lg"
-                                    placeholder="1234"
-                                    maxLength={4}
-                                />
-                            </div>
-
-                            <div className="flex gap-3 mt-8">
-                                <button
-                                    onClick={() => setShowAddCafeModal(false)}
-                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"
-                                >
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={handleAddCafe}
-                                    className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors"
-                                >
-                                    Ekle
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Cafe Admin Assignment Modal */}
-            {showRoleModal && selectedUser && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
-                        <h2 className="text-2xl font-bold text-white mb-2">Kafe Yöneticisi Ata</h2>
-                        <p className="text-gray-400 mb-6">
-                            <span className="text-white font-bold">{selectedUser.username}</span> kullanıcısını hangi kafenin yöneticisi yapmak istiyorsunuz?
-                        </p>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-2">Kafe Seç *</label>
-                                <select
-                                    value={selectedCafeForAdmin}
-                                    onChange={e => setSelectedCafeForAdmin(e.target.value)}
-                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
-                                >
-                                    {cafes.map(cafe => (
-                                        <option key={cafe.id} value={cafe.id}>{cafe.name}</option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-gray-500 mt-1">Seçilen kafenin yönetim yetkisi verilecek</p>
-                            </div>
-
-                            <div className="flex gap-3 mt-8">
-                                <button
-                                    onClick={() => {
-                                        setShowRoleModal(false);
-                                        setSelectedUser(null);
-                                    }}
-                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"
-                                >
-                                    İptal
-                                </button>
-                                <button
-                                    onClick={handleConfirmCafeAdmin}
-                                    className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition-colors"
-                                >
-                                    Yönetici Yap
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <AssignCafeAdminModal
+                isOpen={showRoleModal}
+                cafes={cafes}
+                selectedUser={selectedUser}
+                selectedCafeId={selectedCafeForAdmin}
+                onCafeChange={setSelectedCafeForAdmin}
+                onClose={() => {
+                    setShowRoleModal(false);
+                    setSelectedUser(null);
+                }}
+                onConfirm={handleConfirmCafeAdmin}
+            />
         </div>
     );
 };

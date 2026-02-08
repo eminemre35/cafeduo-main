@@ -13,6 +13,10 @@ interface UseRewardsProps {
   currentUser: User;
 }
 
+type InventoryApiItem = Omit<RedeemedReward, 'redeemedAt'> & {
+  redeemedAt: string | Date;
+};
+
 interface UseRewardsReturn {
   // Mağaza
   rewards: Reward[];
@@ -77,7 +81,7 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
       const data = await api.shop.inventory(currentUser.id);
       
       // Tarih dönüşümü
-      const formattedData = data.map((item: any) => ({
+      const formattedData = (data as InventoryApiItem[]).map((item) => ({
         ...item,
         redeemedAt: new Date(item.redeemedAt)
       }));
