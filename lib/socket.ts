@@ -85,7 +85,7 @@ class SocketService {
         this.socket?.emit('join_game', gameId);
     }
 
-    emitMove(gameId: string, move: any) {
+    emitMove(gameId: string, move: unknown) {
         this.socket?.emit('game_move', { gameId, move });
     }
 }
