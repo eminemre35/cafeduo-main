@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { UserPlus, Coffee, Trophy, ChevronRight } from 'lucide-react';
 
 const steps = [
@@ -38,21 +37,13 @@ export const HowItWorks: React.FC = () => {
           </p>
         </div>
 
-        <motion.div
-          className="hidden md:block h-px mb-6 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"
-          initial={{ opacity: 0.25, scaleX: 0.7 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-        />
+        <div className="hidden md:block h-px mb-6 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
         <div className="grid md:grid-cols-3 gap-5">
           {steps.map((step, index) => (
-            <motion.article
+            <article
               key={step.id}
               className="cd-panel p-6 md:p-7 relative overflow-hidden border-cyan-400/20"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.48, delay: index * 0.08, ease: 'easeOut' }}
             >
               <div className="absolute top-4 right-4 text-slate-700 font-display text-5xl">{step.id}</div>
 
@@ -73,7 +64,7 @@ export const HowItWorks: React.FC = () => {
                   <ChevronRight size={14} className="text-cyan-300/90" />
                 </div>
               )}
-            </motion.article>
+            </article>
           ))}
         </div>
       </div>
