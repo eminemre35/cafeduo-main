@@ -3,10 +3,11 @@
 Checked on: `2026-02-09`
 
 ## Recommended Retro Packs (Working Links)
-- Strategy (`Çift Tek Sprint`): https://kenney.nl/assets/hexagon-kit
-- War (`Ritim Kopyala`): https://kenney.nl/assets/top-down-tanks
+- Strategy / Chess (`Retro Satranç`): https://kenney.nl/assets/boardgame-pack
+- War (`Tank Düellosu`): https://kenney.nl/assets/top-down-tanks
 - Reflex (`Refleks Avı`): https://kenney.nl/assets/puzzle-pack-2
 - Knowledge (`Bilgi Yarışı`): https://kenney.nl/assets/boardgame-pack
+- Optional visual variant for strategy lobby card: https://kenney.nl/assets/hexagon-kit
 
 ## OpenGameArt Links Verified as Reachable
 - Platformer Pack Redux: https://opengameart.org/content/platformer-pack-redux-360-assets
