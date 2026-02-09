@@ -3,6 +3,8 @@ import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
+import { GAME_ASSETS } from '../lib/gameAssets';
+import { playGameSfx } from '../lib/gameAudio';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -59,6 +61,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     let i = 0;
     const interval = window.setInterval(() => {
       setActivePad(sequence[i]);
+      playGameSfx('hit', 0.2);
       window.setTimeout(() => setActivePad(null), 280);
       i += 1;
       if (i >= sequence.length) {
@@ -133,21 +136,33 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   const pressPad = (idx: number) => {
     if (showing || done || resolvingMatch) return;
+    playGameSfx('select', 0.2);
     if (sequence[cursor] === idx) {
       const nextCursor = cursor + 1;
       setCursor(nextCursor);
       if (nextCursor >= sequence.length) {
         setMessage('Doğru! Tur sende.');
+        playGameSfx('success', 0.3);
         nextRound(true);
       }
       return;
     }
     setMessage('Yanlış pad, tur rakibe gitti.');
+    playGameSfx('fail', 0.26);
     nextRound(false);
   };
 
   return (
-    <div className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white" data-testid="rhythm-copy">
+    <div
+      className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      data-testid="rhythm-copy"
+      style={{
+        backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.rhythmCopy}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-pixel text-lg">Ritim Kopyala</h2>
         <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
@@ -155,15 +170,24 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
       <div className="grid grid-cols-3 gap-3 mb-5 text-center">
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
+          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+            <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
+            Tur
+          </div>
           <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
+          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+            <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
+            Sen
+          </div>
           <div className="font-bold">{playerScore}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
+          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+            <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
+            Rakip
+          </div>
           <div className="font-bold">{opponentScore}</div>
         </div>
       </div>
