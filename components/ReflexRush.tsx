@@ -3,6 +3,8 @@ import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
+import { GAME_ASSETS } from '../lib/gameAssets';
+import { playGameSfx } from '../lib/gameAudio';
 
 interface ReflexRushProps {
   currentUser: User;
@@ -47,6 +49,7 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
   const beginRound = () => {
     if (resolvingMatch) return;
     if (phase !== 'ready' && phase !== 'result') return;
+    playGameSfx('select', 0.22);
     if (round === 1) {
       matchStartedAtRef.current = Date.now();
     }
@@ -60,6 +63,7 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
       roundStartRef.current = performance.now();
       setPhase('go');
       setMessage('Şimdi!');
+      playGameSfx('hit', 0.25);
     }, delay);
   };
 
@@ -76,10 +80,13 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
 
     if (early) {
       setMessage('Erken tıkladın! Tur rakibe yazıldı.');
+      playGameSfx('fail', 0.28);
     } else if (playerWon) {
       setMessage('Turu kazandın.');
+      playGameSfx('success', 0.3);
     } else {
       setMessage('Rakip daha hızlı.');
+      playGameSfx('fail', 0.24);
     }
 
     const isLastRound = round >= MAX_ROUNDS;
@@ -146,7 +153,16 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white" data-testid="reflex-rush">
+    <div
+      className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      data-testid="reflex-rush"
+      style={{
+        backgroundImage: `linear-gradient(165deg, rgba(3, 18, 44, 0.92), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.reflexRush}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-pixel text-lg">Refleks Avı</h2>
         <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
@@ -154,15 +170,24 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
 
       <div className="grid grid-cols-3 gap-3 mb-5 text-center">
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
+          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+            <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
+            Tur
+          </div>
           <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
+          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+            <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
+            Sen
+          </div>
           <div className="font-bold">{playerWins}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
+          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+            <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
+            Rakip
+          </div>
           <div className="font-bold">{opponentWins}</div>
         </div>
       </div>
