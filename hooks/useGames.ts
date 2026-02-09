@@ -179,7 +179,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       }
       const data = await api.games.list({
         tableCode: resolvedTableCode,
-        includeAll: isAdminActor,
+        includeAll: isAdminActor || Boolean(resolvedTableCode),
       });
       const list = (Array.isArray(data) ? data : [])
         .filter((game) => String(game.status || '').toLowerCase() === 'waiting')

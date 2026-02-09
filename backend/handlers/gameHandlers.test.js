@@ -28,10 +28,16 @@ const normalizeTableCode = (rawValue) => {
 
 describe('gameHandlers (memory mode)', () => {
   let memoryGames;
+  let memoryUsers;
   let handlers;
 
   beforeEach(() => {
     memoryGames = [];
+    memoryUsers = [
+      { id: 1, username: 'u1', cafe_id: 1, table_number: 5 },
+      { id: 2, username: 'u2', cafe_id: 1, table_number: 7 },
+      { id: 3, username: 'u3', cafe_id: 2, table_number: 9 },
+    ];
 
     handlers = createGameHandlers({
       pool: { query: jest.fn(), connect: jest.fn() },
@@ -68,6 +74,7 @@ describe('gameHandlers (memory mode)', () => {
       setMemoryGames: (nextGames) => {
         memoryGames = nextGames;
       },
+      getMemoryUsers: () => memoryUsers,
     });
   });
 
@@ -79,6 +86,43 @@ describe('gameHandlers (memory mode)', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.payload).toEqual([]);
+  });
+
+  it('shows same-cafe waiting games across tables when scope=all is requested', async () => {
+    memoryGames = [
+      {
+        id: 101,
+        hostName: 'u1',
+        gameType: 'Refleks Avı',
+        points: 30,
+        table: 'MASA05',
+        status: 'waiting',
+      },
+      {
+        id: 102,
+        hostName: 'u3',
+        gameType: 'Ritim Kopyala',
+        points: 40,
+        table: 'MASA09',
+        status: 'waiting',
+      },
+    ];
+
+    const req = {
+      user: { username: 'u2', role: 'user', isAdmin: false, table_number: '7', cafe_id: 1 },
+      query: { scope: 'all' },
+    };
+    const res = createMockRes();
+
+    await handlers.getGames(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toHaveLength(1);
+    expect(res.payload[0]).toMatchObject({
+      id: 101,
+      hostName: 'u1',
+      table: 'MASA05',
+    });
   });
 
   it('creates game for checked-in user', async () => {

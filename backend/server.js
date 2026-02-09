@@ -531,6 +531,7 @@ const gameHandlers = createGameHandlers({
     MEMORY_GAMES = nextGames;
     memoryState.games = nextGames;
   },
+  getMemoryUsers: () => MEMORY_USERS,
 });
 
 const promoteBootstrapAdmins = async () => {

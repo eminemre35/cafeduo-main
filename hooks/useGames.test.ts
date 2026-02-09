@@ -83,6 +83,22 @@ describe('useGames', () => {
     });
   });
 
+  it('requests all visible lobby games for checked-in users', async () => {
+    (api.games.list as jest.Mock).mockResolvedValue([]);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+
+    renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(api.games.list).toHaveBeenCalledWith({
+        tableCode: 'MASA01',
+        includeAll: true,
+      });
+    });
+  });
+
   it('keeps lobby list as returned by API', async () => {
     const mockGames = [
       { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
