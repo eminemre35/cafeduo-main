@@ -272,6 +272,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             <ReflexRush
               gameId={String(activeGameId)}
               currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}

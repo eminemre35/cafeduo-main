@@ -56,6 +56,22 @@ const createGameHandlers = ({
     return { from, to, ...(promotion ? { promotion } : {}) };
   };
 
+  const sanitizeLiveSubmission = (payload) => {
+    const safeScore = Math.max(0, Math.floor(Number(payload?.score || 0)));
+    const safeRounds = Math.max(0, Math.floor(Number(payload?.roundsWon || safeScore)));
+    const safeRound = Math.max(0, Math.floor(Number(payload?.round || 0)));
+    const done = Boolean(payload?.done);
+    const mode = normalizeGameType(payload?.mode) || null;
+    return {
+      mode,
+      score: safeScore,
+      roundsWon: safeRounds,
+      round: safeRound,
+      done,
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
   const nextChessResult = (chess) => {
     if (chess.isCheckmate()) return 'checkmate';
     if (chess.isStalemate()) return 'stalemate';
@@ -631,7 +647,7 @@ const createGameHandlers = ({
 
   const makeMove = async (req, res) => {
     const { id } = req.params;
-    const { player, move, gameState, scoreSubmission, chessMove } = req.body || {};
+    const { player, move, gameState, scoreSubmission, chessMove, liveSubmission } = req.body || {};
     const actorName = String(req.user?.username || '').trim();
 
     if (await isDbConnected()) {
@@ -786,6 +802,85 @@ const createGameHandlers = ({
               to: appliedMove.to,
               san: appliedMove.san,
             },
+          });
+        }
+
+        if (liveSubmission) {
+          if (game.status !== 'active') {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'Canlı ilerleme bildirimi için oyun aktif olmalı.' });
+          }
+          if (!actorParticipant) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+          }
+
+          const safeLive = sanitizeLiveSubmission(liveSubmission);
+          if (safeLive.mode && safeLive.mode !== String(game.game_type || '').trim()) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
+          }
+
+          const currentLive =
+            currentState.live && typeof currentState.live === 'object' ? currentState.live : {};
+          const currentSubmissions =
+            currentLive.submissions && typeof currentLive.submissions === 'object'
+              ? currentLive.submissions
+              : {};
+
+          const nextSubmissions = {
+            ...currentSubmissions,
+            [actorParticipant]: {
+              ...(currentSubmissions[actorParticipant] || {}),
+              ...safeLive,
+            },
+          };
+
+          const participants = getGameParticipants(game);
+          const resolvedWinner =
+            participants.every((name) => Boolean(nextSubmissions[name]?.done))
+              ? pickWinnerFromResults(nextSubmissions, participants)
+              : null;
+
+          const nextLiveState = {
+            mode: safeLive.mode || String(game.game_type || '').trim(),
+            submissions: nextSubmissions,
+            ...(resolvedWinner ? { resolvedWinner } : {}),
+            updatedAt: safeLive.updatedAt,
+          };
+
+          const nextState = {
+            ...currentState,
+            live: nextLiveState,
+          };
+          if (resolvedWinner) {
+            nextState.resolvedWinner = resolvedWinner;
+          }
+
+          await client.query(
+            `
+              UPDATE games
+              SET game_state = $1::jsonb
+              WHERE id = $2
+            `,
+            [JSON.stringify(nextState), id]
+          );
+
+          await client.query('COMMIT');
+          const waitingFor = participants.filter((name) => !nextSubmissions[name]?.done);
+          emitRealtimeUpdate(id, {
+            type: 'live_submission',
+            gameId: id,
+            live: nextLiveState,
+            waitingFor,
+            resolvedWinner: resolvedWinner || null,
+          });
+          return res.json({
+            success: true,
+            gameState: nextState,
+            live: nextLiveState,
+            waitingFor,
+            resolvedWinner: resolvedWinner || null,
           });
         }
 
@@ -1017,6 +1112,74 @@ const createGameHandlers = ({
           to: appliedMove.to,
           san: appliedMove.san,
         },
+      });
+    }
+
+    if (liveSubmission) {
+      if (game.status !== 'active') {
+        return res.status(409).json({ error: 'Canlı ilerleme bildirimi için oyun aktif olmalı.' });
+      }
+      if (!actorParticipant) {
+        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+      }
+
+      const safeLive = sanitizeLiveSubmission(liveSubmission);
+      if (safeLive.mode && safeLive.mode !== String(game.gameType || '').trim()) {
+        return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
+      }
+
+      const liveState =
+        game.gameState?.live && typeof game.gameState.live === 'object' ? game.gameState.live : {};
+      const currentSubmissions =
+        liveState.submissions && typeof liveState.submissions === 'object'
+          ? liveState.submissions
+          : {};
+
+      const nextSubmissions = {
+        ...currentSubmissions,
+        [actorParticipant]: {
+          ...(currentSubmissions[actorParticipant] || {}),
+          ...safeLive,
+        },
+      };
+      const participants = getGameParticipants({
+        host_name: game.hostName,
+        guest_name: game.guestName,
+      });
+      const resolvedWinner =
+        participants.every((name) => Boolean(nextSubmissions[name]?.done))
+          ? pickWinnerFromResults(nextSubmissions, participants)
+          : null;
+
+      const nextLive = {
+        mode: safeLive.mode || String(game.gameType || '').trim(),
+        submissions: nextSubmissions,
+        ...(resolvedWinner ? { resolvedWinner } : {}),
+        updatedAt: safeLive.updatedAt,
+      };
+
+      game.gameState = {
+        ...(game.gameState || {}),
+        live: nextLive,
+      };
+      if (resolvedWinner) {
+        game.gameState.resolvedWinner = resolvedWinner;
+      }
+
+      const waitingFor = participants.filter((name) => !nextSubmissions[name]?.done);
+      emitRealtimeUpdate(id, {
+        type: 'live_submission',
+        gameId: id,
+        live: nextLive,
+        waitingFor,
+        resolvedWinner: resolvedWinner || null,
+      });
+      return res.json({
+        success: true,
+        gameState: game.gameState,
+        live: nextLive,
+        waitingFor,
+        resolvedWinner: resolvedWinner || null,
       });
     }
 
