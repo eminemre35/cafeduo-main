@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
+import { socketService } from '../lib/socket';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -18,6 +19,32 @@ interface ArenaBattleProps {
 
 const PAD_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'];
 const MAX_ROUNDS = 4;
+
+interface LiveSubmissionState {
+  score?: number;
+  round?: number;
+  done?: boolean;
+}
+
+interface GameSnapshot {
+  id: string | number;
+  status?: string;
+  winner?: string | null;
+  hostName?: string;
+  guestName?: string | null;
+  gameState?: {
+    resolvedWinner?: string;
+    live?: {
+      submissions?: Record<string, LiveSubmissionState>;
+      resolvedWinner?: string;
+    };
+  };
+}
+
+interface GameStateUpdatedPayload {
+  type?: string;
+  gameId?: string | number;
+}
 
 export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   currentUser,
@@ -37,15 +64,120 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   const [message, setMessage] = useState('Diziyi izle, sonra birebir tekrar et.');
   const [done, setDone] = useState(false);
   const [resolvingMatch, setResolvingMatch] = useState(false);
+  const [hostName, setHostName] = useState('');
+  const [guestName, setGuestName] = useState('');
   const matchStartedAtRef = useRef<number>(Date.now());
+  const pollRef = useRef<number | null>(null);
+  const finishHandledRef = useRef(false);
 
   const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
+
+  const resolveActorAndOpponent = useCallback((snapshot: GameSnapshot) => {
+    const actor = String(currentUser.username || '').trim().toLowerCase();
+    const host = String(snapshot.hostName || '').trim();
+    const guest = String(snapshot.guestName || '').trim();
+    if (host && actor === host.toLowerCase()) {
+      return { actorName: host, opponentKey: guest };
+    }
+    if (guest && actor === guest.toLowerCase()) {
+      return { actorName: guest, opponentKey: host };
+    }
+    return { actorName: '', opponentKey: '' };
+  }, [currentUser.username]);
+
+  const finishFromServer = useCallback((winnerRaw: string | null) => {
+    if (finishHandledRef.current) return;
+    finishHandledRef.current = true;
+    const winner = String(winnerRaw || '').trim() || 'Berabere';
+    const points = winner.toLowerCase() === currentUser.username.toLowerCase() ? 10 : 0;
+    setDone(true);
+    setMessage(winner === 'Berabere' ? 'Oyun berabere tamamlandı.' : `${winner} kazandı.`);
+    window.setTimeout(() => onGameEnd(winner, points), 700);
+  }, [currentUser.username, onGameEnd]);
+
+  const applySnapshot = useCallback((snapshot: GameSnapshot) => {
+    if (snapshot.hostName) setHostName(String(snapshot.hostName));
+    if (snapshot.guestName) setGuestName(String(snapshot.guestName));
+    const { actorName, opponentKey } = resolveActorAndOpponent(snapshot);
+    const submissions = snapshot.gameState?.live?.submissions || {};
+    const actorLive = actorName ? submissions[actorName] : undefined;
+    const opponentLive = opponentKey ? submissions[opponentKey] : undefined;
+
+    if (typeof actorLive?.score === 'number') {
+      setPlayerScore((prev) => Math.max(prev, Number(actorLive.score)));
+    }
+    if (typeof opponentLive?.score === 'number') {
+      setOpponentScore((prev) => Math.max(prev, Number(opponentLive.score)));
+    }
+
+    const winner =
+      String(snapshot.gameState?.resolvedWinner || snapshot.gameState?.live?.resolvedWinner || snapshot.winner || '').trim() || null;
+    if (String(snapshot.status || '').toLowerCase() === 'finished') {
+      finishFromServer(winner);
+    }
+  }, [finishFromServer, resolveActorAndOpponent]);
+
+  const fetchSnapshot = useCallback(async (silent = false) => {
+    if (isBot || !gameId) return;
+    try {
+      const snapshot = await api.games.get(gameId) as GameSnapshot;
+      applySnapshot(snapshot);
+      if (!silent) {
+        setMessage(`Canlı eşleşme aktif. Rakip: ${snapshot.guestName || snapshot.hostName || target}`);
+      }
+    } catch (err) {
+      console.error('ArenaBattle snapshot error', err);
+    }
+  }, [applySnapshot, gameId, isBot, target]);
+
+  const syncLiveProgress = useCallback(async (score: number, nextRound: number, isDone: boolean) => {
+    if (isBot || !gameId) return;
+    try {
+      await api.games.move(gameId, {
+        liveSubmission: {
+          mode: 'Tank Düellosu',
+          score,
+          roundsWon: score,
+          round: nextRound,
+          done: isDone,
+        },
+      });
+    } catch (err) {
+      console.error('ArenaBattle live submission failed', err);
+    }
+  }, [gameId, isBot]);
 
   useEffect(() => {
     if (round === 1) {
       matchStartedAtRef.current = Date.now();
     }
   }, [round]);
+
+  useEffect(() => {
+    finishHandledRef.current = false;
+    if (isBot || !gameId) return;
+    void fetchSnapshot();
+    const socket = socketService.getSocket();
+    socketService.joinGame(String(gameId));
+    const onRealtime = (payload: GameStateUpdatedPayload) => {
+      if (String(payload?.gameId || '') !== String(gameId)) return;
+      if (payload?.type === 'live_submission' || payload?.type === 'score_submission' || payload?.type === 'game_finished' || payload?.type === 'game_state') {
+        void fetchSnapshot(true);
+      }
+    };
+    socket.on('game_state_updated', onRealtime);
+    pollRef.current = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      if (done) return;
+      void fetchSnapshot(true);
+    }, 2200);
+    return () => {
+      socket.off('game_state_updated', onRealtime);
+      if (pollRef.current) {
+        window.clearInterval(pollRef.current);
+      }
+    };
+  }, [done, fetchSnapshot, gameId, isBot]);
 
   useEffect(() => {
     const length = Math.min(3 + round, 6);
@@ -76,8 +208,10 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   }, [showing, sequence]);
 
   const finalizeMatch = async (localWinner: string, playerScoreValue: number) => {
+    if (finishHandledRef.current) return;
     if (isBot || !gameId) {
       const points = localWinner === currentUser.username ? 10 : 0;
+      finishHandledRef.current = true;
       setTimeout(() => onGameEnd(localWinner, points), 900);
       return;
     }
@@ -104,10 +238,12 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
       const points = resolvedWinner === currentUser.username ? 10 : 0;
       setMessage(points > 0 ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
+      finishHandledRef.current = true;
       setTimeout(() => onGameEnd(resolvedWinner, points), 900);
     } catch {
       const fallbackPoints = localWinner === currentUser.username ? 10 : 0;
       setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
+      finishHandledRef.current = true;
       setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
     } finally {
       setResolvingMatch(false);
@@ -125,6 +261,9 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   const nextRound = (playerWon: boolean) => {
     const nextPlayer = playerScore + (playerWon ? 1 : 0);
     const nextOpponent = opponentScore + (isBot ? (playerWon ? 0 : 1) : 0);
+    const nextRoundNumber = round + 1;
+    const isLast = nextRoundNumber > MAX_ROUNDS;
+    void syncLiveProgress(nextPlayer, Math.min(nextRoundNumber, MAX_ROUNDS), isLast);
     setPlayerScore(nextPlayer);
     setOpponentScore(nextOpponent);
     setRound(prev => {
@@ -164,7 +303,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     >
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Ritim Kopyala</h2>
+        <h2 className="font-pixel text-lg">Tank Düellosu</h2>
         <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
       </div>
 

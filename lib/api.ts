@@ -367,6 +367,13 @@ export const api = {
         player?: 'host' | 'guest';
         move?: string;
         scoreSubmission?: { username: string; score: number; roundsWon?: number; durationMs?: number };
+        liveSubmission?: {
+          mode?: string;
+          score?: number;
+          roundsWon?: number;
+          round?: number;
+          done?: boolean;
+        };
         chessMove?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' };
       }
     ) => {
