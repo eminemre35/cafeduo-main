@@ -72,17 +72,18 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
       }}
     >
       <motion.div
-        className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl pointer-events-none"
+        className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none"
         animate={reduceMotion ? undefined : { x: [0, 24, -12, 0], y: [0, -16, 10, 0] }}
         transition={reduceMotion ? undefined : { duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/14 blur-3xl pointer-events-none"
+        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/22 blur-3xl pointer-events-none"
         animate={reduceMotion ? undefined : { x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
         transition={reduceMotion ? undefined : { duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div className="absolute inset-0 rf-grid opacity-20 pointer-events-none" style={{ y: starsY }} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.18),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.15),transparent_42%)] animate-aurora-pan pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.2),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.2),transparent_42%)] animate-aurora-pan pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(3,14,32,0.75)_0%,rgba(3,14,32,0.2)_45%,rgba(36,86,142,0.22)_100%)] pointer-events-none" />
       <motion.div
         className="absolute h-40 w-40 rounded-full pointer-events-none bg-cyan-400/20 blur-3xl"
         style={{ left: glowX, top: glowY }}
@@ -129,22 +130,37 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
-            <span className="rf-kicker mb-5">NEON RETRO KAFE DENEYİMİ</span>
+            <span className="rf-kicker mb-5">RETRO-NEON SOSYAL KAFE AĞI</span>
 
-            <h1 className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.9rem] md:text-[4.35rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
-              Kafenin temposunu
+            <h1 className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.95rem] md:text-[4.45rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_10px_28px_rgba(0,0,0,0.45)]">
+              Kafenin ritmini
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
                 mini oyunlarla
               </span>
-              canlı akışta yaşat.
+              gerçek zamanlı yaşat.
             </h1>
 
-            <p className="mt-5 text-base sm:text-xl md:text-[1.55rem] text-slate-300 max-w-2xl leading-snug">
-              CafeDuo, hızlı maç turu, canlı skor ve ödül ekonomisini tek bir oyun hattında birleştirir.
-              Oyuncu, masa ve kafe paneli gerçek zamanlı aynı ritimde buluşur.
+            <p className="mt-5 text-base sm:text-xl md:text-[1.45rem] text-slate-300 max-w-2xl leading-snug">
+              CafeDuo; hızlı maç, canlı skor ve ödül döngüsünü tek dijital omurgada birleştirir.
+              Oyuncu, masa ve kafe paneli aynı akışta senkron kalır.
             </p>
 
-            <div className="mt-9 flex flex-col sm:flex-row gap-3">
+            <div className="mt-5 grid grid-cols-1 min-[520px]:grid-cols-3 gap-2.5 max-w-2xl">
+              <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
+                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Hız</p>
+                <p className="text-sm text-slate-100">45 sn ortalama tur</p>
+              </div>
+              <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
+                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Senkron</p>
+                <p className="text-sm text-slate-100">Anlık skor yayını</p>
+              </div>
+              <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
+                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Doğrulama</p>
+                <p className="text-sm text-slate-100">Konum tabanlı giriş</p>
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-col sm:flex-row gap-3">
               {isLoggedIn ? (
                 <RetroButton
                   onClick={handlePanelClick}
@@ -207,7 +223,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               </div>
             </div>
 
-            <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78 hidden sm:block">
+            <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/30 bg-[#06142b]/84 hidden sm:block">
               <motion.div
                 className="flex items-center gap-8 sm:whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
                 animate={reduceMotion ? undefined : { x: ['0%', '-50%'] }}
@@ -245,8 +261,9 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             <div className="rf-panel rf-elevated p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-x-6 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-70" />
               <div className="absolute right-6 top-6 h-20 w-20 rounded-full bg-cyan-400/20 blur-2xl animate-float-slow" />
+              <div className="absolute -left-14 bottom-8 h-36 w-36 rounded-full bg-amber-300/15 blur-2xl" />
 
-              <h3 className="font-display text-3xl text-white mb-6 tracking-wide">Canlı Akış Konsolu</h3>
+              <h3 className="font-display text-3xl text-white mb-6 tracking-wide">Canlı Akış Paneli</h3>
 
               <div className="space-y-4">
                 <div className="rounded-xl border border-cyan-400/30 bg-[#0a1632]/76 p-4">

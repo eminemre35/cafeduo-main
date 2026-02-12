@@ -30,17 +30,18 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
     font-pixel tracking-wide transition-all relative group rounded-2xl
     select-none touch-manipulation
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#050a19]
+    uppercase
   `;
 
   const variants = {
     primary: `
-      bg-[linear-gradient(120deg,#0e3664_0%,#16467f_58%,#2a5e96_100%)] text-cyan-50 border border-cyan-300/45
-      hover:brightness-110 hover:shadow-[0_0_30px_rgba(0,217,255,0.24)]
+      bg-[linear-gradient(120deg,#12396e_0%,#115289_56%,#2b7ca8_100%)] text-cyan-50 border border-cyan-300/50
+      hover:brightness-110 hover:shadow-[0_0_32px_rgba(0,217,255,0.28)] hover:border-cyan-200/75
       focus:ring-cyan-300/55
     `,
     secondary: `
-      bg-[linear-gradient(120deg,rgba(9,21,44,0.94),rgba(17,39,74,0.84))] text-cyan-100 border border-cyan-400/32
-      hover:bg-[linear-gradient(120deg,rgba(12,27,56,0.95),rgba(21,47,88,0.88))] hover:shadow-[0_0_22px_rgba(0,217,255,0.17)]
+      bg-[linear-gradient(120deg,rgba(7,20,44,0.95),rgba(15,39,82,0.9))] text-cyan-100 border border-cyan-400/40
+      hover:bg-[linear-gradient(120deg,rgba(10,25,56,0.97),rgba(16,44,94,0.9))] hover:shadow-[0_0_24px_rgba(0,217,255,0.22)] hover:border-cyan-300/65
       focus:ring-cyan-300/45
     `,
     danger: `
