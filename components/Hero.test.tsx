@@ -61,12 +61,12 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText(/Kafenin ritmini/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /HEMEN BAŞLA/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /GİRİŞ YAP/i })).toBeInTheDocument();
+    expect(screen.getByText(/Kafenin temposunu/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ŞİMDİ BAŞLA/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /OTURUM AÇ/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /HEMEN BAŞLA/i }));
-    fireEvent.click(screen.getByRole('button', { name: /GİRİŞ YAP/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ŞİMDİ BAŞLA/i }));
+    fireEvent.click(screen.getByRole('button', { name: /OTURUM AÇ/i }));
 
     expect(onRegister).toHaveBeenCalledTimes(1);
     expect(onLogin).toHaveBeenCalledTimes(1);

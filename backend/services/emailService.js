@@ -56,14 +56,23 @@ const resolveTransport = () => {
   });
 };
 
-const transporter = resolveTransport();
+const getTransporter = () => {
+  try {
+    return resolveTransport();
+  } catch (error) {
+    logger.error('SMTP transporter init failed', {
+      message: error?.message || String(error),
+    });
+    return null;
+  }
+};
 
 const isRetryableSmtpError = (error) => {
   const code = String(error?.code || '').toUpperCase();
   return ['ETIMEDOUT', 'ECONNECTION', 'ECONNRESET', 'ESOCKET', 'EAI_AGAIN'].includes(code);
 };
 
-const sendWithTimeout = async ({ from, to, subject, text, timeoutMs }) =>
+const sendWithTimeout = async ({ transporter, from, to, subject, text, timeoutMs }) =>
   Promise.race([
     transporter.sendMail({
       from,
@@ -101,6 +110,7 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
     'CafeDuo Güvenlik',
   ].join('\n');
 
+  const transporter = getTransporter();
   if (!transporter) {
     logger.warn('SMTP not configured. Password reset link logged instead of e-mail send.', {
       to: safeTo,
@@ -116,6 +126,7 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       const info = await sendWithTimeout({
+        transporter,
         from: fromAddress,
         to: safeTo,
         subject,

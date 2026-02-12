@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
           <div>
             <span className="font-display text-3xl text-white block">CafeDuo</span>
             <p className="mt-2 text-sm text-[var(--rf-muted)]">
-              Kahve mekanı ile oyunu birleştiren sosyal deneyim platformu.
+              Kafe akışını mini oyunlarla birleştiren sosyal deneyim altyapısı.
             </p>
             <p className="mt-3 font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75">
               © {year} tüm hakları saklıdır

@@ -7,7 +7,7 @@ describe('About', () => {
     render(<About />);
 
     expect(
-      screen.getByText('Kafeleri oyun odaklı topluluk alanına çeviren dijital omurga.')
+      screen.getByText('Kafeyi oyun odaklı topluluk alanına çeviren operasyon katmanı.')
     ).toBeInTheDocument();
 
     expect(screen.getByText('Operasyonel Altyapı')).toBeInTheDocument();
@@ -15,7 +15,7 @@ describe('About', () => {
     expect(screen.getByText('Güvenli İşleyiş')).toBeInTheDocument();
     expect(screen.getByText('B2B Uyum')).toBeInTheDocument();
 
-    expect(screen.getByText('Kafe için net fayda modeli')).toBeInTheDocument();
+    expect(screen.getByText('Kafe için net değer modeli')).toBeInTheDocument();
     expect(screen.getByText('Gerçek zamanlı skor ve kupon akışı')).toBeInTheDocument();
     expect(
       screen.getByText('Rol bazlı panel yapısı (kullanıcı, kafe admin, sistem admin)')

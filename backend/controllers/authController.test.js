@@ -320,8 +320,8 @@ describe('authController security-critical auth flows', () => {
 
     expect(pool.query).toHaveBeenNthCalledWith(
       1,
-      'SELECT id, email, username FROM users WHERE LOWER(email) = $1 LIMIT 1',
-      ['player@example.com']
+      'SELECT id, email, username FROM users WHERE LOWER(TRIM(email)) = ANY($1::text[]) LIMIT 1',
+      [['player@example.com']]
     );
     expect(pool.query.mock.calls[1][0]).toContain('INSERT INTO password_reset_tokens');
     expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
@@ -366,6 +366,38 @@ describe('authController security-critical auth flows', () => {
       expect.objectContaining({
         userId: 11,
         email: 'player@example.com',
+      })
+    );
+  });
+
+  it('finds gmail alias accounts for forgot-password by canonical local-part', async () => {
+    pool.query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 77, email: 'emin.3619+web@googlemail.com', username: 'emin' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+
+    const req = {
+      body: { email: 'emin3619@gmail.com' },
+      headers: { 'user-agent': 'jest-test' },
+      ip: '127.0.0.1',
+    };
+    const res = buildRes();
+
+    await authController.forgotPassword(req, res);
+
+    expect(pool.query.mock.calls[0][0]).toContain('LOWER(TRIM(email)) = ANY');
+    expect(pool.query.mock.calls[1][0]).toContain("split_part(LOWER(TRIM(email)), '@', 2) IN ('gmail.com', 'googlemail.com')");
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'emin.3619+web@googlemail.com',
+        username: 'emin',
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
       })
     );
   });
