@@ -51,8 +51,8 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
       <nav
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled || isLoggedIn
-            ? 'bg-[#060d1e]/80 backdrop-blur-xl border-b border-cyan-400/20 py-2 shadow-[0_16px_36px_rgba(0,0,0,0.45)]'
-            : 'bg-transparent py-4 md:py-5'
+            ? 'bg-[#040c1f]/82 backdrop-blur-xl border-b border-cyan-400/24 py-2 shadow-[0_16px_36px_rgba(0,0,0,0.45)]'
+            : 'bg-[#040c1f]/35 backdrop-blur-sm border-b border-cyan-400/12 py-3 md:py-4'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                 <Coffee size={19} />
               </div>
               <div className="leading-tight min-w-0">
-                <span className="font-display text-[1.7rem] max-[430px]:text-[1.45rem] md:text-[1.65rem] text-cyan-100 block tracking-wide truncate">CafeDuo</span>
+                <span className="font-display text-[1.7rem] max-[430px]:text-[1.45rem] md:text-[1.65rem] text-cyan-50 block tracking-[0.02em] truncate">CafeDuo</span>
                 <span className="font-pixel text-[10px] tracking-[0.24em] text-cyan-300/80 block -mt-1 max-[430px]:hidden">
                   SOCIAL CAFE ENGINE
                 </span>
@@ -89,7 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.06 }}
                     onClick={() => scrollToSection(item.id)}
-                    className="px-4 py-2 rounded-full text-sm font-pixel tracking-wide text-cyan-100/90 hover:text-white hover:bg-cyan-500/15 border border-transparent hover:border-cyan-300/35 transition-all"
+                    className="px-4 py-2 rounded-full text-sm font-pixel tracking-wide text-cyan-100/90 hover:text-white hover:bg-cyan-500/15 border border-cyan-400/10 hover:border-cyan-300/40 transition-all"
                   >
                     {item.label}
                   </motion.button>
@@ -103,7 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                   <motion.button
                     onClick={onLogout}
                     data-testid="logout-button"
-                    className="flex items-center gap-2 rounded-full border border-pink-400/40 px-4 py-2 text-sm font-pixel text-pink-100 hover:bg-pink-500/15 transition-colors"
+                    className="flex items-center gap-2 rounded-full border border-pink-400/42 px-4 py-2 text-sm font-pixel text-pink-100 hover:bg-pink-500/15 transition-colors"
                     whileTap={{ scale: 0.95 }}
                   >
                     <LogOut size={16} />
@@ -161,7 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#020611]/75 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-[#020611]/82 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setIsOpen(false)}
             />
 
@@ -170,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 290 }}
-              className="fixed top-0 right-0 bottom-0 w-[300px] bg-[#060d1e] border-l border-cyan-500/30 z-50 md:hidden shadow-[0_20px_44px_rgba(0,0,0,0.52)]"
+              className="fixed top-0 right-0 bottom-0 w-[300px] bg-[linear-gradient(180deg,#061226,#050d1f)] border-l border-cyan-500/30 z-50 md:hidden shadow-[0_20px_44px_rgba(0,0,0,0.52)]"
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-cyan-500/25">
                 <span className="font-pixel text-cyan-100 text-lg">MENÜ</span>

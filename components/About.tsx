@@ -29,7 +29,8 @@ export const About: React.FC = () => {
     <section id="about" className="cd-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
-          <div className="lg:col-span-7 cd-panel rf-elevated p-7 md:p-9 border-cyan-400/25">
+          <div className="lg:col-span-7 cd-panel rf-elevated p-7 md:p-9 border-cyan-400/26 relative overflow-hidden">
+            <div className="absolute -left-16 -top-16 h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl pointer-events-none" />
             <span className="cd-kicker">CafeDuo hakkında</span>
             <h2 className="mt-4 text-3xl md:text-5xl font-display text-white leading-tight">
               Kafeyi oyun odaklı topluluk alanına çeviren operasyon katmanı.
@@ -41,7 +42,7 @@ export const About: React.FC = () => {
 
             <div className="mt-8 grid sm:grid-cols-2 gap-4">
               {pillars.map((pillar) => (
-                <article key={pillar.title} className="rounded-2xl border border-cyan-400/20 bg-[#0a1834]/76 p-4">
+                <article key={pillar.title} className="rounded-2xl border border-cyan-400/24 bg-[#0a1834]/78 p-4">
                   <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#09132b] border border-cyan-400/30">
                     {pillar.icon}
                   </div>
@@ -53,7 +54,7 @@ export const About: React.FC = () => {
           </div>
 
           <div className="lg:col-span-5 flex flex-col gap-5">
-            <article className="cd-panel rf-elevated p-7 relative overflow-hidden border-cyan-400/20">
+            <article className="cd-panel rf-elevated p-7 relative overflow-hidden border-cyan-400/24">
               <div className="absolute -right-12 -top-12 w-36 h-36 rounded-full bg-cyan-400/12" />
               <div className="inline-flex items-center gap-2 text-cyan-300/85 font-pixel text-[10px] uppercase tracking-[0.2em]">
                 <Building2 size={14} />
@@ -79,7 +80,7 @@ export const About: React.FC = () => {
               </div>
             </article>
 
-            <article className="cd-panel rf-elevated p-6 border-cyan-400/20">
+            <article className="cd-panel rf-elevated p-6 border-cyan-400/24">
               <p className="font-pixel text-[10px] uppercase tracking-[0.2em] text-cyan-300/80">Uzman yaklaşım</p>
               <ul className="mt-3 space-y-2 text-[var(--rf-muted)]">
                 <li>Gerçek zamanlı skor ve kupon akışı</li>

@@ -61,7 +61,7 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText(/Kafenin temposunu/i)).toBeInTheDocument();
+    expect(screen.getByText(/Kafenin ritmini/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /ŞİMDİ BAŞLA/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /OTURUM AÇ/i })).toBeInTheDocument();
 

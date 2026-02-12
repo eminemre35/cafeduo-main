@@ -7,8 +7,8 @@ export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-8 border-t border-cyan-400/20 bg-[#050a19]">
-      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
+    <footer className="relative mt-8 border-t border-cyan-400/24 bg-[linear-gradient(180deg,#040b1a,#040915)]">
+      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-cyan-500/12 to-transparent pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
         <div className="grid md:grid-cols-3 gap-7 items-start">
           <div>
@@ -46,21 +46,21 @@ export const Footer: React.FC = () => {
               <a
                 href="#"
                 aria-label="Instagram"
-                className="w-10 h-10 rounded-full border border-cyan-400/30 bg-[#0a1834]/75 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/50 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Instagram size={18} />
               </a>
               <a
                 href="#"
                 aria-label="Twitter"
-                className="w-10 h-10 rounded-full border border-cyan-400/30 bg-[#0a1834]/75 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/50 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Twitter size={18} />
               </a>
               <a
                 href="mailto:kvkk@cafeduo.com"
                 aria-label="E-posta"
-                className="w-10 h-10 rounded-full border border-cyan-400/30 bg-[#0a1834]/75 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/50 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Mail size={18} />
               </a>
