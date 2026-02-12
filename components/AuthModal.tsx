@@ -45,11 +45,6 @@ interface AuthLikeError {
   message?: string;
 }
 
-const GOOGLE_CLIENT_ID =
-  typeof window !== 'undefined'
-    ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
-    : '';
-
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
@@ -261,6 +256,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     'border-red-500 focus:border-red-500 focus:shadow-[0_0_20px_rgba(255,86,114,0.2)]';
   const iconBaseClass =
     'absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-300';
+  const googleClientId =
+    typeof window !== 'undefined'
+      ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
+      : '';
 
   if (!isOpen) return null;
 
@@ -501,7 +500,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </RetroButton>
             </form>
 
-            {mode === 'login' && !isForgotPasswordMode && GOOGLE_CLIENT_ID && (
+            {mode === 'login' && !isForgotPasswordMode && googleClientId && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-slate-500 text-xs uppercase tracking-[0.12em]">
                   <span className="h-px flex-1 bg-slate-700/80" />
