@@ -52,6 +52,92 @@ const buildPasswordResetUrl = (rawToken) => {
 };
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
+const splitEmailParts = (email) => {
+    const normalized = normalizeEmail(email);
+    const [localRaw, domainRaw] = normalized.split('@');
+    const local = String(localRaw || '').trim();
+    const domain = String(domainRaw || '').trim();
+    if (!local || !domain) return null;
+    return { local, domain };
+};
+
+const canonicalizeEmail = (email) => {
+    const parts = splitEmailParts(email);
+    if (!parts) return normalizeEmail(email);
+
+    let local = parts.local;
+    let domain = parts.domain;
+
+    if (domain === 'googlemail.com') {
+        domain = 'gmail.com';
+    }
+
+    if (domain === 'gmail.com') {
+        local = local.split('+')[0].replace(/\./g, '');
+    }
+
+    return `${local}@${domain}`;
+};
+
+const buildEmailLookupVariants = (email) => {
+    const normalized = normalizeEmail(email);
+    if (!normalized) return [];
+
+    const variants = new Set([normalized]);
+    const canonical = canonicalizeEmail(normalized);
+    if (canonical) variants.add(canonical);
+
+    const parts = splitEmailParts(normalized);
+    if (parts && (parts.domain === 'gmail.com' || parts.domain === 'googlemail.com')) {
+        const gmailDomain = parts.domain === 'googlemail.com' ? 'gmail.com' : 'googlemail.com';
+        const swapped = `${parts.local}@${gmailDomain}`;
+        variants.add(swapped);
+        variants.add(canonicalizeEmail(swapped));
+    }
+
+    return Array.from(variants).filter(Boolean);
+};
+
+const findMemoryUserByEmail = (email) => {
+    const candidates = new Set(buildEmailLookupVariants(email));
+    const canonicalInput = canonicalizeEmail(email);
+    return memoryState.users.find((user) => {
+        const raw = normalizeEmail(user?.email);
+        return candidates.has(raw) || canonicalizeEmail(raw) === canonicalInput;
+    }) || null;
+};
+
+const findDbUserByEmail = async (email) => {
+    const variants = buildEmailLookupVariants(email);
+    if (variants.length === 0) return null;
+
+    const directLookup = await pool.query(
+        'SELECT id, email, username FROM users WHERE LOWER(TRIM(email)) = ANY($1::text[]) LIMIT 1',
+        [variants]
+    );
+    if (directLookup.rows.length > 0) {
+        return directLookup.rows[0];
+    }
+
+    const parts = splitEmailParts(email);
+    if (!parts || !['gmail.com', 'googlemail.com'].includes(parts.domain)) {
+        return null;
+    }
+
+    const canonicalLocal = parts.local.split('+')[0].replace(/\./g, '');
+    const gmailLookup = await pool.query(
+        `SELECT id, email, username
+         FROM users
+         WHERE split_part(LOWER(TRIM(email)), '@', 2) IN ('gmail.com', 'googlemail.com')
+           AND REPLACE(split_part(split_part(LOWER(TRIM(email)), '@', 1), '+', 1), '.', '') = $1
+         LIMIT 1`,
+        [canonicalLocal]
+    );
+
+    return gmailLookup.rows[0] || null;
+};
+
 const toSafeUsername = (name, fallbackEmail) => {
     const fromName = String(name || '')
         .normalize('NFKD')
@@ -430,15 +516,11 @@ const authController = {
             const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
 
             if (await isDbConnected()) {
-                const lookup = await pool.query(
-                    'SELECT id, email, username FROM users WHERE LOWER(email) = $1 LIMIT 1',
-                    [normalizedEmail]
-                );
-                if (lookup.rows.length === 0) {
+                const user = await findDbUserByEmail(normalizedEmail);
+                if (!user) {
                     return res.json(responseForgotPassword);
                 }
 
-                const user = lookup.rows[0];
                 await pool.query(
                     `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, request_ip, user_agent)
                      VALUES ($1, $2, $3, $4, $5)`,
@@ -452,22 +534,24 @@ const authController = {
                 );
 
                 const resetUrl = buildPasswordResetUrl(rawToken);
-                void sendPasswordResetEmail({
-                    to: user.email,
-                    username: user.username,
-                    resetUrl,
-                    expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
-                }).catch((mailError) => {
+                try {
+                    await sendPasswordResetEmail({
+                        to: user.email,
+                        username: user.username,
+                        resetUrl,
+                        expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+                    });
+                } catch (mailError) {
                     logger.error('forgotPassword e-mail send failed', {
                         userId: user.id,
                         email: user.email,
                         error: mailError?.message || String(mailError),
                     });
-                });
+                }
                 return res.json(responseForgotPassword);
             }
 
-            const memoryUser = memoryState.users.find((u) => normalizeEmail(u.email) === normalizedEmail);
+            const memoryUser = findMemoryUserByEmail(normalizedEmail);
             if (!memoryUser) {
                 return res.json(responseForgotPassword);
             }
@@ -480,18 +564,20 @@ const authController = {
             });
 
             const resetUrl = buildPasswordResetUrl(rawToken);
-            void sendPasswordResetEmail({
-                to: memoryUser.email,
-                username: memoryUser.username,
-                resetUrl,
-                expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
-            }).catch((mailError) => {
+            try {
+                await sendPasswordResetEmail({
+                    to: memoryUser.email,
+                    username: memoryUser.username,
+                    resetUrl,
+                    expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+                });
+            } catch (mailError) {
                 logger.error('forgotPassword e-mail send failed (memory mode)', {
                     userId: memoryUser.id,
                     email: memoryUser.email,
                     error: mailError?.message || String(mailError),
                 });
-            });
+            }
 
             return res.json(responseForgotPassword);
         } catch (error) {

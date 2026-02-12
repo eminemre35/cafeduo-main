@@ -32,11 +32,11 @@ export const About: React.FC = () => {
           <div className="lg:col-span-7 cd-panel p-7 md:p-9 border-cyan-400/25">
             <span className="cd-kicker">CafeDuo hakkında</span>
             <h2 className="mt-4 text-3xl md:text-5xl font-display text-white leading-tight">
-              Kafeleri oyun odaklı topluluk alanına çeviren dijital omurga.
+              Kafeyi oyun odaklı topluluk alanına çeviren operasyon katmanı.
             </h2>
             <p className="mt-5 text-lg text-[var(--rf-muted)] leading-relaxed">
-              CafeDuo sadece bir oyun ekranı değil; mekan içi etkileşimi ölçülebilir hale getiren bir deneyim sistemi.
-              Kullanıcı, personel ve yönetici aynı akışta buluşur.
+              CafeDuo yalnızca bir oyun ekranı değil; mekan içi etkileşimi ölçülebilir hale getiren bir deneyim altyapısıdır.
+              Oyuncu, personel ve yönetici aynı akışta buluşur.
             </p>
 
             <div className="mt-8 grid sm:grid-cols-2 gap-4">
@@ -59,7 +59,7 @@ export const About: React.FC = () => {
                 <Building2 size={14} />
                 Platform özeti
               </div>
-              <h3 className="mt-4 text-2xl font-display text-white">Kafe için net fayda modeli</h3>
+              <h3 className="mt-4 text-2xl font-display text-white">Kafe için net değer modeli</h3>
               <p className="mt-2 text-[var(--rf-muted)]">
                 Amaç: masa başı zamanı etkileşime çevirmek ve tekrar ziyaret oranını yükseltmek.
               </p>

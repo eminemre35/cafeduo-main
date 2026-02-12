@@ -6,7 +6,7 @@ describe('HowItWorks', () => {
   it('renders three-step flow with timing hints', () => {
     render(<HowItWorks />);
 
-    expect(screen.getByText('Akışı 3 adımda çalıştır.')).toBeInTheDocument();
+    expect(screen.getByText('Sistemi 3 adımda devreye al.')).toBeInTheDocument();
 
     expect(screen.getAllByText('Hesabını aç').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Masanı doğrula').length).toBeGreaterThan(0);
