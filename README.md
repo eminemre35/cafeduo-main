@@ -1,211 +1,236 @@
-# 🎮 CafeDuo
+<div align="center">
 
-[![Tests](https://img.shields.io/badge/tests-145%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/coverage-34%25-yellow)]()
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)]()
-[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js)]()
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql)]()
-[![License](https://img.shields.io/badge/license-MIT-blue)]()
+# ☕ CafeDuo
 
-> ☕ **Gamified cafe loyalty platform for university students**
+**Üniversite Öğrencileri İçin Oyunlaştırılmış Kafe Sadakat Platformu**
 
-Students check in at cafes, play multiplayer games with friends, earn points, and redeem real cafe rewards!
+Kafelere gel, arkadaşlarınla oyun oyna, puan kazan, gerçek ödüller al!
 
-![Demo GIF Placeholder](https://via.placeholder.com/800x400/1a1a2e/ffffff?text=🎮+Demo+GIF+Coming+Soon)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-Gerçek%20Zamanlı-010101?logo=socket.io)](https://socket.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql)](https://www.postgresql.org/)
+[![Tests](https://img.shields.io/badge/Testler-145%20geçiyor-brightgreen)]()
+[![Docker](https://img.shields.io/badge/Docker-Hazır-2496ED?logo=docker)](Dockerfile)
+[![License: MIT](https://img.shields.io/badge/Lisans-MIT-blue)](LICENSE)
+
+[Özellikler](#-özellikler) · [Hızlı Başlangıç](#-hızlı-başlangıç) · [Ekran Görüntüleri](#-ekran-görüntüleri) · [Mimari](#️-mimari) · [Katkıda Bulunma](#-katkıda-bulunma)
+
+</div>
 
 ---
 
-## ✨ Features
+## 🎯 Problem
 
-### 🎮 Multiplayer Games
-- **Rock Paper Scissors** - Classic game with real-time multiplayer
-- **Gladiator Arena** - Turn-based battle game
-- **Game Lobby** - Create or join games instantly
-- **Live Matchmaking** - Find opponents in your cafe
+Türkiye'de kafeler müşteri bağlılığını artırmakta zorlanıyor. Geleneksel sadakat kartları kaybolur, uygulamalar indirilmez, sosyal etkileşim eksik kalır.
 
-### 📍 Cafe Check-in System
-- **PIN Verification** - Secure table check-in with unique codes
-- **Location-based** - Only valid cafe locations
-- **Friend Discovery** - See who's checked in at the same cafe
+## 💡 Çözüm
 
-### 🏆 Points & Leaderboard
-- **Earn Points** - Win games to earn cafe points
-- **Daily Rewards** - Check in daily for bonus points
-- **Global Rankings** - Compete on the global leaderboard
-- **Achievements** - Unlock badges and achievements
+**CafeDuo**, üniversite öğrencilerini kafe kültürüyle buluşturan **oyunlaştırılmış** bir platformdur:
 
-### 🎁 Reward Store
-- **Cafe Rewards** - Exchange points for free drinks, snacks, discounts
-- **Inventory System** - Manage your redeemed rewards
-- **QR Code Redemption** - Easy reward claiming at counter
+1. **Check-in**: Kafeye geldiğinde PIN ile otur
+2. **Oyna**: Aynı kafedeki arkadaşlarınla gerçek zamanlı oyunlar oyna
+3. **Kazan**: Her galibiyet puan kazandırır
+4. **Harca**: Puanlarını bedava kahve, tatlı ve indirimlere dönüştür
+
+---
+
+## ✨ Özellikler
+
+### 🎮 Çok Oyunculu Oyunlar
+| Oyun | Açıklama |
+|------|----------|
+| ✊✋✌️ **Taş Kağıt Makas** | Klasik oyun, gerçek zamanlı eşleşme |
+| ⚔️ **Gladyatör Arena** | Sıra tabanlı savaş oyunu |
+| 🎯 **Oyun Lobisi** | Anında oluştur veya katıl |
+| 🔍 **Canlı Eşleşme** | Aynı kafedeki rakipleri bul |
+
+### 📍 Kafe Check-in Sistemi
+- **PIN Doğrulama** — Her masaya özel güvenli kodlar
+- **Konum Bazlı** — Sadece geçerli kafe lokasyonlarında çalışır
+- **Arkadaş Keşfi** — Aynı kafede kimlerin olduğunu gör
+- **Harita Entegrasyonu** — Leaflet ile yakındaki kafeleri bul
+
+### 🏆 Puan & Liderlik Tablosu
+- 🎯 Oyun kazanarak puan topla
+- 📅 Günlük check-in bonusu
+- 🌍 Genel sıralama tablosu
+- 🏅 Başarı rozetleri
+
+### 🎁 Ödül Mağazası
+- ☕ Puanları bedava içecek, atıştırmalık veya indirimlere dönüştür
+- 📦 Envanter sistemi — kazanılan ödülleri yönet
+- 📱 QR kodla kasada hızlı kullanım
 
 ### 🎨 Modern UI/UX
-- **Responsive Design** - Works perfectly on mobile & desktop
-- **Micro-animations** - Smooth transitions with Framer Motion
-- **Dark Theme** - Eye-catching arcade-style design
-- **Toast Notifications** - Real-time feedback
-- **Skeleton Loading** - Smooth loading states
+- 📱 Mobil ve masaüstü uyumlu responsive tasarım
+- ✨ Framer Motion ile akıcı mikro-animasyonlar
+- 🌙 Arcade tarzı göz alıcı karanlık tema
+- 🔔 Toast bildirimleri ile anlık geri bildirim
+- 💀 Skeleton loading ile profesyonel yükleme ekranları
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Teknoloji Yığını
 
-| Layer | Technology |
-|-------|------------|
+| Katman | Teknoloji |
+|--------|-----------|
 | **Frontend** | React 18 + TypeScript + Vite |
-| **Styling** | Tailwind CSS v4 + Framer Motion |
-| **State** | React Context + Custom Hooks |
+| **Stil** | Tailwind CSS v4 + Framer Motion |
+| **Durum Yönetimi** | React Context + Custom Hooks |
 | **Backend** | Node.js + Express.js |
-| **Real-time** | Socket.IO |
-| **Database** | PostgreSQL |
-| **Auth** | JWT + bcrypt |
-| **Testing** | Jest + React Testing Library + Playwright |
-| **DevOps** | Docker + GitHub Actions |
+| **Gerçek Zamanlı** | Socket.IO (WebSocket) |
+| **Veritabanı** | PostgreSQL 15 |
+| **Önbellek** | Redis (ioredis) |
+| **Kimlik Doğrulama** | JWT + bcrypt + Google OAuth |
+| **Güvenlik** | Helmet + Rate Limiting + reCAPTCHA |
+| **E-posta** | Nodemailer |
+| **Harita** | Leaflet + React-Leaflet |
+| **Test** | Jest + React Testing Library + Playwright E2E |
+| **DevOps** | Docker + Docker Compose |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Hızlı Başlangıç
 
-### Prerequisites
+### Gereksinimler
 - Node.js 18+
-- PostgreSQL 15+ (or use Docker)
+- PostgreSQL 15+ (veya Docker kullanın)
 
-### Option 1: Docker (Recommended)
+### Docker ile (Önerilen)
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/cafeduo.git
-cd cafeduo
+# Repoyu klonlayın
+git clone https://github.com/eminemre35/cafeduo-main.git
+cd cafeduo-main
 
-# Start with Docker Compose
+# .env dosyasını oluşturun
+cp .env.example .env
+
+# Docker ile başlatın
 docker-compose up -d
 
-# App will be available at:
+# Uygulama hazır:
 # Frontend: http://localhost:3000
-# Backend: http://localhost:3001
+# Backend:  http://localhost:3001
 ```
 
-### Option 2: Manual Setup
+### Manuel Kurulum
 
 ```bash
-# 1. Install dependencies
+# 1. Bağımlılıkları yükleyin
 npm install
 
-# 2. Setup database
+# 2. Veritabanını oluşturun
 createdb cafeduo
 psql cafeduo < schema.sql
 
-# 3. Configure environment
+# 3. .env dosyasını düzenleyin
 cp .env.example .env
-# Edit .env with your database credentials
 
-# 4. Start development server
+# 4. Geliştirme sunucusunu başlatın
 npm run dev
-
-# Frontend: http://localhost:3000
-# Backend: http://localhost:3001
 ```
 
 ---
 
-## 📊 Testing
+## 📊 Test
 
 ```bash
-# Run unit tests
+# Unit testler
 npm test
 
-# Run with coverage
+# Coverage raporu
 npm run test:coverage
 
-# Run E2E tests
+# E2E testler (Playwright)
 npm run test:e2e
 
-# Run all tests
+# Tüm testler
 npm run test:all
+
+# Canlı ortam smoke testi
+npm run smoke:live
 ```
 
-**Test Coverage:** 34% (145 tests passing)
+**Test Durumu:** 145 test geçiyor ✅
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Mimari
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Client                                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   React     │  │  Socket.IO  │  │   React Router      │  │
-│  │  Components │  │   Client    │  │    (Navigation)     │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└────────────────────┬────────────────────────────────────────┘
-                     │ HTTP / WebSocket
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      API Server                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Express   │  │  Socket.IO  │  │   JWT Auth          │  │
-│  │   Routes    │  │   Server    │  │   Middleware        │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└────────────────────┬────────────────────────────────────────┘
-                     │ SQL
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     PostgreSQL                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │    Users    │  │    Games    │  │    Rewards          │  │
-│  │   Tables    │  │   Tables    │  │    Tables           │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                    İstemci (React)                     │
+│  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
+│  │ Bileşenler │  │ Socket.IO  │  │ React Router   │  │
+│  │ (UI)       │  │ İstemci    │  │ (Navigasyon)   │  │
+│  └────────────┘  └────────────┘  └────────────────┘  │
+└──────────────────┬───────────────────────────────────┘
+                   │ HTTP / WebSocket
+                   ▼
+┌──────────────────────────────────────────────────────┐
+│                   API Sunucusu                        │
+│  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
+│  │ Express    │  │ Socket.IO  │  │ JWT + Helmet   │  │
+│  │ Routes     │  │ Sunucu     │  │ Güvenlik       │  │
+│  └────────────┘  └────────────┘  └────────────────┘  │
+└──────────────────┬───────────────────────────────────┘
+                   │ SQL
+                   ▼
+┌──────────────────────────────────────────────────────┐
+│          PostgreSQL + Redis                           │
+│  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
+│  │ Kullanıcılar│ │  Oyunlar   │  │   Ödüller      │  │
+│  └────────────┘  └────────────┘  └────────────────┘  │
+└──────────────────────────────────────────────────────┘
 ```
 
-### Project Structure
+---
+
+## 📂 Proje Yapısı
 
 ```
-cafeduo/
-├── components/           # React components
-│   ├── dashboard/        # Dashboard sections
-│   ├── ui/               # Reusable UI components
+cafeduo-main/
+├── components/           # React bileşenleri
+│   ├── dashboard/        # Ana panel bölümleri
+│   ├── ui/               # Yeniden kullanılabilir UI
 │   └── ...
 ├── hooks/                # Custom React hooks
-├── contexts/             # React contexts (Auth, Toast)
+├── contexts/             # React context (Auth, Toast)
 ├── backend/              # Express.js API
-│   ├── server.js         # Main server
-│   └── db.js             # Database connection
-├── e2e/                  # Playwright E2E tests
-├── schema.sql            # Database schema
-└── docker-compose.yml    # Docker setup
+│   ├── server.js         # Ana sunucu
+│   └── db.js             # Veritabanı bağlantısı
+├── e2e/                  # Playwright E2E testleri
+├── schema.sql            # Veritabanı şeması
+├── docker-compose.yml    # Docker kurulumu
+└── Dockerfile            # Container tanımı
 ```
 
 ---
 
-## 📚 Documentation
+## 🤝 Katkıda Bulunma
 
-- [API Documentation](./docs/API.md) (Coming Soon)
-- [Architecture Decisions](./docs/ADR.md) (Coming Soon)
-- [Contributing Guide](./CONTRIBUTING.md) (Coming Soon)
-- [Deployment Guide](./docs/DEPLOYMENT.md) (Coming Soon)
+Katkılarınızı bekliyoruz! 
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our [Contributing Guide](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Repoyu forklayın
+2. Feature branch oluşturun (`git checkout -b feature/harika-ozellik`)
+3. Değişikliklerinizi commit edin (`git commit -m 'feat: harika özellik eklendi'`)
+4. Push edin (`git push origin feature/harika-ozellik`)
+5. Pull Request açın
 
 ---
 
-## 📄 License
+## 📄 Lisans
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 ---
 
-<p align="center">
-  Made with ☕ and 🎮 for university students
-</p>
+<div align="center">
+
+**Üniversite öğrencileri için ☕ ve 🎮 ile yapıldı**
+
+⭐ Projeyi beğendiyseniz yıldız bırakmayı unutmayın!
+
+</div>
