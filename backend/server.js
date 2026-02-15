@@ -43,6 +43,8 @@ const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Impo
 const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
+const { createAdminRoutes } = require('./routes/adminRoutes');
+const { createCommerceRoutes } = require('./routes/commerceRoutes');
 const { createGameRoutes } = require('./routes/gameRoutes');
 const memoryState = require('./store/memoryState');
 const {
@@ -60,7 +62,7 @@ const { createCommerceHandlers } = require('./handlers/commerceHandlers');
 const { createGameHandlers } = require('./handlers/gameHandlers');
 const { createGameRepository } = require('./repositories/gameRepository');
 const { createGameService } = require('./services/gameService');
-const { authenticateToken, requireAdmin, requireOwnership, requireCafeAdmin } = require('./middleware/auth'); // Auth Middleware Imports
+const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 
 // Simple Logger (can be replaced with Winston in production)
 const logger = {
@@ -300,7 +302,6 @@ console.log("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : 
  * Verifies token and fetches fresh user data from DB
  */
 // Middleware (Moved to backend/middleware/auth.js)
-// authenticateToken, requireAdmin, requireCafeAdmin, requireOwnership
 
 
 // Security Middleware
@@ -608,6 +609,17 @@ const gameRoutes = createGameRoutes({
   gameService,
 });
 
+const adminRoutes = createAdminRoutes({
+  authenticateToken,
+  adminHandlers,
+});
+
+const commerceRoutes = createCommerceRoutes({
+  authenticateToken,
+  cache,
+  commerceHandlers,
+});
+
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
 
@@ -682,70 +694,16 @@ app.use('/api/cafes', cafeRoutes);
 
 // 3.4 UPDATE PIN (Moved to cafeController)
 
-// ===================================
-// 4. ADMIN ENDPOINTS
-// ===================================
+// Admin Routes (Modularized)
+app.use('/api/admin', adminRoutes);
 
-// 4.1 GET ALL USERS (Admin only) - PROTECTED
-app.get('/api/admin/users', authenticateToken, requireAdmin, adminHandlers.getUsers);
-
-// 4.2 CREATE USER (Admin only) - PROTECTED
-app.post('/api/admin/users', authenticateToken, requireAdmin, adminHandlers.createUser);
-
-// 4.3 GET ALL GAMES (Admin only) - PROTECTED
-app.get('/api/admin/games', authenticateToken, requireAdmin, adminHandlers.getGames);
-
-// 4.4 UPDATE USER ROLE (Admin only) - PROTECTED
-app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, adminHandlers.updateUserRole);
-
-// 4.5 UPDATE USER POINTS (Admin only) - PROTECTED
-app.patch('/api/admin/users/:id/points', authenticateToken, requireAdmin, adminHandlers.updateUserPoints);
-
-// 4.6 UPDATE CAFE (Admin only) - PROTECTED
-app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, adminHandlers.updateCafe);
-
-// 4.7 CREATE CAFE (Admin only) - PROTECTED
-app.post('/api/admin/cafes', authenticateToken, requireAdmin, adminHandlers.createCafe);
-
-// 4.8 DELETE CAFE (Admin only) - PROTECTED
-app.delete('/api/admin/cafes/:id', authenticateToken, requireAdmin, adminHandlers.deleteCafe);
-
-// ===================================
-// 5. REWARDS ENDPOINTS (for Cafe Admins)
-// ===================================
-
-// 5.1 CREATE REWARD (Cafe Admin)
-app.post('/api/rewards', authenticateToken, requireCafeAdmin, commerceHandlers.createReward);
-
-// 5.2 GET REWARDS (optionally by cafe)
-app.get('/api/rewards', cache(600), commerceHandlers.getRewards);
-
-// 5.3 DELETE REWARD (Cafe Admin)
-app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, commerceHandlers.deleteReward);
+// Commerce/Rewards Routes (Modularized)
+app.use('/api', commerceRoutes);
 
 // 2.6 FUNCTIONS REMOVED (Moved to backend/utils/geo.js)
 
 // 6. GAME ROUTES (Modularized)
 app.use('/api', gameRoutes);
-
-
-
-// 7. SHOP: BUY ITEM - PROTECTED (Fixed IDOR & Race Condition)
-app.post('/api/shop/buy', authenticateToken, commerceHandlers.buyShopItem);
-
-// Get User Items (Coupons) - PROTECTED
-app.get('/api/users/:id/items', authenticateToken, requireOwnership('id'), commerceHandlers.getUserItems);
-
-// Use Coupon (Cafe Admin)
-app.post('/api/coupons/use', authenticateToken, requireCafeAdmin, commerceHandlers.useCoupon);
-
-// Duplicate Get Cafes (Removed)
-
-// Create Cafe Admin (Super Admin only) - PROTECTED
-app.post('/api/admin/cafe-admins', authenticateToken, requireAdmin, adminHandlers.createCafeAdmin);
-
-// 8. SHOP: GET INVENTORY - PROTECTED
-app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('userId'), commerceHandlers.getShopInventory);
 
 // NOTE: Duplicate admin endpoints removed. Using protected versions above.
 
@@ -761,9 +719,6 @@ app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('user
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // ... (keep existing API routes)
-
-// 10. ADMIN: DELETE USER - PROTECTED
-app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, adminHandlers.deleteUser);
 
 // Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
 

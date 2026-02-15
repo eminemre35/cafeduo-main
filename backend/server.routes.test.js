@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const SERVER_PATH = path.join(__dirname, 'server.js');
+const ADMIN_ROUTES_PATH = path.join(__dirname, 'routes', 'adminRoutes.js');
+const COMMERCE_ROUTES_PATH = path.join(__dirname, 'routes', 'commerceRoutes.js');
 const GAME_ROUTES_PATH = path.join(__dirname, 'routes', 'gameRoutes.js');
 
 const extractAppRouteMap = (source) => {
@@ -52,9 +54,13 @@ const mergeRouteMaps = (...maps) => {
 
 describe('backend/server.js route registry', () => {
   const serverSource = fs.readFileSync(SERVER_PATH, 'utf8');
+  const adminRouteSource = fs.readFileSync(ADMIN_ROUTES_PATH, 'utf8');
+  const commerceRouteSource = fs.readFileSync(COMMERCE_ROUTES_PATH, 'utf8');
   const gameRouteSource = fs.readFileSync(GAME_ROUTES_PATH, 'utf8');
   const routeMap = mergeRouteMaps(
     extractAppRouteMap(serverSource),
+    extractRouterRouteMap(adminRouteSource, '/api/admin'),
+    extractRouterRouteMap(commerceRouteSource, '/api'),
     extractRouterRouteMap(gameRouteSource, '/api')
   );
 
@@ -75,6 +81,11 @@ describe('backend/server.js route registry', () => {
       'POST /api/admin/cafes',
       'PUT /api/admin/cafes/:id',
       'DELETE /api/admin/cafes/:id',
+      'POST /api/rewards',
+      'GET /api/rewards',
+      'DELETE /api/rewards/:id',
+      'POST /api/shop/buy',
+      'GET /api/shop/inventory/:userId',
     ];
 
     for (const routeKey of expectedSingleRoutes) {
