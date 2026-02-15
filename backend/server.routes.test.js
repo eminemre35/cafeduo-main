@@ -5,6 +5,7 @@ const SERVER_PATH = path.join(__dirname, 'server.js');
 const ADMIN_ROUTES_PATH = path.join(__dirname, 'routes', 'adminRoutes.js');
 const COMMERCE_ROUTES_PATH = path.join(__dirname, 'routes', 'commerceRoutes.js');
 const PROFILE_ROUTES_PATH = path.join(__dirname, 'routes', 'profileRoutes.js');
+const SYSTEM_ROUTES_PATH = path.join(__dirname, 'routes', 'systemRoutes.js');
 const GAME_ROUTES_PATH = path.join(__dirname, 'routes', 'gameRoutes.js');
 
 const extractAppRouteMap = (source) => {
@@ -58,12 +59,14 @@ describe('backend/server.js route registry', () => {
   const adminRouteSource = fs.readFileSync(ADMIN_ROUTES_PATH, 'utf8');
   const commerceRouteSource = fs.readFileSync(COMMERCE_ROUTES_PATH, 'utf8');
   const profileRouteSource = fs.readFileSync(PROFILE_ROUTES_PATH, 'utf8');
+  const systemRouteSource = fs.readFileSync(SYSTEM_ROUTES_PATH, 'utf8');
   const gameRouteSource = fs.readFileSync(GAME_ROUTES_PATH, 'utf8');
   const routeMap = mergeRouteMaps(
     extractAppRouteMap(serverSource),
     extractRouterRouteMap(adminRouteSource, '/api/admin'),
     extractRouterRouteMap(commerceRouteSource, '/api'),
     extractRouterRouteMap(profileRouteSource, '/api'),
+    extractRouterRouteMap(systemRouteSource, ''),
     extractRouterRouteMap(gameRouteSource, '/api')
   );
 
@@ -92,6 +95,8 @@ describe('backend/server.js route registry', () => {
       'GET /api/leaderboard',
       'GET /api/achievements/:userId',
       'PUT /api/users/:id',
+      'GET /api/meta/version',
+      'GET /health',
     ];
 
     for (const routeKey of expectedSingleRoutes) {
