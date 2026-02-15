@@ -568,6 +568,19 @@ const commerceHandlers = createCommerceHandlers({
   },
 });
 
+const gameRepository = createGameRepository({
+  pool,
+  supportedGameTypes: SUPPORTED_GAME_TYPES,
+});
+
+const gameService = createGameService({
+  isDbConnected,
+  gameRepository,
+  getMemoryGames: () => MEMORY_GAMES,
+  getMemoryUsers: () => MEMORY_USERS,
+  supportedGameTypes: SUPPORTED_GAME_TYPES,
+});
+
 const gameHandlers = createGameHandlers({
   pool,
   isDbConnected,
@@ -580,24 +593,13 @@ const gameHandlers = createGameHandlers({
   normalizeParticipantName,
   sanitizeScoreSubmission,
   pickWinnerFromResults,
+  gameService,
   getMemoryGames: () => MEMORY_GAMES,
   setMemoryGames: (nextGames) => {
     MEMORY_GAMES = nextGames;
     memoryState.games = nextGames;
   },
   getMemoryUsers: () => MEMORY_USERS,
-});
-
-const gameRepository = createGameRepository({
-  pool,
-  supportedGameTypes: SUPPORTED_GAME_TYPES,
-});
-
-const gameService = createGameService({
-  isDbConnected,
-  gameRepository,
-  getMemoryGames: () => MEMORY_GAMES,
-  supportedGameTypes: SUPPORTED_GAME_TYPES,
 });
 
 const gameRoutes = createGameRoutes({

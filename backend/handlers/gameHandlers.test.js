@@ -86,6 +86,51 @@ describe('gameHandlers (memory mode)', () => {
         if (!results?.[a] || !results?.[b]) return null;
         return scoreA >= scoreB ? a : b;
       },
+      gameService: {
+        listWaitingGames: async ({
+          adminActor,
+          hasCheckIn,
+          actorCafeId,
+          actorTableCode,
+          requestedTableCode,
+          scopeAllRequested,
+        }) => {
+          if (!adminActor && !hasCheckIn) return [];
+          const effectiveTableCode = adminActor
+            ? requestedTableCode
+            : scopeAllRequested
+              ? null
+              : actorTableCode;
+
+          return memoryGames.filter((game) => {
+            if (String(game.status || '').toLowerCase() !== 'waiting') return false;
+            if (
+              ![
+                'Refleks Avı',
+                'Ritim Kopyala',
+                'Çift Tek Sprint',
+                'Tank Düellosu',
+                'Retro Satranç',
+                'Bilgi Yarışı',
+              ].includes(String(game.gameType || '').trim())
+            ) {
+              return false;
+            }
+            if (!adminActor && scopeAllRequested) {
+              const hostName = String(game.hostName || '').trim().toLowerCase();
+              const hostUser = memoryUsers.find(
+                (user) => String(user?.username || '').trim().toLowerCase() === hostName
+              );
+              const hostCafeId = Number(hostUser?.cafe_id ?? hostUser?.cafeId ?? 0);
+              if (hostCafeId !== actorCafeId) return false;
+            }
+            if (effectiveTableCode && normalizeTableCode(game.table) !== effectiveTableCode) {
+              return false;
+            }
+            return true;
+          });
+        },
+      },
       getMemoryGames: () => memoryGames,
       setMemoryGames: (nextGames) => {
         memoryGames = nextGames;
