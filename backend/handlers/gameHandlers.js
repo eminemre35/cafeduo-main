@@ -18,6 +18,7 @@ const createGameHandlers = ({
   normalizeParticipantName,
   sanitizeScoreSubmission,
   pickWinnerFromResults,
+  gameService,
   getMemoryGames,
   setMemoryGames,
   getMemoryUsers,
@@ -517,103 +518,43 @@ const createGameHandlers = ({
     const hasCheckIn =
       actorCafeId > 0 &&
       Boolean(actorTableCode);
-    const effectiveTableCode = adminActor
-      ? requestedTableCode
-      : scopeAllRequested
-        ? null
-        : actorTableCode;
 
-    if (!adminActor && !hasCheckIn) {
-      return res.json([]);
+    if (gameService && typeof gameService.listWaitingGames === 'function') {
+      const games = await gameService.listWaitingGames({
+        adminActor,
+        hasCheckIn,
+        actorCafeId,
+        actorTableCode,
+        requestedTableCode,
+        scopeAllRequested,
+      });
+      return res.json(games);
     }
 
+    // Fallback: service enjekte edilmediyse mevcut davranışı koru.
+    if (!adminActor && !hasCheckIn) return res.json([]);
     if (await isDbConnected()) {
-      const result = !adminActor && scopeAllRequested
-        ? await pool.query(
-            `
-            SELECT
-              g.id,
-              g.host_name as "hostName",
-              g.game_type as "gameType",
-              g.points,
-              g.table_code as "table",
-              g.status,
-              g.guest_name as "guestName",
-              g.created_at as "createdAt"
-            FROM games g
-            INNER JOIN users u ON LOWER(u.username) = LOWER(g.host_name)
-            WHERE g.status = 'waiting'
-              AND g.game_type = ANY($1::text[])
-              AND u.cafe_id = $2
-            ORDER BY g.created_at DESC
-          `,
-            [[...supportedGameTypes], actorCafeId]
-          )
-        : effectiveTableCode
-          ? await pool.query(
-            `
-            SELECT 
-              id, 
-              host_name as "hostName", 
-              game_type as "gameType", 
-              points, 
-              table_code as "table", 
-              status, 
-              guest_name as "guestName", 
-              created_at as "createdAt" 
-            FROM games 
-            WHERE status = 'waiting'
-              AND game_type = ANY($1::text[])
-              AND table_code = $2
-            ORDER BY created_at DESC
-          `,
-            [[...supportedGameTypes], effectiveTableCode]
-          )
-          : await pool.query(
-            `
-            SELECT 
-              id, 
-              host_name as "hostName", 
-              game_type as "gameType", 
-              points, 
-              table_code as "table", 
-              status, 
-              guest_name as "guestName", 
-              created_at as "createdAt" 
-            FROM games 
-            WHERE status = 'waiting'
-              AND game_type = ANY($1::text[])
-            ORDER BY created_at DESC
-          `,
-            [[...supportedGameTypes]]
-          );
+      const result = await pool.query(
+        `
+          SELECT
+            id,
+            host_name as "hostName",
+            game_type as "gameType",
+            points,
+            table_code as "table",
+            status,
+            guest_name as "guestName",
+            created_at as "createdAt"
+          FROM games
+          WHERE status = 'waiting'
+            AND game_type = ANY($1::text[])
+          ORDER BY created_at DESC
+        `,
+        [[...supportedGameTypes]]
+      );
       return res.json(result.rows);
     }
-
-    const memoryUsers = Array.isArray(getMemoryUsers?.()) ? getMemoryUsers() : [];
-    const filtered = getMemoryGames().filter((game) => {
-      if (String(game.status || '').toLowerCase() !== 'waiting') {
-        return false;
-      }
-      if (!supportedGameTypes.has(String(game.gameType || '').trim())) {
-        return false;
-      }
-      if (!adminActor && scopeAllRequested) {
-        const hostName = String(game.hostName || '').trim().toLowerCase();
-        const hostUser = memoryUsers.find(
-          (user) => String(user?.username || '').trim().toLowerCase() === hostName
-        );
-        const hostCafeId = Number(hostUser?.cafe_id ?? hostUser?.cafeId ?? 0);
-        if (hostCafeId !== actorCafeId) {
-          return false;
-        }
-      }
-      if (effectiveTableCode && normalizeTableCode(game.table) !== effectiveTableCode) {
-        return false;
-      }
-      return true;
-    });
-    return res.json(filtered);
+    return res.json(getMemoryGames().filter((game) => String(game.status || '').toLowerCase() === 'waiting'));
   };
 
   const createGame = async (req, res) => {

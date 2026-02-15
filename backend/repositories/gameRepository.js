@@ -1,4 +1,19 @@
 const createGameRepository = ({ pool, supportedGameTypes }) => {
+  const WAITING_GAMES_SELECT = `
+    SELECT
+      id,
+      host_name as "hostName",
+      game_type as "gameType",
+      points,
+      table_code as "table",
+      status,
+      guest_name as "guestName",
+      created_at as "createdAt"
+    FROM games
+    WHERE status = 'waiting'
+      AND game_type = ANY($1::text[])
+  `;
+
   const findLatestActiveGameByUsername = async (username) => {
     const result = await pool.query(
       `
@@ -27,12 +42,57 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
     return result.rows[0] || null;
   };
 
+  const listWaitingGamesByCafe = async ({ cafeId }) => {
+    const result = await pool.query(
+      `
+        ${WAITING_GAMES_SELECT}
+        AND EXISTS (
+          SELECT 1
+          FROM users u
+          WHERE LOWER(u.username) = LOWER(games.host_name)
+            AND u.cafe_id = $2
+        )
+        ORDER BY created_at DESC
+      `,
+      [[...supportedGameTypes], cafeId]
+    );
+
+    return result.rows;
+  };
+
+  const listWaitingGamesByTable = async ({ tableCode }) => {
+    const result = await pool.query(
+      `
+        ${WAITING_GAMES_SELECT}
+        AND table_code = $2
+        ORDER BY created_at DESC
+      `,
+      [[...supportedGameTypes], tableCode]
+    );
+
+    return result.rows;
+  };
+
+  const listWaitingGames = async () => {
+    const result = await pool.query(
+      `
+        ${WAITING_GAMES_SELECT}
+        ORDER BY created_at DESC
+      `,
+      [[...supportedGameTypes]]
+    );
+
+    return result.rows;
+  };
+
   return {
     findLatestActiveGameByUsername,
+    listWaitingGamesByCafe,
+    listWaitingGamesByTable,
+    listWaitingGames,
   };
 };
 
 module.exports = {
   createGameRepository,
 };
-
