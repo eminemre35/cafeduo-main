@@ -46,6 +46,7 @@ const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
 const { createCommerceRoutes } = require('./routes/commerceRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
+const { createSystemRoutes } = require('./routes/systemRoutes');
 const { createGameRoutes } = require('./routes/gameRoutes');
 const memoryState = require('./store/memoryState');
 const {
@@ -64,6 +65,7 @@ const { createGameHandlers } = require('./handlers/gameHandlers');
 const { createProfileHandlers } = require('./handlers/profileHandlers');
 const { createGameRepository } = require('./repositories/gameRepository');
 const { createGameService } = require('./services/gameService');
+const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 
 // Simple Logger (can be replaced with Winston in production)
@@ -640,6 +642,12 @@ const profileRoutes = createProfileRoutes({
   profileHandlers,
 });
 
+const systemRoutes = createSystemRoutes({
+  appVersion: APP_VERSION,
+  appBuildTime: APP_BUILD_TIME,
+  isDbConnected,
+});
+
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
 
@@ -668,37 +676,16 @@ const promoteBootstrapAdmins = async () => {
   }
 };
 
-// --- CLEANUP JOB ---
-// Her 5 dakikada bir çalışır, 30 dakikadan eski 'waiting' oyunları siler
-setInterval(async () => {
-  console.log('🧹 Running cleanup job for stale games...');
-  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        "DELETE FROM games WHERE status = 'waiting' AND created_at < $1 RETURNING id",
-        [thirtyMinutesAgo]
-      );
-      if (result.rowCount > 0) {
-        console.log(`🗑️ Deleted ${result.rowCount} stale games from DB.`);
-      }
-    } catch (err) {
-      console.error('Cleanup Error:', err);
-    }
-  } else {
-    const initialCount = MEMORY_GAMES.length;
-    MEMORY_GAMES = MEMORY_GAMES.filter(g => {
-      const createdAt = new Date(g.createdAt || Date.now()); // Fallback if createdAt missing in memory
-      return g.status !== 'waiting' || createdAt > new Date(Date.now() - 30 * 60 * 1000);
-    });
-    memoryState.games = MEMORY_GAMES;
-    const deletedCount = initialCount - MEMORY_GAMES.length;
-    if (deletedCount > 0) {
-      console.log(`🗑️ Deleted ${deletedCount} stale games from Memory.`);
-    }
-  }
-}, 5 * 60 * 1000); // 5 minutes
+registerGameCleanupJobs({
+  pool,
+  isDbConnected,
+  getMemoryGames: () => MEMORY_GAMES,
+  setMemoryGames: (nextGames) => {
+    MEMORY_GAMES = nextGames;
+    memoryState.games = nextGames;
+  },
+  logger,
+});
 
 // --- API ROUTES ---
 
@@ -728,6 +715,9 @@ app.use('/api', gameRoutes);
 // Profile/Leaderboard Routes (Modularized)
 app.use('/api', profileRoutes);
 
+// System Routes (health/meta/root)
+app.use('/', systemRoutes);
+
 // NOTE: Duplicate admin endpoints removed. Using protected versions above.
 
 // CHECK-IN (Moved to cafeController)
@@ -744,64 +734,6 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // ... (keep existing API routes)
 
 // Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
-
-// --- DÜZELTİLEN KISIM BAŞLANGICI ---
-
-// Eskiden burada dist/index.html çağıran kod vardı, onu kaldırdık.
-// Şimdi Render'a girenler hata almasın diye basit bir mesaj gösteriyoruz:
-app.get('/', (req, res) => {
-  res.send('✅ CafeDuo API Sunucusu (Render) Aktif!');
-});
-
-// --- DÜZELTİLEN KISIM BİTİŞİ ---
-
-app.get('/api/meta/version', (req, res) => {
-  res.json({
-    commit: APP_VERSION || 'local',
-    buildTime: APP_BUILD_TIME || null,
-    nodeEnv: process.env.NODE_ENV || 'development',
-  });
-});
-
-// HEALTH CHECK ENDPOINT (for Docker/load balancers)
-app.get('/health', async (req, res) => {
-  const healthcheck = {
-    uptime: process.uptime(),
-    message: 'OK',
-    timestamp: Date.now(),
-    database: false
-  };
-
-  try {
-    healthcheck.database = await isDbConnected();
-    if (healthcheck.database) {
-      res.status(200).json(healthcheck);
-    } else {
-      healthcheck.message = 'Database disconnected - Running in memory mode';
-      res.status(200).json(healthcheck);
-    }
-  } catch (err) {
-    healthcheck.message = err.message;
-    res.status(503).json(healthcheck);
-  }
-});
-
-// 21. AUTO-CLEANUP STUCK GAMES
-setInterval(async () => {
-  if (await isDbConnected()) {
-    try {
-      // Mark games as 'finished' if created more than 2 hours ago and still 'waiting' or 'active'
-      await pool.query(`
-        UPDATE games 
-        SET status = 'finished' 
-        WHERE status IN ('waiting', 'active') 
-        AND created_at < NOW() - INTERVAL '2 hours'
-      `);
-    } catch (err) {
-      console.error("Auto-cleanup failed:", err);
-    }
-  }
-}, 5 * 60 * 1000); // Run every 5 minutes
 
 // NOTE: Duplicate endpoints removed. Protected versions are defined above.
 
