@@ -585,32 +585,15 @@ const createGameHandlers = ({
       try {
         await client.query('BEGIN');
 
-        const existingGame = await client.query(
-          `
-            SELECT
-              id,
-              host_name as "hostName",
-              game_type as "gameType",
-              points,
-              table_code as "table",
-              status,
-              guest_name as "guestName",
-              created_at as "createdAt"
-            FROM games
-            WHERE (host_name = $1 OR guest_name = $1)
-              AND status IN ('waiting', 'active')
-            ORDER BY created_at DESC
-            LIMIT 1
-            FOR UPDATE
-          `,
-          [hostName]
-        );
+        const existingGame = gameService?.findParticipantPendingOrActiveGameForUpdate
+          ? await gameService.findParticipantPendingOrActiveGameForUpdate(client, hostName)
+          : (() => null)();
 
-        if (existingGame.rows.length > 0) {
+        if (existingGame) {
           await client.query('ROLLBACK');
           return res.status(409).json({
             error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
-            game: existingGame.rows[0],
+            game: existingGame,
           });
         }
 
@@ -618,26 +601,20 @@ const createGameHandlers = ({
           ? { chess: createInitialChessState(req.body?.chessClock) }
           : {};
 
-        const result = await client.query(
-          `
-            INSERT INTO games (host_name, game_type, points, table_code, status, game_state)
-            VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb)
-            RETURNING
-              id,
-              host_name as "hostName",
-              game_type as "gameType",
+        const createdGame = gameService?.insertWaitingGame
+          ? await gameService.insertWaitingGame(client, {
+              hostName,
+              gameType,
               points,
-              table_code as "table",
-              status,
-              guest_name as "guestName",
-              game_state as "gameState",
-              created_at as "createdAt"
-          `,
-          [hostName, gameType, points, table, JSON.stringify(initialGameState)]
-        );
+              table,
+              gameState: initialGameState,
+            })
+          : null;
 
         await client.query('COMMIT');
-        const createdGame = result.rows[0];
+        if (!createdGame) {
+          throw new Error('Created game could not be returned');
+        }
         emitLobbyUpdate({
           action: 'game_created',
           gameId: createdGame.id,
@@ -708,31 +685,14 @@ const createGameHandlers = ({
       try {
         await client.query('BEGIN');
 
-        const gameResult = await client.query(
-          `
-            SELECT
-              id,
-              host_name,
-              game_type,
-              points,
-              table_code,
-              status,
-              guest_name,
-              game_state,
-              created_at
-            FROM games
-            WHERE id = $1
-            FOR UPDATE
-          `,
-          [id]
-        );
+        const game = gameService?.findGameByIdForUpdate
+          ? await gameService.findGameByIdForUpdate(client, id)
+          : null;
 
-        if (gameResult.rows.length === 0) {
+        if (!game) {
           await client.query('ROLLBACK');
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
-
-        const game = gameResult.rows[0];
         if (String(game.host_name || '').toLowerCase() === guestName.toLowerCase()) {
           await client.query('ROLLBACK');
           return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
@@ -795,19 +755,11 @@ const createGameHandlers = ({
           return res.status(409).json(mapTransitionError(joinTransition));
         }
 
-        const playerBusy = await client.query(
-          `
-            SELECT id
-            FROM games
-            WHERE id <> $1
-              AND status = 'active'
-              AND (host_name = $2 OR guest_name = $2)
-            LIMIT 1
-          `,
-          [id, guestName]
-        );
+        const playerBusy = gameService?.findActivePlayerConflict
+          ? await gameService.findActivePlayerConflict(client, { gameId: id, username: guestName })
+          : null;
 
-        if (playerBusy.rows.length > 0) {
+        if (playerBusy) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
         }
@@ -822,35 +774,20 @@ const createGameHandlers = ({
           };
         })();
 
-        const updatedResult = await client.query(
-          `
-            UPDATE games
-            SET status = 'active',
-                guest_name = $1,
-                game_state = $3::jsonb
-            WHERE id = $2
-              AND status = 'waiting'
-            RETURNING
-              id,
-              host_name as "hostName",
-              game_type as "gameType",
-              points,
-              table_code as "table",
-              status,
-              guest_name as "guestName",
-              game_state as "gameState",
-              created_at as "createdAt"
-          `,
-          [guestName, id, JSON.stringify(nextGameState)]
-        );
+        const joinedGame = gameService?.activateGameWithGuest
+          ? await gameService.activateGameWithGuest(client, {
+              gameId: id,
+              guestName,
+              gameState: nextGameState,
+            })
+          : null;
 
-        if (updatedResult.rows.length === 0) {
+        if (!joinedGame) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error: 'Bu oyun artık katılıma uygun değil.' });
         }
 
         await client.query('COMMIT');
-        const joinedGame = updatedResult.rows[0];
         emitRealtimeUpdate(joinedGame.id, {
           type: 'game_joined',
           gameId: joinedGame.id,
@@ -1881,22 +1818,14 @@ const createGameHandlers = ({
       try {
         await client.query('BEGIN');
 
-        const gameResult = await client.query(
-          `
-            SELECT id, host_name, guest_name, game_type, points, status, winner, game_state
-            FROM games
-            WHERE id = $1
-            FOR UPDATE
-          `,
-          [id]
-        );
+        const game = gameService?.findGameByIdForUpdate
+          ? await gameService.findGameByIdForUpdate(client, id)
+          : null;
 
-        if (gameResult.rows.length === 0) {
+        if (!game) {
           await client.query('ROLLBACK');
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
-
-        const game = gameResult.rows[0];
         const actorParticipant = normalizeParticipantName(actorName, game);
         const adminActor = isAdminActor(req.user);
         if (!actorParticipant && !adminActor) {
@@ -1964,14 +1893,12 @@ const createGameHandlers = ({
                 stakeTransferred: settlement.transferredPoints,
                 settledAt: new Date().toISOString(),
               };
-              await client.query(
-                `
-                  UPDATE games
-                  SET game_state = $1::jsonb
-                  WHERE id = $2
-                `,
-                [JSON.stringify(patchedState), id]
-              );
+              if (gameService?.updateGameStateInDb) {
+                await gameService.updateGameStateInDb(client, {
+                  gameId: id,
+                  gameState: patchedState,
+                });
+              }
               await client.query('COMMIT');
               return res.json({
                 success: true,
@@ -1998,14 +1925,12 @@ const createGameHandlers = ({
                 stakeTransferred: settlement.transferredPoints,
                 settledAt: new Date().toISOString(),
               };
-              await client.query(
-                `
-                  UPDATE games
-                  SET game_state = $1::jsonb
-                  WHERE id = $2
-                `,
-                [JSON.stringify(patchedState), id]
-              );
+              if (gameService?.updateGameStateInDb) {
+                await gameService.updateGameStateInDb(client, {
+                  gameId: id,
+                  gameState: patchedState,
+                });
+              }
               await client.query('COMMIT');
               return res.json({
                 success: true,
@@ -2048,16 +1973,13 @@ const createGameHandlers = ({
         nextGameState.stakeTransferred = settlement.transferredPoints;
         nextGameState.settledAt = new Date().toISOString();
 
-        await client.query(
-          `
-            UPDATE games
-            SET status = 'finished',
-                winner = $1::text,
-                game_state = $2::jsonb
-            WHERE id = $3
-          `,
-          [finalWinner || null, JSON.stringify(nextGameState), id]
-        );
+        if (gameService?.finishGameInDb) {
+          await gameService.finishGameInDb(client, {
+            gameId: id,
+            winner: finalWinner || null,
+            gameState: nextGameState,
+          });
+        }
 
         await client.query('COMMIT');
         emitRealtimeUpdate(id, {
