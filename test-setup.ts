@@ -10,19 +10,21 @@ Object.defineProperty(global, 'TextDecoder', {
 });
 
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}
 
 // Mock IntersectionObserver
 class MockIntersectionObserver {
@@ -31,10 +33,12 @@ class MockIntersectionObserver {
   unobserve = jest.fn();
 }
 
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  value: MockIntersectionObserver,
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'IntersectionObserver', {
+    writable: true,
+    value: MockIntersectionObserver,
+  });
+}
 
 // Mock localStorage
 const localStorageMock = {
@@ -43,20 +47,26 @@ const localStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock,
+  });
+}
 
 // Mock browser dialogs used by UI actions
-Object.defineProperty(window, 'alert', {
-  writable: true,
-  value: jest.fn(),
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'alert', {
+    writable: true,
+    value: jest.fn(),
+  });
+}
 
-Object.defineProperty(window, 'confirm', {
-  writable: true,
-  value: jest.fn(() => true),
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'confirm', {
+    writable: true,
+    value: jest.fn(() => true),
+  });
+}
 
 // Mock import.meta.env for Vite compatibility
 Object.defineProperty(global, 'import', {

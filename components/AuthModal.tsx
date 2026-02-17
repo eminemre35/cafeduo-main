@@ -255,7 +255,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const inputErrorClass =
     'border-red-500 focus:border-red-500 focus:shadow-[0_0_20px_rgba(255,86,114,0.2)]';
   const iconBaseClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-cyan-300';
+    'absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-cyan-300';
   const googleClientId =
     typeof window !== 'undefined'
       ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
@@ -507,8 +507,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span className="h-px flex-1 bg-slate-700/80" />
                 </div>
                 <div className="flex justify-center">
-                  <div className="google-login-shell w-full max-w-[320px] overflow-hidden rounded-full">
+                  <div className="google-login-shell w-full max-w-[320px] overflow-hidden rounded-full" data-testid="auth-google-login-shell">
                     <GoogleLogin
+                      key={googleClientId}
                       onSuccess={handleGoogleLogin}
                       onError={() => {
                         setError('Google ile giriş işlemi başlatılamadı.');
@@ -517,7 +518,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       theme="filled_black"
                       shape="pill"
                       text="continue_with"
-                      width="320"
+                      width="300"
                     />
                   </div>
                 </div>
