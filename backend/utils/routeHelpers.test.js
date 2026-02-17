@@ -1,4 +1,4 @@
-const { buildApiErrorPayload, sendApiError } = require('./routeHelpers');
+const { buildApiErrorPayload, sendApiError, sendApiProblem } = require('./routeHelpers');
 
 const createMockRes = () => {
   const res = {};
@@ -53,5 +53,19 @@ describe('routeHelpers', () => {
     expect(res.payload.message).toBe('İşlem başarısız.');
     expect(res.payload.error).toBe('İşlem başarısız.');
     expect(res.payload.requestId).toBe('req-123');
+  });
+
+  it('sendApiProblem writes unified payload with explicit status/code', () => {
+    const res = createMockRes();
+    sendApiProblem(res, {
+      status: 404,
+      code: 'USER_NOT_FOUND',
+      message: 'Kullanıcı bulunamadı.',
+    });
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.payload.code).toBe('USER_NOT_FOUND');
+    expect(res.payload.message).toBe('Kullanıcı bulunamadı.');
+    expect(res.payload.error).toBe('Kullanıcı bulunamadı.');
   });
 });

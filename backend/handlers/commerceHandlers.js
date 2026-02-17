@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { executeDataMode, sendApiError } = require('../utils/routeHelpers');
+const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
 const BASELINE_REWARDS = [
@@ -39,7 +39,11 @@ const createCommerceHandlers = ({
     const { title, cost, description, icon, cafeId } = req.body || {};
 
     if (!title || !cost) {
-      return res.status(400).json({ error: 'Başlık ve maliyet zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Başlık ve maliyet zorunludur.',
+      });
     }
 
     return executeDataMode(isDbConnected, {
@@ -56,7 +60,12 @@ const createCommerceHandlers = ({
           return sendApiError(res, logger, 'Reward creation error', err, 'Ödül oluşturulamadı.');
         }
       },
-      memory: async () => res.status(501).json({ error: 'Demo modda ödül oluşturulamaz.' }),
+      memory: async () =>
+        sendApiProblem(res, {
+          status: 501,
+          code: 'NOT_IMPLEMENTED',
+          message: 'Demo modda ödül oluşturulamaz.',
+        }),
     });
   };
 
@@ -104,7 +113,11 @@ const createCommerceHandlers = ({
           );
 
           if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Ödül bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'REWARD_NOT_FOUND',
+              message: 'Ödül bulunamadı.',
+            });
           }
 
           return res.json({ success: true });
@@ -112,7 +125,12 @@ const createCommerceHandlers = ({
           return sendApiError(res, logger, 'Reward deletion error', err, 'Ödül silinemedi.');
         }
       },
-      memory: async () => res.status(501).json({ error: 'Demo modda ödül silinemez.' }),
+      memory: async () =>
+        sendApiProblem(res, {
+          status: 501,
+          code: 'NOT_IMPLEMENTED',
+          message: 'Demo modda ödül silinemez.',
+        }),
     });
   };
 
@@ -122,7 +140,11 @@ const createCommerceHandlers = ({
     const requestedRewardId = rewardId || item?.id;
 
     if (!requestedRewardId) {
-      return res.status(400).json({ error: 'rewardId is required' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'rewardId is required',
+      });
     }
 
     if (!(await isDbConnected())) {
@@ -130,7 +152,11 @@ const createCommerceHandlers = ({
         const users = getMemoryUsers();
         const userIndex = users.findIndex((entry) => Number(entry.id) === Number(userId));
         if (userIndex === -1) {
-          return res.status(404).json({ error: 'User not found' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'USER_NOT_FOUND',
+            message: 'User not found',
+          });
         }
 
         const rewards = Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
@@ -138,17 +164,29 @@ const createCommerceHandlers = ({
           : BASELINE_REWARDS;
         const reward = rewards.find((entry) => Number(entry.id) === Number(requestedRewardId));
         if (!reward) {
-          return res.status(404).json({ error: 'Reward not found' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'REWARD_NOT_FOUND',
+            message: 'Reward not found',
+          });
         }
 
         const rewardCost = Number(reward.cost);
         if (!Number.isFinite(rewardCost) || rewardCost < 0) {
-          return res.status(500).json({ error: 'Ödül maliyeti geçersiz.' });
+          return sendApiProblem(res, {
+            status: 500,
+            code: 'REWARD_COST_INVALID',
+            message: 'Ödül maliyeti geçersiz.',
+          });
         }
 
         const currentPoints = Number(users[userIndex].points || 0);
         if (currentPoints < rewardCost) {
-          return res.status(400).json({ error: 'Yetersiz puan.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'INSUFFICIENT_POINTS',
+            message: 'Yetersiz puan.',
+          });
         }
 
         const newPoints = currentPoints - rewardCost;
@@ -184,7 +222,11 @@ const createCommerceHandlers = ({
       );
       if (userRes.rows.length === 0) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'User not found' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+        });
       }
 
       const rewardRes = await client.query(
@@ -193,14 +235,22 @@ const createCommerceHandlers = ({
       );
       if (rewardRes.rows.length === 0) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Reward not found' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'REWARD_NOT_FOUND',
+          message: 'Reward not found',
+        });
       }
 
       const reward = rewardRes.rows[0];
       const currentPoints = userRes.rows[0].points;
       if (currentPoints < reward.cost) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Yetersiz puan.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INSUFFICIENT_POINTS',
+          message: 'Yetersiz puan.',
+        });
       }
 
       const newPoints = currentPoints - reward.cost;
@@ -277,7 +327,11 @@ const createCommerceHandlers = ({
           );
 
           if (result.rows.length === 0) {
-            return res.status(400).json({ error: 'Kupon geçersiz, süresi dolmuş veya zaten kullanılmış.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'COUPON_INVALID',
+              message: 'Kupon geçersiz, süresi dolmuş veya zaten kullanılmış.',
+            });
           }
 
           return res.json({ success: true, item: result.rows[0] });
@@ -294,7 +348,11 @@ const createCommerceHandlers = ({
         });
 
         if (index === -1) {
-          return res.status(400).json({ error: 'Kupon bulunamadı, süresi dolmuş veya zaten kullanılmış.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'COUPON_INVALID',
+            message: 'Kupon bulunamadı, süresi dolmuş veya zaten kullanılmış.',
+          });
         }
 
         items[index].is_used = true;

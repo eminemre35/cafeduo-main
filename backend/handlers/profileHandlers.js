@@ -1,4 +1,4 @@
-const { executeDataMode, sendApiError } = require('../utils/routeHelpers');
+const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
 const createProfileHandlers = ({
   pool,
@@ -114,7 +114,11 @@ const createProfileHandlers = ({
     const safeDepartment = String(req.body?.department || '').slice(0, 120);
 
     if (![nextPoints, nextWins, nextGamesPlayed].every((value) => Number.isFinite(value) && value >= 0)) {
-      return res.status(400).json({ error: 'Puan, galibiyet ve oyun sayısı geçerli pozitif sayılar olmalıdır.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Puan, galibiyet ve oyun sayısı geçerli pozitif sayılar olmalıdır.',
+      });
     }
 
     return executeDataMode(isDbConnected, {
@@ -129,7 +133,11 @@ const createProfileHandlers = ({
           );
 
           if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'USER_NOT_FOUND',
+              message: 'User not found',
+            });
           }
 
           const user = result.rows[0];
@@ -153,7 +161,11 @@ const createProfileHandlers = ({
         const users = getMemoryUsers();
         const idx = users.findIndex((user) => Number(user.id) === Number(id));
         if (idx === -1) {
-          return res.status(404).json({ error: 'User not found' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'USER_NOT_FOUND',
+            message: 'User not found',
+          });
         }
 
         const nextUsers = [...users];
