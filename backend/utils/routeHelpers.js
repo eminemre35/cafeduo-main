@@ -16,6 +16,11 @@ const buildApiErrorPayload = (res, { code, message, details = null, status = 500
   status: Number(status) || 500,
 });
 
+const sendApiProblem = (res, { status = 400, code = 'BAD_REQUEST', message, details = null }) => {
+  const payload = buildApiErrorPayload(res, { code, message, details, status });
+  return res.status(status).json(payload);
+};
+
 const sendApiError = (res, logger, context, err, message, status = 500) => {
   if (logger && typeof logger.error === 'function') {
     logger.error(`${context}:`, err);
@@ -33,5 +38,6 @@ const sendApiError = (res, logger, context, err, message, status = 500) => {
 module.exports = {
   executeDataMode,
   buildApiErrorPayload,
+  sendApiProblem,
   sendApiError,
 };

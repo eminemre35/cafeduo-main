@@ -3,7 +3,7 @@ const {
   normalizeRoleUpdatePayload,
   normalizePointsUpdatePayload,
 } = require('../utils/adminValidation');
-const { executeDataMode, sendApiError } = require('../utils/routeHelpers');
+const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
 const createAdminHandlers = ({
   pool,
@@ -40,7 +40,11 @@ const createAdminHandlers = ({
   const createUser = async (req, res) => {
     const validation = normalizeAdminCreateUserPayload(req.body);
     if (!validation.ok) {
-      return res.status(400).json({ error: validation.error });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: validation.error,
+      });
     }
 
     const payload = validation.value;
@@ -50,7 +54,11 @@ const createAdminHandlers = ({
         try {
           const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [payload.email]);
           if (existingUser.rows.length > 0) {
-            return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'EMAIL_ALREADY_REGISTERED',
+              message: 'Bu e-posta zaten kayıtlı.',
+            });
           }
 
           const hashedPassword = await bcrypt.hash(payload.password, 10);
@@ -125,7 +133,11 @@ const createAdminHandlers = ({
     const { id } = req.params;
     const validation = normalizeRoleUpdatePayload(req.body);
     if (!validation.ok) {
-      return res.status(400).json({ error: validation.error });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: validation.error,
+      });
     }
     const payload = validation.value;
 
@@ -147,7 +159,11 @@ const createAdminHandlers = ({
           }
 
           if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'USER_NOT_FOUND',
+              message: 'Kullanıcı bulunamadı.',
+            });
           }
 
           return res.json({ success: true, user: result.rows[0] });
@@ -159,7 +175,11 @@ const createAdminHandlers = ({
         const users = getMemoryUsers();
         const userIndex = users.findIndex((user) => Number(user.id) === Number(id));
         if (userIndex === -1) {
-          return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'USER_NOT_FOUND',
+            message: 'Kullanıcı bulunamadı.',
+          });
         }
 
         const nextUsers = [...users];
@@ -179,7 +199,11 @@ const createAdminHandlers = ({
     const { id } = req.params;
     const validation = normalizePointsUpdatePayload(req.body);
     if (!validation.ok) {
-      return res.status(400).json({ error: validation.error });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: validation.error,
+      });
     }
     const points = validation.value;
 
@@ -197,7 +221,11 @@ const createAdminHandlers = ({
           );
 
           if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'USER_NOT_FOUND',
+              message: 'Kullanıcı bulunamadı.',
+            });
           }
 
           return res.json(result.rows[0]);
@@ -209,7 +237,11 @@ const createAdminHandlers = ({
         const users = getMemoryUsers();
         const userIndex = users.findIndex((user) => Number(user.id) === Number(id));
         if (userIndex === -1) {
-          return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'USER_NOT_FOUND',
+            message: 'Kullanıcı bulunamadı.',
+          });
         }
 
         const nextUsers = [...users];
@@ -224,7 +256,11 @@ const createAdminHandlers = ({
     const { id } = req.params;
     const validation = normalizeCafeUpdatePayload(req.body);
     if (!validation.ok) {
-      return res.status(400).json({ error: validation.error });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: validation.error,
+      });
     }
     const updatesPayload = validation.value;
 
@@ -279,7 +315,11 @@ const createAdminHandlers = ({
           const result = await pool.query(query, values);
 
           if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Kafe bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'CAFE_NOT_FOUND',
+              message: 'Kafe bulunamadı.',
+            });
           }
 
           return res.json({ success: true, cafe: result.rows[0] });
@@ -287,14 +327,23 @@ const createAdminHandlers = ({
           return sendApiError(res, logger, 'Cafe update error', err, 'Kafe güncellenemedi.');
         }
       },
-      memory: async () => res.status(501).json({ error: 'Demo modda kafe güncellenemez.' }),
+      memory: async () =>
+        sendApiProblem(res, {
+          status: 501,
+          code: 'NOT_IMPLEMENTED',
+          message: 'Demo modda kafe güncellenemez.',
+        }),
     });
   };
 
   const createCafe = async (req, res) => {
     const validation = normalizeCafeCreatePayload(req.body);
     if (!validation.ok) {
-      return res.status(400).json({ error: validation.error });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: validation.error,
+      });
     }
     const cafe = validation.value;
 
@@ -335,7 +384,11 @@ const createAdminHandlers = ({
           return res.status(201).json({ success: true, cafe: result.rows[0] });
         } catch (err) {
           if (err && err.code === '23505') {
-            return res.status(409).json({ error: 'Bu isimde bir kafe zaten mevcut.' });
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'CAFE_ALREADY_EXISTS',
+              message: 'Bu isimde bir kafe zaten mevcut.',
+            });
           }
           return sendApiError(res, logger, 'Cafe creation error', err, 'Kafe oluşturulamadı.');
         }
@@ -364,7 +417,11 @@ const createAdminHandlers = ({
   const createCafeAdmin = async (req, res) => {
     const { username, email, password, cafeId } = req.body || {};
     if (!username || !email || !password || !cafeId) {
-      return res.status(400).json({ error: 'Kullanıcı adı, e-posta, şifre ve kafe seçimi zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Kullanıcı adı, e-posta, şifre ve kafe seçimi zorunludur.',
+      });
     }
 
     return executeDataMode(isDbConnected, {
@@ -382,14 +439,23 @@ const createAdminHandlers = ({
           return sendApiError(res, logger, 'Admin create cafe admin error', err, 'Database error');
         }
       },
-      memory: async () => res.status(501).json({ error: 'Not implemented in memory mode' }),
+      memory: async () =>
+        sendApiProblem(res, {
+          status: 501,
+          code: 'NOT_IMPLEMENTED',
+          message: 'Not implemented in memory mode',
+        }),
     });
   };
 
   const deleteCafe = async (req, res) => {
     const cafeId = Number(req.params?.id);
     if (!Number.isInteger(cafeId) || cafeId <= 0) {
-      return res.status(400).json({ error: 'Geçersiz kafe kimliği.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Geçersiz kafe kimliği.',
+      });
     }
 
     return executeDataMode(isDbConnected, {
@@ -405,14 +471,22 @@ const createAdminHandlers = ({
           );
           if (cafeResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Kafe bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'CAFE_NOT_FOUND',
+              message: 'Kafe bulunamadı.',
+            });
           }
 
           const cafeCountResult = await client.query('SELECT COUNT(*)::int AS count FROM cafes');
           const totalCafes = Number(cafeCountResult.rows[0]?.count || 0);
           if (totalCafes <= 1) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Sistemde en az bir kafe kalmalıdır.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'LAST_CAFE_DELETION_FORBIDDEN',
+              message: 'Sistemde en az bir kafe kalmalıdır.',
+            });
           }
 
           const usersResult = await client.query(
@@ -473,7 +547,11 @@ const createAdminHandlers = ({
           );
           if (deleteCafeResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Kafe bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'CAFE_NOT_FOUND',
+              message: 'Kafe bulunamadı.',
+            });
           }
 
           await client.query('COMMIT');
@@ -509,14 +587,22 @@ const createAdminHandlers = ({
         }
       },
       memory: async () =>
-        res.status(501).json({ error: 'Demo modda kafe silme desteklenmiyor.' }),
+        sendApiProblem(res, {
+          status: 501,
+          code: 'NOT_IMPLEMENTED',
+          message: 'Demo modda kafe silme desteklenmiyor.',
+        }),
     });
   };
 
   const deleteUser = async (req, res) => {
     const { id } = req.params;
     if (Number(id) === Number(req.user.id)) {
-      return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'SELF_DELETE_FORBIDDEN',
+        message: 'Kendi hesabınızı silemezsiniz.',
+      });
     }
 
     return executeDataMode(isDbConnected, {
@@ -524,7 +610,11 @@ const createAdminHandlers = ({
         try {
           const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
           if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'USER_NOT_FOUND',
+              message: 'Kullanıcı bulunamadı.',
+            });
           }
           return res.json({ success: true });
         } catch (err) {
@@ -535,7 +625,11 @@ const createAdminHandlers = ({
         const users = getMemoryUsers();
         const nextUsers = users.filter((user) => Number(user.id) !== Number(id));
         if (nextUsers.length === users.length) {
-          return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'USER_NOT_FOUND',
+            message: 'Kullanıcı bulunamadı.',
+          });
         }
         setMemoryUsers(nextUsers);
         return res.json({ success: true });
