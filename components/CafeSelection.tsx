@@ -30,7 +30,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
   const fieldBaseClass =
     'rf-input rf-control h-12 font-sans text-[1.02rem] leading-[1.1] text-white tracking-normal';
   const fieldIconClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-cyan-300';
+    'absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-cyan-300';
 
   return (
     <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 pb-[calc(2.5rem+env(safe-area-inset-bottom))] px-4 font-sans relative overflow-hidden">

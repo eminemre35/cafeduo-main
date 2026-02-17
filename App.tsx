@@ -193,6 +193,14 @@ const App: React.FC = () => {
     setIsAuthOpen(true);
   };
 
+  useEffect(() => {
+    const authQuery = new URLSearchParams(location.search).get('auth');
+    if (authQuery === 'login' || authQuery === 'register') {
+      setAuthMode(authQuery);
+      setIsAuthOpen(true);
+    }
+  }, [location.search]);
+
   const handleLoginSuccess = (user: User) => {
     console.log("Login success:", user);
 

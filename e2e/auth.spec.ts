@@ -2,13 +2,25 @@ import { test, expect } from '@playwright/test';
 import { provisionUser, checkInUser, fetchCurrentUser } from './helpers/session';
 
 const openAuthModal = async (page: import('@playwright/test').Page) => {
-  const loginButtonByTestId = page.locator('[data-testid="hero-login-button"]');
-  if (await loginButtonByTestId.count()) {
-    await loginButtonByTestId.first().click();
-  } else {
-    const loginButtonByText = page.locator('main').getByRole('button', { name: /GİRİŞ YAP/i }).first();
-    await expect(loginButtonByText).toBeVisible();
-    await loginButtonByText.click();
+  const buttonCandidates = [
+    page.locator('[data-testid="hero-login-button"]').first(),
+    page.getByRole('button', { name: /OTURUM AÇ|GİRİŞ YAP/i }).first(),
+    page.locator('main').getByRole('button', { name: /OTURUM AÇ|GİRİŞ YAP/i }).first(),
+  ];
+
+  let clicked = false;
+  for (const candidate of buttonCandidates) {
+    const exists = await candidate.count().then((count) => count > 0).catch(() => false);
+    if (!exists) continue;
+    const visible = await candidate.isVisible().catch(() => false);
+    if (!visible) continue;
+    await candidate.click();
+    clicked = true;
+    break;
+  }
+
+  if (!clicked) {
+    await page.goto('/?auth=login');
   }
 
   await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();

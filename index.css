@@ -266,7 +266,7 @@ body::after {
 }
 
 .rf-input-icon-left {
-  padding-left: 2.9rem !important;
+  padding-left: 3.2rem !important;
 }
 
 .rf-input-icon-right {
@@ -274,8 +274,8 @@ body::after {
 }
 
 .rf-input-icon-double {
-  padding-left: 2.9rem !important;
-  padding-right: 2.9rem !important;
+  padding-left: 3.2rem !important;
+  padding-right: 3.2rem !important;
 }
 
 .rf-number-clean::-webkit-outer-spin-button,
@@ -288,7 +288,28 @@ body::after {
   -moz-appearance: textfield;
 }
 
+.google-login-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  max-height: 40px;
+  width: 100%;
+}
+
+.google-login-shell > div {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
 .google-login-shell > *:not(:first-child) {
+  display: none !important;
+}
+
+.google-login-shell iframe:nth-of-type(n + 2),
+.google-login-shell div[role='button']:nth-of-type(n + 2) {
   display: none !important;
 }
 
