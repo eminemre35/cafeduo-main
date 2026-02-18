@@ -138,7 +138,32 @@ jobs:
             grep -Ev '^(APP_VERSION|APP_BUILD_TIME)=' .env > .env.tmp || true
             printf 'APP_VERSION=%s\nAPP_BUILD_TIME=%s\n' "$APP_VERSION" "$APP_BUILD_TIME" >> .env.tmp
             mv .env.tmp .env
-            run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
+
+            try_compose_up() {
+              run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
+            }
+
+            up_ok=0
+            for attempt in 1 2 3; do
+              echo "Compose deploy attempt ${attempt}/3"
+              if try_compose_up; then
+                up_ok=1
+                break
+              fi
+
+              echo "Compose attempt ${attempt} failed. Restarting docker services..."
+              systemctl daemon-reload || true
+              systemctl restart docker || service docker restart || true
+              systemctl restart containerd || true
+              sleep 8
+              docker info >/dev/null 2>&1 || true
+            done
+
+            if [ "$up_ok" -ne 1 ]; then
+              echo "Compose deploy failed after retries."
+              exit 1
+            fi
+
             docker image prune -f
           REMOTE
 
