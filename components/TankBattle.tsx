@@ -54,6 +54,7 @@ const MAX_HP = 3;
 const TERRAIN_SEGMENTS = 40;
 const EXPLOSION_DURATION = 350;
 const HIT_RADIUS = 30;
+const MIN_TANK_GAP = 0.4; // minimum normalised distance between tanks
 
 // Color palette (retro-futuristic)
 const C = {
@@ -128,9 +129,14 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
     const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
 
-    // Tank positions
-    const playerTankX = 0.12;
-    const opponentTankX = 0.88;
+    // Tank positions - randomised each round
+    const [tankPositions, setTankPositions] = useState(() => {
+        const px = 0.08 + Math.random() * 0.15;  // 0.08 - 0.23
+        const ox = 0.77 + Math.random() * 0.15;  // 0.77 - 0.92
+        return { px, ox };
+    });
+    const playerTankX = tankPositions.px;
+    const opponentTankX = tankPositions.ox;
     const playerTankY = terrainYAt(terrainRef.current, playerTankX);
     const opponentTankY = terrainYAt(terrainRef.current, opponentTankX);
 
@@ -598,7 +604,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         setAngle(45);
         setPower(60);
         setMessage('Açı ve güç ayarla, ateş et!');
+        // Regenerate terrain and tank positions for variety
         terrainRef.current = generateTerrain();
+        setTankPositions({
+            px: 0.08 + Math.random() * 0.15,
+            ox: 0.77 + Math.random() * 0.15,
+        });
         draw();
     }, [gameId, draw]);
 
@@ -633,15 +644,15 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 backgroundPosition: 'center',
             }}
         >
-            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50 z-0" />
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 relative z-10">
                 <h2 className="font-pixel text-lg">Tank Düellosu</h2>
-                <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
+                <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm px-3 py-1.5 border border-rose-500/30 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors">Oyundan Çık</button>
             </div>
 
             {/* Scoreboard */}
-            <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+            <div className="grid grid-cols-3 gap-3 mb-4 text-center relative z-10">
                 <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
                     <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
                         <span className="text-cyan-300">⬥</span> Sen
@@ -669,7 +680,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             </div>
 
             {/* Canvas */}
-            <div className="rounded-xl border border-cyan-400/25 overflow-hidden mb-4 bg-[#04112a]">
+            <div className="rounded-xl border border-cyan-400/25 overflow-hidden mb-4 bg-[#04112a] relative z-10">
                 <canvas
                     ref={canvasRef}
                     width={CANVAS_W}
@@ -679,11 +690,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 />
             </div>
 
-            <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
+            <p className="text-sm text-[var(--rf-muted)] mb-4 relative z-10">{message}</p>
 
             {/* Controls */}
             {!done && (
-                <div className="space-y-3">
+                <div className="space-y-3 relative z-10">
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
                             <label htmlFor="tank-angle" className="text-xs text-[var(--rf-muted)] block mb-1">
@@ -732,7 +743,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             )}
 
             {done && (
-                <div className="mt-4">
+                <div className="mt-4 relative z-10">
                     <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
                 </div>
             )}

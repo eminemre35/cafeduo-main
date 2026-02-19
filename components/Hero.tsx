@@ -150,18 +150,21 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               Kısa maçlarda puan toplar, ödüle yaklaşır ve zamanı keyfe çevirirsin.
             </p>
 
-            <div className="mt-5 grid grid-cols-1 min-[520px]:grid-cols-3 gap-2.5 max-w-2xl">
-              <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
-                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Hızlı Tur</p>
-                <p className="text-sm text-slate-100">45 sn ortalama maç</p>
+            <div className="mt-7 grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 max-w-2xl">
+              <div className="rf-panel p-4 rf-horizon">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">🎮 Oyun Çeşitliliği</p>
+                <p className="text-3xl font-display text-white mt-1">7+</p>
+                <p className="text-sm text-slate-300 mt-1">Farklı mini oyun türü seni bekliyor.</p>
               </div>
-              <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
-                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Eşleşme</p>
-                <p className="text-sm text-slate-100">Kafedeki oyuncuyla anlık eşleş</p>
+              <div className="rf-panel p-4">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">⚡ Hızlı Maç</p>
+                <p className="text-3xl font-display text-white mt-1">45 sn</p>
+                <p className="text-sm text-slate-300 mt-1">Beklerken tek turda tamamlanır.</p>
               </div>
-              <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
-                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Güvenli Giriş</p>
-                <p className="text-sm text-slate-100">Tek adımda güvenli doğrulama</p>
+              <div className="rf-panel p-4">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">🏆 Anlık Ödül</p>
+                <p className="text-3xl font-display text-white mt-1">Canlı</p>
+                <p className="text-sm text-slate-300 mt-1">Her maç puanı hesabına direkt yansır.</p>
               </div>
             </div>
 
@@ -169,7 +172,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               {isLoggedIn ? (
                 <RetroButton
                   onClick={handlePanelClick}
-                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-cyan-400 shadow-[0_0_15px_rgba(10,215,255,0.3)] hover:shadow-[0_0_30px_rgba(10,215,255,0.6)] transition-all z-10"
+                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                   variant="primary"
                 >
                   PANELE GEÇ <ArrowRight className="ml-2" size={18} />
@@ -181,7 +184,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     variantA={
                       <RetroButton
                         onClick={onRegister}
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-cyan-400 shadow-[0_0_15px_rgba(10,215,255,0.3)] hover:shadow-[0_0_30px_rgba(10,215,255,0.6)] transition-all z-10"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                         variant="primary"
                       >
                         KAYDOL VE EŞLEŞ <ArrowRight className="ml-2" size={18} />
@@ -190,7 +193,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     variantB={
                       <RetroButton
                         onClick={onRegister}
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-cyan-400 shadow-[0_0_15px_rgba(10,215,255,0.3)] hover:shadow-[0_0_30px_rgba(10,215,255,0.6)] transition-all z-10"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                         variant="primary"
                       >
                         KAYDOL VE EŞLEŞ <Sparkles className="ml-2" size={18} />
@@ -201,31 +204,13 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                   <RetroButton
                     onClick={onLogin}
                     data-testid="hero-login-button"
-                    className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-slate-700 hover:border-cyan-800/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+                    className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                     variant="secondary"
                   >
                     OTURUM AÇ
                   </RetroButton>
                 </>
               )}
-            </div>
-
-            <div className="mt-7 grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 max-w-2xl">
-              <div className="rf-panel p-4 rf-horizon">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Tur Süresi</p>
-                <p className="text-3xl font-display text-white mt-1">45 sn</p>
-                <p className="text-sm text-slate-300 mt-1">Beklerken tek turda tamamlanır.</p>
-              </div>
-              <div className="rf-panel p-4">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Eşleşme Modu</p>
-                <p className="text-3xl font-display text-white mt-1">Canlı</p>
-                <p className="text-sm text-slate-300 mt-1">Kafedeki aktif oyuncularla anında eşleş.</p>
-              </div>
-              <div className="rf-panel p-4">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Ödül Akışı</p>
-                <p className="text-3xl font-display text-white mt-1">Anlık</p>
-                <p className="text-sm text-slate-300 mt-1">Her maç puanı hesabına direkt yansır.</p>
-              </div>
             </div>
 
             <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/30 bg-[#06142b]/84 hidden sm:block">
