@@ -186,6 +186,22 @@ body::after {
   text-shadow: none !important;
 }
 
+/* Cyber-Brutalism Hero Title Styles */
+.hero-title-wrapper {
+  font-family: "Teko", "Chakra Petch", sans-serif;
+  font-variant-ligatures: none;
+}
+
+.hero-title {
+  font-family: "Teko", "Chakra Petch", sans-serif !important;
+  font-weight: 900;
+  font-variant-ligatures: none;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 0.85;
+  text-shadow: 2px 2px 0 rgba(0, 243, 255, 0.15), -1px -1px 0 rgba(255, 0, 234, 0.1);
+}
+
 @keyframes slide-up {
   from {
     transform: translateY(8px);
