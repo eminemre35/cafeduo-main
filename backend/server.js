@@ -30,18 +30,25 @@ loadEnvFile();
 
 // Sentry APM Monitoring
 const Sentry = require("@sentry/node");
-const { ProfilingIntegration } = require("@sentry/profiling-node");
 
 // Only initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
+  const integrations = [];
+  
+  // Try to load profiling integration (optional dependency)
+  try {
+    const { ProfilingIntegration } = require("@sentry/profiling-node");
+    integrations.push(new ProfilingIntegration());
+  } catch (e) {
+    console.log('⚠️  @sentry/profiling-node not available - profiling disabled');
+  }
+
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     profilesSampleRate: 1.0,
-    integrations: [
-      new ProfilingIntegration(),
-    ],
+    integrations,
     // Filter out sensitive data
     beforeSend(event, hint) {
       // Remove password_hash from user object if present
