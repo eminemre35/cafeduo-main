@@ -31,6 +31,9 @@ loadEnvFile();
 // Sentry APM Monitoring
 const Sentry = require("@sentry/node");
 
+// Track if Sentry was successfully initialized
+let isSentryInitialized = false;
+
 // Only initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
   const integrations = [];
@@ -63,6 +66,7 @@ if (process.env.SENTRY_DSN) {
       return event;
     },
   });
+  isSentryInitialized = true;
   console.log('✅ Sentry APM initialized');
 } else {
   console.log('⚠️  SENTRY_DSN not set - APM monitoring disabled');
@@ -394,7 +398,7 @@ logger.info("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" :
 app.use(helmet()); // Secure HTTP headers
 
 // Sentry Request and Tracing Handlers (must be before other middleware)
-if (process.env.SENTRY_DSN) {
+if (isSentryInitialized) {
   app.use(Sentry.Handlers.requestHandler());
   app.use(Sentry.Handlers.tracingHandler());
 }
@@ -897,7 +901,7 @@ app.get('/debug-sentry', (req, res) => {
 });
 
 // Sentry Error Handler (must be before other error handlers)
-if (process.env.SENTRY_DSN) {
+if (isSentryInitialized) {
   app.use(Sentry.Handlers.errorHandler());
 }
 
