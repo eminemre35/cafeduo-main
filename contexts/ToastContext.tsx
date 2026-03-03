@@ -91,7 +91,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ toast }}>
       {children}
       {/* Toast Container - Stacked with animations */}
-      <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 sm:left-auto sm:right-4 z-[100] flex flex-col items-end gap-2 pointer-events-none">
+      <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 right-4 sm:left-auto sm:right-4 z-[105] flex flex-col items-end gap-2 pointer-events-none">
         <AnimatePresence mode="popLayout">
           {toasts.map((t) => (
             <motion.div

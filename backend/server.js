@@ -28,6 +28,40 @@ function loadEnvFile() {
 loadEnvFile();
 
 
+// Sentry APM Monitoring
+const Sentry = require("@sentry/node");
+const { ProfilingIntegration } = require("@sentry/profiling-node");
+
+// Only initialize Sentry if DSN is provided
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    profilesSampleRate: 1.0,
+    integrations: [
+      new ProfilingIntegration(),
+    ],
+    // Filter out sensitive data
+    beforeSend(event, hint) {
+      // Remove password_hash from user object if present
+      if (event.user) {
+        delete event.user.password_hash;
+      }
+      // Filter sensitive headers
+      if (event.request?.headers) {
+        delete event.request.headers['authorization'];
+        delete event.request.headers['cookie'];
+      }
+      return event;
+    },
+  });
+  console.log('✅ Sentry APM initialized');
+} else {
+  console.log('⚠️  SENTRY_DSN not set - APM monitoring disabled');
+}
+
+
 // Core dependencies
 const express = require('express');
 const http = require('http');
@@ -351,6 +385,12 @@ logger.info("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" :
 
 // Security Middleware
 app.use(helmet()); // Secure HTTP headers
+
+// Sentry Request and Tracing Handlers (must be before other middleware)
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // Apply a higher baseline limiter only to API routes.
 // Auth brute-force protection is handled separately in authRoutes.
@@ -843,6 +883,16 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // ==========================================
 // GLOBAL ERROR HANDLING
 // ==========================================
+
+// Debug endpoint for testing Sentry integration
+app.get('/debug-sentry', (req, res) => {
+  throw new Error('Sentry test error!');
+});
+
+// Sentry Error Handler (must be before other error handlers)
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
 
 app.use(notFoundHandler);
 app.use(handleApiError);

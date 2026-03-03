@@ -73,7 +73,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[115] flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-[#02050f]/85 backdrop-blur-sm noise-bg" onClick={onClose}></div>
 
             <div className="relative w-full max-w-md bg-[#050a19] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.8)] sm:rounded-none overflow-hidden flex flex-col noise-bg">
