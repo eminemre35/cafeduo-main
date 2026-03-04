@@ -55,14 +55,8 @@ class SocketService {
     connect() {
         if (this.socket) return;
 
-        // Cookie'den token al (fallback için)
-        const cookieToken = typeof document !== 'undefined'
-            ? document.cookie
-                .split('; ')
-                .find(row => row.startsWith('auth_token='))
-                ?.split('=')[1]
-            : null;
-
+        // httpOnly cookie kullanılıyor, withCredentials: true ile otomatik gönderiliyor
+        // auth object'i Socket.IO handshake için gerekli değil (cookie backend'de okunacak)
         this.socket = io(SOCKET_URL, {
             withCredentials: true,
             autoConnect: true,
@@ -70,7 +64,6 @@ class SocketService {
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: 5,
-            auth: cookieToken ? { token: cookieToken } : {},
         });
 
         this.socket.on('connect', () => {
