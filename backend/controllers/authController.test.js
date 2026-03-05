@@ -252,6 +252,7 @@ describe('authController security-critical auth flows', () => {
       'signed-jwt-token',
       expect.objectContaining({
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
       })
