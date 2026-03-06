@@ -59,19 +59,6 @@ jobs:
       - name: Run unit tests with coverage
         run: npm run test:ci
 
-      - name: Check migration status against production database
-        env:
-          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
-        run: |
-          set -euo pipefail
-          tmp_env="$(mktemp)"
-          trap 'rm -f "$tmp_env"' EXIT
-          echo "$DEPLOY_ENV_B64" | base64 -d > "$tmp_env"
-          DOTENV_CONFIG_PATH="$tmp_env" \
-          MIGRATION_STATUS_REQUIRE_DB=1 \
-          MIGRATION_STATUS_FAIL_ON_PENDING=1 \
-          npm run migrate:status
-
       - name: Build frontend
         run: npm run build
 
@@ -121,6 +108,44 @@ jobs:
             --exclude "test-results" \
             -e "ssh -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+
+      - name: Check migration status against production database on VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' bash -s" <<'REMOTE'
+            set -euo pipefail
+
+            if ! command -v docker >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y docker.io
+              systemctl enable --now docker
+            fi
+
+            cd "$DEPLOY_PATH"
+            echo "$DEPLOY_ENV_B64" | base64 -d > .env
+
+            docker run --rm \
+              --user "$(id -u):$(id -g)" \
+              -e HOME=/tmp/cafeduo-npm-home \
+              -e npm_config_cache=/tmp/cafeduo-npm-cache \
+              --env-file .env \
+              -e DOTENV_CONFIG_PATH=.env \
+              -e MIGRATION_STATUS_REQUIRE_DB=1 \
+              -e MIGRATION_STATUS_FAIL_ON_PENDING=1 \
+              -v "$PWD:/workspace" \
+              -w /workspace \
+              node:20-bookworm \
+              bash -lc 'npm ci --ignore-scripts && npm run migrate:status'
+
+            rm -rf node_modules
+          REMOTE
 
       - name: Deploy containers on VPS
         env:

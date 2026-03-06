@@ -50,6 +50,7 @@ Operational defaults for same-origin production:
 - `COOKIE_DOMAIN=`
 - `sameSite='lax'`
 - `DEPLOY_SITE_URL` origin must be present in `CORS_ORIGIN`
+- Strict migration status is checked from the VPS network boundary, not from the GitHub runner.
 
 External testing tools:
 

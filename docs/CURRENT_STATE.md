@@ -14,6 +14,7 @@ Current validated state:
 - `npm run test:ci` passes
 - `npm run build` passes
 - `npm run migrate:status` runs locally, but only reports file-based status when the database is unreachable
+- Production deploy now validates migrations from the VPS network boundary before container rollout
 - Sprint 1 coverage target is now met locally: `lines 62.6%`, `statements 61.27%`, `functions 65%`, `branches 45.06%`
 - Targeted Chromium game E2E passes locally: `e2e/game.spec.ts`
 
