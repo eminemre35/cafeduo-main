@@ -76,6 +76,11 @@ bash deploy/scripts/migration-baseline-vps.sh apply
 Host-shell fallback exists, but the compose wrapper is preferred because it uses the same
 network/env topology as the production `api` service.
 
+Implementation note:
+- `npm run migrate:up/down/redo` now uses a portable wrapper.
+- In development/CI it prefers the local `node_modules/.bin/node-pg-migrate`.
+- In the production API image, where dev dependencies are omitted, it falls back to `npx node-pg-migrate@<package.json version>`.
+
 ## What `migrate:baseline:report` verifies
 
 It checks:

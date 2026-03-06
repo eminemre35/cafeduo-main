@@ -40,9 +40,9 @@
     "smoke:prod": "node scripts/smoke/prod-smoke.mjs",
     "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs",
     "migrate:create": "node-pg-migrate create",
-    "migrate:up": "node-pg-migrate up --migrations-dir 'migrations/*.js' --use-glob",
-    "migrate:down": "node-pg-migrate down --migrations-dir 'migrations/*.js' --use-glob",
-    "migrate:redo": "node-pg-migrate redo --migrations-dir 'migrations/*.js' --use-glob",
+    "migrate:up": "node scripts/migrations/run-node-pg-migrate.js up",
+    "migrate:down": "node scripts/migrations/run-node-pg-migrate.js down",
+    "migrate:redo": "node scripts/migrations/run-node-pg-migrate.js redo",
     "migrate:status": "node scripts/migrations/status.js",
     "migrate:baseline:report": "node scripts/migrations/legacy-baseline.js report",
     "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply"
