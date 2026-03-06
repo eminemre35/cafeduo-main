@@ -131,21 +131,26 @@ jobs:
             cd "$DEPLOY_PATH"
             echo "$DEPLOY_ENV_B64" | base64 -d > .env
 
-            docker run --rm \
-              --network host \
-              --user "$(id -u):$(id -g)" \
-              -e HOME=/tmp/cafeduo-npm-home \
-              -e npm_config_cache=/tmp/cafeduo-npm-cache \
-              --env-file .env \
+            if docker compose version >/dev/null 2>&1; then
+              run_compose() { docker compose "$@"; }
+            else
+              if ! command -v docker-compose >/dev/null 2>&1; then
+                apt-get update
+                apt-get install -y docker-compose-v2 || apt-get install -y docker-compose
+              fi
+
+              if docker compose version >/dev/null 2>&1; then
+                run_compose() { docker compose "$@"; }
+              else
+                run_compose() { docker-compose "$@"; }
+              fi
+            fi
+
+            run_compose -f deploy/docker-compose.prod.yml --env-file .env run --rm --build \
               -e DOTENV_CONFIG_PATH=.env \
               -e MIGRATION_STATUS_REQUIRE_DB=1 \
               -e MIGRATION_STATUS_FAIL_ON_PENDING=1 \
-              -v "$PWD:/workspace" \
-              -w /workspace \
-              node:20-bookworm \
-              bash -lc 'npm ci --ignore-scripts && npm run migrate:status'
-
-            rm -rf node_modules
+              api npm run migrate:status
           REMOTE
 
       - name: Deploy containers on VPS
