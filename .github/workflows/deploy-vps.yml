@@ -132,6 +132,7 @@ jobs:
             echo "$DEPLOY_ENV_B64" | base64 -d > .env
 
             docker run --rm \
+              --network host \
               --user "$(id -u):$(id -g)" \
               -e HOME=/tmp/cafeduo-npm-home \
               -e npm_config_cache=/tmp/cafeduo-npm-cache \
