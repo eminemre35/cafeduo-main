@@ -3,15 +3,10 @@ const { pool, isDbConnected } = require('../db');
 const memoryState = require('../store/memoryState');
 const { buildApiErrorPayload } = require('../utils/routeHelpers');
 const redisClient = require('../config/redis');
+const { getBlacklistFailMode, getRequiredJwtSecret } = require('../utils/securityConfig');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-// SECURITY: Configure blacklist fail mode (default: closed = reject on Redis failure)
-const BLACKLIST_FAIL_MODE = process.env.BLACKLIST_FAIL_MODE || 'closed';
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
-}
+const JWT_SECRET = getRequiredJwtSecret();
+const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 
 const sendAuthError = (res, { status, code, message, details = null }) => {
     const payload = buildApiErrorPayload(res, {

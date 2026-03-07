@@ -1,5 +1,6 @@
 const redis = require('../config/redis');
 const logger = require('../utils/logger');
+const { isProductionEnv } = require('../utils/securityConfig');
 
 const parseBooleanEnv = (value, fallback) => {
   if (value === undefined || value === null || value === '') {
@@ -14,7 +15,8 @@ const parseBooleanEnv = (value, fallback) => {
 
 const getStoreMode = () => String(process.env.RATE_LIMIT_STORE || 'redis').trim().toLowerCase();
 
-const getPassOnStoreError = () => parseBooleanEnv(process.env.RATE_LIMIT_PASS_ON_STORE_ERROR, true);
+const getPassOnStoreError = () =>
+  parseBooleanEnv(process.env.RATE_LIMIT_PASS_ON_STORE_ERROR, isProductionEnv() ? false : true);
 
 const getPrefixBase = () =>
   (String(process.env.RATE_LIMIT_REDIS_PREFIX || 'cafeduo:ratelimit').trim() || 'cafeduo:ratelimit');

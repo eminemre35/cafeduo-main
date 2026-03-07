@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const isCI = !!process.env.CI;
+const playwrightBaseUrl = process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL || 'http://127.0.0.1:3000';
 
 /**
  * Read environment variables from file.
@@ -29,7 +30,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: playwrightBaseUrl,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -79,7 +80,7 @@ export default defineConfig({
   webServer: {
     command:
       'NODE_ENV=development CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173 COOKIE_DOMAIN= AUTH_RATE_LIMIT_WINDOW_MS=60000 AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=500 AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=500 API_RATE_LIMIT_MAX_REQUESTS=5000 RATE_LIMIT_MAX_REQUESTS=5000 npm run dev',
-    url: 'http://localhost:3000',
+    url: playwrightBaseUrl,
     reuseExistingServer: false,
     timeout: 120 * 1000,
   },

@@ -1,59 +1,53 @@
 # CafeDuo Current State
 
-Last updated: 2026-03-06
+Last updated: 2026-03-07
 
 ## Summary
 
-CafeDuo is currently live at `https://cafeduotr.com` and running on cookie-first authentication.
+CafeDuo is live at `https://cafeduotr.com` and currently operates with cookie-first authentication, strict production deploy gating, and authenticated public smoke validation.
 
-Current validated state:
+Current repo-head validation:
 
-- Live health endpoint returns `OK`
-- Live version endpoint reports a current production commit
-- `npm audit --audit-level=moderate` passes locally
+- `npm run test` passes
 - `npm run test:ci` passes
 - `npm run build` passes
-- `npm run migrate:status` runs locally, but only reports file-based status when the database is unreachable
-- Production deploy now validates migrations from the VPS network boundary before container rollout
-- Legacy production migration baseline tooling exists: `npm run migrate:baseline:report` / `npm run migrate:baseline:apply`
-- Sprint 1 coverage target is now met locally: `lines 62.6%`, `statements 61.27%`, `functions 65%`, `branches 45.06%`
-- Targeted Chromium game E2E passes locally: `e2e/game.spec.ts`
+- `npm run migrate:status` passes in informational mode when DB is unreachable locally
+- `npm run test:e2e -- --project=chromium` passes locally
+- Production health endpoint returns `OK`
+- Production version endpoint returns a live commit hash
 
-## Current Source Of Truth
+## Source Of Truth
 
 Use these as the primary operational references:
 
 - [`DEPLOYMENT.md`](/home/emin/cafeduo-main/DEPLOYMENT.md)
 - [`.github/workflows/deploy-vps.yml`](/home/emin/cafeduo-main/.github/workflows/deploy-vps.yml)
 - [`docs/COOKIE_AUTH_TROUBLESHOOTING.md`](/home/emin/cafeduo-main/docs/COOKIE_AUTH_TROUBLESHOOTING.md)
+- [`docs/PRODUCTION_MIGRATION_BASELINE.md`](/home/emin/cafeduo-main/docs/PRODUCTION_MIGRATION_BASELINE.md)
 
-Historical analysis documents remain useful, but they are not the primary source of truth for current production behavior.
+Historical analysis documents are useful for context, but they are not the source of truth for current production behavior.
 
 ## Current Production Decisions
 
 - Deployment model: same-origin frontend + backend behind `cafeduotr.com`
-- Auth model: cookie-first, dual-mode fallback still enabled
+- Auth model: cookie-first, header/handshake fallback still enabled for compatibility
 - Cookie domain: `COOKIE_DOMAIN=` must stay empty for same-origin deployment
 - Cookie policy: `sameSite='lax'`, `secure=true` in production
-- Public smoke: must validate authenticated cookie flow
-- Deploy gate: production env secrets and migration status must be validated before deploy
+- JWT secret policy: production startup and deploy validation require `JWT_SECRET` length `>= 64`
+- Blacklist policy: `BLACKLIST_FAIL_MODE=closed`
+- Rate-limit store failure policy: production defaults to fail-closed unless explicitly overridden
+- Public smoke: validates authenticated cookie flow, `/api/auth/me`, socket auth, and logout
+- Deploy gate: production env secrets, migration status, and smoke must pass before release
 
-## Known Risks
+## Active Risks
 
-- `CI/CD Pipeline` is only green if the current lockfile is kept in sync with patched dependency resolutions
-- Public smoke and strict deploy gating depend on `DEPLOY_SITE_URL`, `SMOKE_LOGIN_EMAIL`, and `SMOKE_LOGIN_PASSWORD` secrets being present and valid
-- Manual edits on VPS `.env` are temporary unless `DEPLOY_ENV_B64` is updated in GitHub secrets
-- Production database is connected, but `public.pgmigrations` is still missing; deploy remains intentionally blocked until legacy baseline is applied
-- Coverage is still significantly lower than the desired level for large realtime game components
+- The main quality risk is CI E2E stability, not core application behavior. The current fix standardizes Playwright and E2E API readiness on `127.0.0.1` to eliminate `localhost -> ::1` drift in GitHub Actions.
+- Coverage is still materially low for large realtime game components such as `TankBattle`, `RetroChess`, and the social card/board games.
+- Root local `.env` can still trigger a Vite warning if it contains `NODE_ENV`; this is a local operator issue, not a production runtime issue.
+- Manual edits on VPS `.env` remain temporary unless `DEPLOY_ENV_B64` is updated in GitHub secrets.
 
 ## Immediate Priorities
 
-1. Keep `CI/CD Pipeline` green by avoiding unnecessary dependency surface and maintaining patched transitive resolutions.
-2. Keep production deploy fail-fast on env validation, migration status, and authenticated smoke.
-3. Raise coverage on large realtime and social game components.
-
-## Local Build Note
-
-- Root local `.env` should not define `NODE_ENV` for Vite builds.
-- If a local build still warns about `NODE_ENV`, remove it from the gitignored root `.env` and keep runtime-only values in deployment env files instead.
-- Real secrets stay in private env files or GitHub secrets and must never be committed or logged.
+1. Keep GitHub Actions green by preserving deterministic Chromium E2E host resolution.
+2. Keep runtime security defaults aligned with production-safe behavior.
+3. Raise coverage on large realtime and social game components without destabilizing deploy quality.

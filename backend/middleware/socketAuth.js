@@ -19,12 +19,9 @@ const { pool, isDbConnected } = require('../db');
 const memoryState = require('../store/memoryState');
 const logger = require('../utils/logger');
 const redisClient = require('../config/redis');
+const { getRequiredJwtSecret } = require('../utils/securityConfig');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
-}
+const JWT_SECRET = getRequiredJwtSecret();
 
 /**
  * Socket.IO Authentication Middleware

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+  DEFAULT_E2E_APP_BASE_URL,
   provisionUser,
   checkInUser,
   fetchCurrentUser,
@@ -11,7 +12,7 @@ test.describe('Mobile UI Stability', () => {
     page,
     baseURL,
   }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(root);
 
@@ -47,7 +48,7 @@ test.describe('Mobile UI Stability', () => {
   });
 
   test('dashboard remains operable on mobile after check-in', async ({ page, request, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'mobile_dash');
     await checkInUser(request, root, session.token, { tableNumber: 4 });
     const user = await fetchCurrentUser(request, root, session.token);
@@ -89,7 +90,7 @@ test.describe('Mobile UI Stability', () => {
   });
 
   test('captures regression snapshots for 375x812 and 768x1024', async ({ page, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
 
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(root);

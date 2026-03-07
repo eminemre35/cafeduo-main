@@ -15,6 +15,7 @@ const {
   RedisRateLimitStore,
   buildRateLimiterOptions,
   parseBooleanEnv,
+  getPassOnStoreError,
 } = require('./rateLimit');
 const mockRedis = require('../config/redis');
 
@@ -137,5 +138,20 @@ describe('rateLimit middleware helpers', () => {
     expect(options.store).toBeInstanceOf(RedisRateLimitStore);
     expect(options.store.prefix).toBe('cafeduo:rl:auth:login');
     expect(options.passOnStoreError).toBe(true);
+  });
+
+  it('defaults to fail-closed on store errors in production when env is unset', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.RATE_LIMIT_PASS_ON_STORE_ERROR;
+
+    expect(getPassOnStoreError()).toBe(false);
+
+    const options = buildRateLimiterOptions({
+      scope: 'api',
+      windowMs: 60_000,
+      limit: 10,
+    });
+
+    expect(options.passOnStoreError).toBe(false);
   });
 });

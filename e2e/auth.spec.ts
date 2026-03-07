@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { provisionUser } from './helpers/session';
+import { DEFAULT_E2E_APP_BASE_URL, provisionUser } from './helpers/session';
 
 const openAuthModal = async (page: import('@playwright/test').Page) => {
   await page.evaluate(() => localStorage.setItem('cookie_consent', 'true'));
@@ -73,7 +73,7 @@ test.describe('Authentication Flow', () => {
   });
 
   test('can register from UI and lands on check-in screen', async ({ page, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const seed = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     const username = `ui_reg_${seed}`.slice(0, 20);
     const email = `${username}@example.com`;
@@ -107,7 +107,7 @@ test.describe('Authentication Flow', () => {
   });
 
   test('can login with provisioned account and logout', async ({ page, request, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'auth_login');
 
     await page.goto(root);

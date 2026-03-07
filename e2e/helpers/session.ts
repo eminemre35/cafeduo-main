@@ -13,6 +13,9 @@ export interface E2ESession {
   user: any;
 }
 
+export const DEFAULT_E2E_APP_BASE_URL = 'http://127.0.0.1:3000';
+export const DEFAULT_E2E_API_BASE_URL = 'http://127.0.0.1:3001';
+
 const normalizeBaseUrl = (rawBase: string) => rawBase.replace(/\/+$/, '');
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const CHECK_IN_GATE_TIMEOUT_MS = 10000;
@@ -49,17 +52,20 @@ export const resolveApiBaseUrl = (appBaseURL: string): string => {
 
   try {
     const parsed = new URL(appBaseURL);
+    if (parsed.hostname === 'localhost') {
+      parsed.hostname = '127.0.0.1';
+    }
     if (parsed.port === '3000') {
       parsed.port = '3001';
       return normalizeBaseUrl(parsed.toString());
     }
-    if (!parsed.port && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
+    if (!parsed.port && parsed.hostname === '127.0.0.1') {
       parsed.port = '3001';
       return normalizeBaseUrl(parsed.toString());
     }
     return normalizeBaseUrl(parsed.toString());
   } catch {
-    return 'http://localhost:3001';
+    return DEFAULT_E2E_API_BASE_URL;
   }
 };
 
@@ -85,7 +91,7 @@ export const waitForApiReady = async (
     await sleep(500);
   }
 
-  throw new Error(`API readiness timeout (${timeoutMs}ms): ${lastError}`);
+  throw new Error(`API readiness timeout (${timeoutMs}ms) for ${root}/api/health: ${lastError}`);
 };
 
 export const generateCredentials = (prefix = 'e2e'): E2ECredentials => {

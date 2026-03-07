@@ -87,7 +87,7 @@ const { Server } = require("socket.io");
 const { pool, isDbConnected } = require('./db');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
 const redisClient = require('./config/redis'); // Redis client
-const { buildRateLimiterOptions } = require('./middleware/rateLimit');
+const { buildRateLimiterOptions, getPassOnStoreError } = require('./middleware/rateLimit');
 const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
@@ -118,6 +118,7 @@ const { createLobbyCacheService } = require('./services/lobbyCacheService');
 const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 const { socketAuthMiddleware } = require('./middleware/socketAuth'); // Socket.IO Auth Middleware
+const { getBlacklistFailMode, getRequiredJwtSecret } = require('./utils/securityConfig');
 
 // Setup Logger
 const logger = require('./utils/logger');
@@ -369,10 +370,8 @@ io.on('connection', (socket) => {
 });
 
 // JWT Secret from .env (required)
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
-}
+const JWT_SECRET = getRequiredJwtSecret();
+const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 
 // 4) START SERVER / INIT DB
 logger.info("🚀 Starting Server...");
@@ -381,6 +380,12 @@ logger.info(
   process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
 );
 logger.info("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
+logger.info('🔐 Security defaults:', {
+  blacklistFailMode: BLACKLIST_FAIL_MODE,
+  rateLimitPassOnStoreError: getPassOnStoreError(),
+  jwtSecretLength: JWT_SECRET.length,
+  nodeEnv: process.env.NODE_ENV || 'development',
+});
 
 // ==========================================
 // SECURITY MIDDLEWARE - Enhanced Authentication

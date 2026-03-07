@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+  DEFAULT_E2E_APP_BASE_URL,
   provisionUser,
   checkInUser,
   fetchCurrentUser,
@@ -12,7 +13,7 @@ const authHeader = (token: string) => ({ Authorization: `Bearer ${token}`, Cooki
 
 test.describe('Game Flow & Multiplayer Integrity', () => {
   test('blocks unauthenticated and non-checkin game creation attempts', async ({ request, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
 
@@ -40,7 +41,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
   });
 
   test('forces check-in before dashboard for regular users', async ({ page, request, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'checkin_guard');
 
     await bootstrapAuthenticatedPage(page, root, session, { checkedIn: false });
@@ -48,7 +49,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
   });
 
   test('shows dashboard + stats after authenticated check-in', async ({ page, request, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'dashboard_ready');
 
     await checkInUser(request, root, session.token, { tableNumber: 3 });
@@ -67,7 +68,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
   });
 
   test('enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
     const host = await provisionUser(request, root, 'host');

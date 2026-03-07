@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+  DEFAULT_E2E_APP_BASE_URL,
   provisionUser,
   checkInUser,
   fetchCurrentUser,
@@ -14,7 +15,7 @@ test.describe('Shop & Inventory Flow', () => {
     request,
     baseURL,
   }) => {
-    const root = baseURL || 'http://localhost:3000';
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
     const session = await provisionUser(request, root, 'shop_user');
