@@ -15,6 +15,31 @@ export interface E2ESession {
 
 const normalizeBaseUrl = (rawBase: string) => rawBase.replace(/\/+$/, '');
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const CHECK_IN_GATE_TIMEOUT_MS = 10000;
+const E2E_CAFE_VERIFICATION_CODES: Record<string, string> = {
+  '1': '1234',
+  '2': '5678',
+};
+
+const parseTableNumber = (value: unknown): string => {
+  const raw = String(value || '').trim().toUpperCase();
+  if (!raw) return '1';
+  const match = raw.match(/\d+/);
+  const parsed = Number(match?.[0] || raw);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return String(parsed);
+  }
+  return '1';
+};
+
+const isVisible = async (locator: { isVisible: () => Promise<boolean> }) =>
+  locator.isVisible().catch(() => false);
+
+const buildTableVerificationCode = (cafeId: unknown, tableNumber: string) => {
+  const pin = E2E_CAFE_VERIFICATION_CODES[String(cafeId || '1')] || E2E_CAFE_VERIFICATION_CODES['1'];
+  const normalizedTable = `MASA${String(parseTableNumber(tableNumber)).padStart(2, '0')}`;
+  return `${pin}-${normalizedTable}`;
+};
 
 export const resolveApiBaseUrl = (appBaseURL: string): string => {
   const override = process.env.E2E_API_BASE_URL?.trim();
@@ -257,23 +282,77 @@ export const bootstrapAuthenticatedPage = async (
   // App initially redirects to "/" while async session restore runs.
   const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]').first();
   const gamesButton = page.getByRole('button', { name: /OYUNLAR/i }).first();
-  const isDashboardReady =
-    (await dashboardTab.isVisible().catch(() => false)) ||
-    (await gamesButton.isVisible().catch(() => false));
-  if (isDashboardReady) {
+  const checkInSubmit = page.locator('[data-testid="checkin-submit-button"]').first();
+  const panelButton = page.getByRole('button', { name: /PANELE GEÇ/i }).first();
+  const performCheckInRecovery = async () => {
+    const selectedCafeId = String(user?.cafe_id || '1');
+    const tableNumber = parseTableNumber(user?.table_number);
+    const verificationCode = buildTableVerificationCode(selectedCafeId, tableNumber);
+    const cafeSelect = page.locator('[data-testid="checkin-cafe-select"]');
+    const tableInput = page.locator('[data-testid="checkin-table-input"]');
+    const verificationInput = page.locator('#checkin-verification-code');
+
+    await cafeSelect.waitFor({ state: 'visible', timeout: 3000 });
+    await cafeSelect.selectOption(selectedCafeId);
+    await tableInput.fill(tableNumber);
+    await expect(tableInput).toHaveValue(tableNumber);
+    await verificationInput.fill(verificationCode);
+    await expect(verificationInput).toHaveValue(verificationCode);
+    await expect(checkInSubmit).toBeEnabled({ timeout: 3000 });
+    await checkInSubmit.click();
+
+    return (
+      (await dashboardTab
+        .waitFor({ state: 'visible', timeout: CHECK_IN_GATE_TIMEOUT_MS })
+        .then(() => true)
+        .catch(() => false)) ||
+      (await gamesButton
+        .waitFor({ state: 'visible', timeout: CHECK_IN_GATE_TIMEOUT_MS })
+        .then(() => true)
+        .catch(() => false))
+    );
+  };
+
+  const waitForSurface = async (
+    timeoutMs: number
+  ): Promise<'dashboard' | 'checkin' | 'panel' | 'timeout'> => {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if ((await isVisible(dashboardTab)) || (await isVisible(gamesButton))) {
+        return 'dashboard';
+      }
+      if (checkedIn && (await isVisible(checkInSubmit))) {
+        return 'checkin';
+      }
+      if (await isVisible(panelButton)) {
+        return 'panel';
+      }
+      await page.waitForTimeout(250);
+    }
+    return 'timeout';
+  };
+
+  const initialSurface = await waitForSurface(7000);
+  if (initialSurface === 'dashboard') {
     return;
   }
 
-  const panelButton = page.getByRole('button', { name: /PANELE GEÇ/i }).first();
-  const panelReady = await panelButton
-    .waitFor({ state: 'visible', timeout: 7000 })
-    .then(() => true)
-    .catch(() => false);
+  if (checkedIn && initialSurface === 'checkin') {
+    const dashboardAfterCheckIn = await performCheckInRecovery();
+    if (dashboardAfterCheckIn) {
+      return;
+    }
+  }
 
-  if (panelReady) {
+  if (initialSurface === 'panel') {
     await panelButton.click();
   }
   // Socket/polling trafiği olduğu için networkidle burada false-negative üretebiliyor.
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(300);
+
+  const finalSurface = await waitForSurface(CHECK_IN_GATE_TIMEOUT_MS);
+  if (checkedIn && finalSurface === 'checkin') {
+    await performCheckInRecovery();
+  }
 };

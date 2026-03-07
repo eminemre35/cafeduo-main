@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { provisionUser, checkInUser, fetchCurrentUser } from './helpers/session';
+import { provisionUser } from './helpers/session';
 
 const openAuthModal = async (page: import('@playwright/test').Page) => {
   await page.evaluate(() => localStorage.setItem('cookie_consent', 'true'));
@@ -45,11 +45,13 @@ const switchToRegisterMode = async (page: import('@playwright/test').Page) => {
     await candidate.click({ force: true });
     const usernameFieldVisible = await page
       .getByPlaceholder('Kullanıcı adı')
-      .isVisible()
+      .waitFor({ state: 'visible', timeout: 2000 })
+      .then(() => true)
       .catch(() => false);
     if (usernameFieldVisible) return;
   }
 
+  await page.goto('/?auth=register');
   await expect(page.getByPlaceholder('Kullanıcı adı')).toBeVisible();
 };
 
@@ -114,9 +116,9 @@ test.describe('Authentication Flow', () => {
     await page.locator('[data-testid="auth-password-input"]').fill(session.credentials.password);
     await page.locator('[data-testid="auth-submit-button"], form button[type=\"submit\"]').first().click({ force: true });
 
-    const checkInHeading = page.getByText('Kafe Giriş');
+    const checkInHeadingInitial = page.getByText('Kafe Giriş');
     const dashboardTabInitial = page.locator('[data-testid="dashboard-tab-games"]').first();
-    const landedOnCheckIn = await checkInHeading.isVisible().catch(() => false);
+    const landedOnCheckIn = await checkInHeadingInitial.isVisible().catch(() => false);
     const landedOnDashboard = await dashboardTabInitial.isVisible().catch(() => false);
     if (!landedOnCheckIn && !landedOnDashboard) {
       const rootUrl = new URL(root);
@@ -134,38 +136,50 @@ test.describe('Authentication Flow', () => {
       await page.reload();
     }
 
-    // check-in API ile tamamlayıp dashboard + logout akışını doğrula
-    await checkInUser(request, root, session.token, { tableNumber: 7 });
-    const currentUser = await fetchCurrentUser(request, root, session.token);
+    const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]').first();
+    const checkInHeading = page.getByRole('heading', { name: 'Kafe Giriş' }).first();
+    const checkInSubmit = page.locator('[data-testid="checkin-submit-button"]').first();
+    const tableInput = page.locator('[data-testid="checkin-table-input"]').first();
+    const verificationInput = page.locator('#checkin-verification-code').first();
 
-    await page.evaluate(
-      ({ user }) => {
-        localStorage.setItem('cafe_user', JSON.stringify(user));
-        sessionStorage.setItem('cafeduo_checked_in_user_id', String(user.id));
-      },
-      { user: currentUser }
-    );
-    await page.goto(`${root}/dashboard`);
-    const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]');
-    const gamesButton = page.getByRole('button', { name: /OYUNLAR/i }).first();
-    const dashboardReady =
-      (await dashboardTab.isVisible().catch(() => false)) ||
-      (await gamesButton.isVisible().catch(() => false));
-    if (!dashboardReady) {
-      const panelButton = page.getByRole('button', { name: /PANELE GEÇ/i }).first();
-      const panelReady = await panelButton
-        .waitFor({ state: 'visible', timeout: 7000 })
-        .then(() => true)
-        .catch(() => false);
-      if (panelReady) {
-        await panelButton.click();
+    const waitForDashboardOrCheckIn = async (timeoutMs: number) => {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (await dashboardTab.isVisible().catch(() => false)) return 'dashboard';
+        if (await checkInHeading.isVisible().catch(() => false)) return 'checkin';
+        await page.waitForTimeout(250);
       }
+      return 'timeout';
+    };
+
+    let surface = await waitForDashboardOrCheckIn(10000);
+    if (surface === 'timeout') {
+      const rootUrl = new URL(root);
+      await page.context().addCookies([
+        {
+          name: 'auth_token',
+          value: session.token,
+          domain: rootUrl.hostname,
+          httpOnly: true,
+          sameSite: 'Lax',
+          secure: root.startsWith('https://'),
+          path: '/',
+        },
+      ]);
+      await page.goto(`${root}/dashboard`);
+      surface = await waitForDashboardOrCheckIn(10000);
     }
-    if (await dashboardTab.isVisible().catch(() => false)) {
-      await expect(dashboardTab).toBeVisible({ timeout: 10000 });
-    } else {
-      await expect(gamesButton).toBeVisible({ timeout: 10000 });
+
+    if (surface === 'checkin') {
+      await tableInput.fill('7');
+      await expect(tableInput).toHaveValue('7');
+      await verificationInput.fill('1234-MASA07');
+      await expect(verificationInput).toHaveValue('1234-MASA07');
+      await expect(checkInSubmit).toBeEnabled({ timeout: 3000 });
+      await checkInSubmit.click();
     }
+
+    await expect(dashboardTab).toBeVisible({ timeout: 10000 });
 
     await page.context().clearCookies();
     await page.evaluate(() => {
