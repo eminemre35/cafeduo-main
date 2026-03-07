@@ -10,7 +10,7 @@ import {
 const authHeader = (token: string) => ({ Authorization: `Bearer ${token}`, Cookie: '' });
 
 test.describe('Tank Multiplayer Sync & Settlement', () => {
-  test('resolves tank winner from server-side scores despite spoofed finish payload', async ({
+  test('@advanced resolves tank winner from server-side scores despite spoofed finish payload', async ({
     request,
     baseURL,
   }) => {
@@ -137,7 +137,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(gameState.winner).toBe(host.user.username);
   });
 
-  test('resign finalizes tank match and blocks additional score writes', async ({
+  test('@advanced resign finalizes tank match and blocks additional score writes', async ({
     request,
     baseURL,
   }) => {

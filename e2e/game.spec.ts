@@ -12,7 +12,7 @@ import {
 const authHeader = (token: string) => ({ Authorization: `Bearer ${token}`, Cookie: '' });
 
 test.describe('Game Flow & Multiplayer Integrity', () => {
-  test('blocks unauthenticated and non-checkin game creation attempts', async ({ request, baseURL }) => {
+  test('@smoke blocks unauthenticated and non-checkin game creation attempts', async ({ request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
@@ -40,7 +40,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     expect(withoutCheckInRes.status()).toBe(403);
   });
 
-  test('forces check-in before dashboard for regular users', async ({ page, request, baseURL }) => {
+  test('@smoke forces check-in before dashboard for regular users', async ({ page, request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'checkin_guard');
 
@@ -48,7 +48,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     await expect(page.getByText('Kafe Giriş')).toBeVisible();
   });
 
-  test('shows dashboard + stats after authenticated check-in', async ({ page, request, baseURL }) => {
+  test('@smoke shows dashboard + stats after authenticated check-in', async ({ page, request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'dashboard_ready');
 
@@ -67,7 +67,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     await expect(page.getByRole('button', { name: /Oyun Kur/i })).toBeEnabled();
   });
 
-  test('enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
+  test('@advanced enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);

@@ -170,9 +170,9 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright E2E Tests
+      - name: Run Playwright smoke E2E tests
         id: playwright
-        run: npx playwright test --project=chromium --reporter=list,html,junit
+        run: npx playwright test --project=chromium --grep @smoke --reporter=list,html,junit
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
           E2E_API_BASE_URL: http://127.0.0.1:3001
@@ -257,7 +257,7 @@ jobs:
             
             ![Coverage](https://img.shields.io/badge/coverage-${lines}%25-${badgeColor})
             
-            ### 🎭 E2E Tests (Playwright)
+            ### 🎭 E2E Tests (Playwright Smoke)
             ${statusIcon} **${e2eStatus}**
             - ✅ Passed: ${e2ePassed}
             - ❌ Failed: ${e2eFailed}

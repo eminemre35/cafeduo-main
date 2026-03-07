@@ -10,7 +10,7 @@ import {
 } from './helpers/session';
 
 test.describe('Shop & Inventory Flow', () => {
-  test('can switch between shop/inventory and purchase an affordable reward', async ({
+  test('@smoke can switch between shop/inventory and purchase an affordable reward', async ({
     page,
     request,
     baseURL,

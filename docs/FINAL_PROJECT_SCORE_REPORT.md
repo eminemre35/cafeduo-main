@@ -61,6 +61,6 @@ Current readiness estimate:
 
 ## Next Actions
 
-1. Confirm GitHub Actions `CI/CD Pipeline` and `Playwright Tests` are green after the `127.0.0.1` stabilization.
+1. Confirm GitHub Actions `CI/CD Pipeline` is green on the new `@smoke` blocking set.
 2. Keep production-safe runtime defaults in place: JWT secret length, blacklist fail-closed, rate-limit fail-closed.
-3. Use the next sprint for large-component coverage and maintenance reduction, not auth redesign.
+3. Run `@advanced` Playwright coverage on schedule/manual cadence and use the next sprint for large-component coverage and maintenance reduction, not auth redesign.

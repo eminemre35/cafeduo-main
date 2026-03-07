@@ -56,7 +56,7 @@ const switchToRegisterMode = async (page: import('@playwright/test').Page) => {
 };
 
 test.describe('Authentication Flow', () => {
-  test('shows login modal and client-side validation messages', async ({ page, baseURL }) => {
+  test('@smoke shows login modal and client-side validation messages', async ({ page, baseURL }) => {
     await page.goto(baseURL || '/');
     await openAuthModal(page);
 
@@ -72,7 +72,7 @@ test.describe('Authentication Flow', () => {
     await expect(page.getByText(/Şifre en az 6 karakter olmalıdır/i)).toBeVisible();
   });
 
-  test('can register from UI and lands on check-in screen', async ({ page, baseURL }) => {
+  test('@smoke can register from UI and lands on check-in screen', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const seed = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     const username = `ui_reg_${seed}`.slice(0, 20);
@@ -106,7 +106,7 @@ test.describe('Authentication Flow', () => {
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
   });
 
-  test('can login with provisioned account and logout', async ({ page, request, baseURL }) => {
+  test('@smoke can login with provisioned account and logout', async ({ page, request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'auth_login');
 
@@ -196,7 +196,7 @@ test.describe('Authentication Flow', () => {
     await openAuthModal(page);
   });
 
-  test('shows backend auth error for invalid credentials', async ({ page, baseURL }) => {
+  test('@smoke shows backend auth error for invalid credentials', async ({ page, baseURL }) => {
     await page.goto(baseURL || '/');
     await openAuthModal(page);
     await page.locator('[data-testid="auth-email-input"]').fill('nonexistent@example.com');

@@ -51,3 +51,10 @@ Historical analysis documents are useful for context, but they are not the sourc
 1. Keep GitHub Actions green by preserving deterministic Chromium E2E host resolution.
 2. Keep runtime security defaults aligned with production-safe behavior.
 3. Raise coverage on large realtime and social game components without destabilizing deploy quality.
+
+## E2E Policy
+
+- Blocking CI now uses `smoke-critical` Chromium Playwright coverage.
+- `@smoke` covers auth, shop, and dashboard/check-in bootstrap paths.
+- `@advanced` covers heavier realtime and mobile/regression scenarios.
+- Advanced Playwright runs stay visible through scheduled or manual workflow execution instead of blocking every push.

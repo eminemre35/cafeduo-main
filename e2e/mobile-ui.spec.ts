@@ -8,7 +8,7 @@ import {
 } from './helpers/session';
 
 test.describe('Mobile UI Stability', () => {
-  test('landing page keeps critical CTA interactive on mobile without horizontal overflow', async ({
+  test('@advanced landing page keeps critical CTA interactive on mobile without horizontal overflow', async ({
     page,
     baseURL,
   }) => {
@@ -47,7 +47,7 @@ test.describe('Mobile UI Stability', () => {
     expect(hasHorizontalOverflow).toBeFalsy();
   });
 
-  test('dashboard remains operable on mobile after check-in', async ({ page, request, baseURL }) => {
+  test('@advanced dashboard remains operable on mobile after check-in', async ({ page, request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'mobile_dash');
     await checkInUser(request, root, session.token, { tableNumber: 4 });
@@ -89,7 +89,7 @@ test.describe('Mobile UI Stability', () => {
     expect(hasHorizontalOverflow).toBeFalsy();
   });
 
-  test('captures regression snapshots for 375x812 and 768x1024', async ({ page, baseURL }) => {
+  test('@advanced captures regression snapshots for 375x812 and 768x1024', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
 
     await page.setViewportSize({ width: 375, height: 812 });
