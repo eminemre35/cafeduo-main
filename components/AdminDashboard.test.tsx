@@ -1,7 +1,9 @@
 /**
- * AdminDashboard Component Tests
- * 
- * @description Admin panel CRUD operations tests
+ * AdminDashboard Component Tests — Café Concierge edition
+ *
+ * Behavior-focused after the visual rewrite: queries target roles, labels,
+ * data-testids, and stable strings (user/cafe names, status semantics) rather
+ * than the brittle ALL-CAPS retro chrome of the previous design.
  */
 
 import React from 'react';
@@ -10,7 +12,6 @@ import { AdminDashboard } from './AdminDashboard';
 import { User } from '../types';
 import * as apiModule from '../lib/api';
 
-// Mock api
 jest.mock('../lib/api', () => ({
   api: {
     admin: {
@@ -24,26 +25,13 @@ jest.mock('../lib/api', () => ({
       createCafe: jest.fn(),
       deleteCafe: jest.fn(),
     },
-    cafes: {
-      list: jest.fn(),
-    },
-    games: {
-      delete: jest.fn(),
-    },
+    cafes: { list: jest.fn() },
+    games: { delete: jest.fn() },
   },
 }));
 
-// Mock window.alert
-Object.defineProperty(window, 'alert', {
-  writable: true,
-  value: jest.fn(),
-});
-
-// Mock window.confirm
-Object.defineProperty(window, 'confirm', {
-  writable: true,
-  value: jest.fn(),
-});
+Object.defineProperty(window, 'alert', { writable: true, value: jest.fn() });
+Object.defineProperty(window, 'confirm', { writable: true, value: jest.fn() });
 
 describe('AdminDashboard', () => {
   const mockCurrentUser: User = {
@@ -59,13 +47,48 @@ describe('AdminDashboard', () => {
   };
 
   const mockUsers = [
-    { id: 1, username: 'user1', email: 'user1@test.com', role: 'user', points: 500, department: 'Makine', isAdmin: false },
-    { id: 2, username: 'cafe_admin1', email: 'cafe@test.com', role: 'cafe_admin', points: 300, department: 'Elektrik', isAdmin: false, cafe_name: 'Kafe 1' },
+    {
+      id: 1,
+      username: 'user1',
+      email: 'user1@test.com',
+      role: 'user',
+      points: 500,
+      department: 'Makine',
+      isAdmin: false,
+    },
+    {
+      id: 2,
+      username: 'cafe_admin1',
+      email: 'cafe@test.com',
+      role: 'cafe_admin',
+      points: 300,
+      department: 'Elektrik',
+      isAdmin: false,
+      cafe_name: 'Kafe 1',
+    },
   ];
 
   const mockGames = [
-    { id: 1, host_name: 'user1', guest_name: 'user2', game_type: 'tictactoe', status: 'finished', created_at: '2024-01-01', cafe_name: 'Kafe 1', table_code: 'A1' },
-    { id: 2, host_name: 'user3', guest_name: null, game_type: 'arena', status: 'waiting', created_at: '2024-01-02', cafe_name: 'Kafe 2', table_code: 'B2' },
+    {
+      id: 1,
+      host_name: 'user1',
+      guest_name: 'user2',
+      game_type: 'tictactoe',
+      status: 'finished',
+      created_at: '2024-01-01',
+      cafe_name: 'Kafe 1',
+      table_code: 'A1',
+    },
+    {
+      id: 2,
+      host_name: 'user3',
+      guest_name: null,
+      game_type: 'arena',
+      status: 'waiting',
+      created_at: '2024-01-02',
+      cafe_name: 'Kafe 2',
+      table_code: 'B2',
+    },
   ];
 
   const mockCafes = [
@@ -91,12 +114,12 @@ describe('AdminDashboard', () => {
     });
   });
 
-  it('renders dashboard title and admin username', async () => {
+  it('renders dashboard heading and current admin username', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByText('YÖNETİM PANELİ')).toBeInTheDocument();
-      expect(screen.getByText(/SİSTEM YÖNETİCİSİ: admin_user/)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Concierge' })).toBeInTheDocument();
+      expect(screen.getByText(/admin_user/)).toBeInTheDocument();
     });
   });
 
@@ -104,9 +127,9 @@ describe('AdminDashboard', () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Kullanıcılar')).toBeInTheDocument();
-      expect(screen.getByText('Oyunlar')).toBeInTheDocument();
-      expect(screen.getByText('Kafeler')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Kullanıcılar/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Oyunlar/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Kafeler/ })).toBeInTheDocument();
     });
   });
 
@@ -122,25 +145,27 @@ describe('AdminDashboard', () => {
   it('switches to games tab when clicked', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    await waitFor(() => expect(screen.getByText('Kullanıcı Listesi')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText('Oyunlar'));
+    fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
     await waitFor(() => {
-      expect(screen.getByText('Oyun Geçmişi')).toBeInTheDocument();
-      expect(screen.getByText(/user1 vs/)).toBeInTheDocument();
+      // Game rows surface host names on the games tab
+      expect(screen.getByText(/user1/)).toBeInTheDocument();
+      expect(screen.getByText(/user3/)).toBeInTheDocument();
     });
   });
 
   it('switches to cafes tab when clicked', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    await waitFor(() => expect(screen.getByText('Kullanıcı Listesi')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
-      expect(screen.getByText('Kafe Yönetimi')).toBeInTheDocument();
+      // Konum Detayları eyebrow + selected cafe heading both appear
+      expect(screen.getByText('Konum Detayları')).toBeInTheDocument();
     });
   });
 
@@ -148,8 +173,8 @@ describe('AdminDashboard', () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByText('USER')).toBeInTheDocument();
-      expect(screen.getByText('CAFE ADMIN')).toBeInTheDocument();
+      expect(screen.getByText('User')).toBeInTheDocument();
+      expect(screen.getByText('Cafe Admin')).toBeInTheDocument();
     });
   });
 
@@ -158,7 +183,7 @@ describe('AdminDashboard', () => {
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
-    const searchInput = screen.getByPlaceholderText('Kullanıcı adı / e-posta ara...');
+    const searchInput = screen.getByPlaceholderText(/Kullanıcı adı veya e-posta ara/i);
     fireEvent.change(searchInput, { target: { value: 'cafe' } });
 
     await waitFor(() => {
@@ -170,14 +195,10 @@ describe('AdminDashboard', () => {
   it('shows promote button for regular users', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    // Wait for users to be rendered in the table
-    await waitFor(() => {
-      expect(screen.getByText('user1')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
-    // Wait a bit more for buttons to render
     await waitFor(() => {
-      const promoteButtons = screen.queryAllByText('YÖNETİCİ YAP');
+      const promoteButtons = screen.queryAllByRole('button', { name: /Yönetici Yap/ });
       expect(promoteButtons.length).toBeGreaterThan(0);
     });
   });
@@ -186,31 +207,20 @@ describe('AdminDashboard', () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByText('YÖNETİCİLİĞİ AL')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Yetkiyi Al/ })).toBeInTheDocument();
     });
   });
 
   it('opens cafe admin modal when promoting user', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    // Wait for all data to fully load including cafes
-    await waitFor(() => {
-      expect(screen.getByText('Kullanıcı Listesi')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
-    // Wait for user data to be rendered
-    await waitFor(() => {
-      expect(screen.getByText('user1')).toBeInTheDocument();
-    });
-
-    // Find and click "YÖNETİCİ YAP" button (for user who has role 'user')
-    const promoteButtons = screen.queryAllByText('YÖNETİCİ YAP');
+    const promoteButtons = screen.queryAllByRole('button', { name: /Yönetici Yap/ });
     expect(promoteButtons.length).toBeGreaterThan(0);
-    
-    // Click the first promote button
+
     fireEvent.click(promoteButtons[0]);
 
-    // Modal should open
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Kafe Yöneticisi Ata' })).toBeInTheDocument();
     });
@@ -222,9 +232,11 @@ describe('AdminDashboard', () => {
 
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    await waitFor(() => expect(screen.getByText('YÖNETİCİLİĞİ AL')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Yetkiyi Al/ })).toBeInTheDocument()
+    );
 
-    fireEvent.click(screen.getByText('YÖNETİCİLİĞİ AL'));
+    fireEvent.click(screen.getByRole('button', { name: /Yetkiyi Al/ }));
 
     await waitFor(() => {
       expect(window.confirm).toHaveBeenCalled();
@@ -234,21 +246,22 @@ describe('AdminDashboard', () => {
   it('shows game status badges', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Oyunlar'));
+    fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
     await waitFor(() => {
-      expect(screen.getByText('TAMAMLANDI')).toBeInTheDocument();
-      expect(screen.getByText('DEVAM EDİYOR')).toBeInTheDocument();
+      expect(screen.getByText('Tamamlandı')).toBeInTheDocument();
+      expect(screen.getByText('Devam ediyor')).toBeInTheDocument();
     });
   });
 
   it('shows delete game button', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Oyunlar'));
+    fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
     await waitFor(() => {
-      expect(screen.getAllByText(/SİL/i).length).toBeGreaterThan(0);
+      const deleteButtons = screen.queryAllByRole('button', { name: /^Sil$/ });
+      expect(deleteButtons.length).toBeGreaterThan(0);
     });
   });
 
@@ -258,26 +271,27 @@ describe('AdminDashboard', () => {
 
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Oyunlar'));
-
-    await waitFor(() => expect(screen.getAllByText(/SİL/i)[0]).toBeInTheDocument());
-
-    fireEvent.click(screen.getAllByText(/SİL/i)[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalledWith(
-        expect.stringContaining('Geri alınamaz')
-      );
+      expect(screen.queryAllByRole('button', { name: /^Sil$/ }).length).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(screen.queryAllByRole('button', { name: /^Sil$/ })[0]);
+
+    await waitFor(() => {
+      expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Geri alınamaz'));
     });
   });
 
-  it('shows cafe list with edit form in cafes tab', async () => {
+  it('shows cafe edit form when a cafe is selected', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
-      expect(screen.getByText('Kafe Bilgilerini Düzenle')).toBeInTheDocument();
+      // Selected cafe surfaces its name in the detail card heading
+      expect(screen.getByRole('heading', { name: 'Kafe 1' })).toBeInTheDocument();
     });
   });
 
@@ -304,13 +318,13 @@ describe('AdminDashboard', () => {
       expect(screen.getByText('user1')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Kafeler/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Kafe Bilgilerini/)).toBeInTheDocument();
+      expect(screen.getByText(/Konum Detayları/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /DE.*KAYDET/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Değişiklikleri Kaydet/ }));
 
     await waitFor(() => {
       expect(apiModule.api.admin.updateCafe).toHaveBeenCalledWith(
@@ -332,17 +346,17 @@ describe('AdminDashboard', () => {
   it('shows add cafe button', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Yeni Kafe Ekle/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Yeni Kafe/ })).toBeInTheDocument();
     });
   });
 
   it('shows delete cafe button in cafes tab', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
       expect(screen.getByTestId('delete-cafe-button')).toBeInTheDocument();
@@ -354,7 +368,7 @@ describe('AdminDashboard', () => {
 
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
       expect(screen.getByTestId('delete-cafe-button')).toBeInTheDocument();
@@ -374,26 +388,28 @@ describe('AdminDashboard', () => {
 
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
       expect(screen.getByTestId('delete-cafe-button')).toBeDisabled();
     });
 
-    expect(screen.getByText('Güvenlik kuralı: Son kafe silinemez.')).toBeInTheDocument();
+    expect(screen.getByText(/Güvenlik kuralı: Son kafe silinemez./)).toBeInTheDocument();
   });
 
   it('opens add cafe modal when clicking add button', async () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
-    fireEvent.click(screen.getByText('Kafeler'));
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
-    await waitFor(() => expect(screen.getByText(/Yeni Kafe Ekle/)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Yeni Kafe/ })).toBeInTheDocument()
+    );
 
-    fireEvent.click(screen.getByText(/Yeni Kafe Ekle/));
+    fireEvent.click(screen.getByRole('button', { name: /Yeni Kafe/ }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Yeni Kafe Ekle' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Kafe Ekle' })).toBeInTheDocument();
     });
   });
 
@@ -437,7 +453,9 @@ describe('AdminDashboard', () => {
       expect(screen.getByText('user1')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: /KULLANICIYI SİL/i })[1]);
+    // Two non-admin users → two delete buttons in the user table; click the second (cafe_admin1, id=2).
+    const deleteButtons = screen.getAllByRole('button', { name: /^Sil$/ });
+    fireEvent.click(deleteButtons[1]);
 
     await waitFor(() => {
       expect(apiModule.api.admin.deleteUser).toHaveBeenCalledWith(2);
@@ -450,7 +468,7 @@ describe('AdminDashboard', () => {
     render(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Kullanıcı Listesi')).toBeInTheDocument();
+      expect(screen.getByText('user1')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Yeni Kullanıcı/i }));
@@ -458,10 +476,12 @@ describe('AdminDashboard', () => {
       expect(screen.getByRole('heading', { name: 'Yeni Kullanıcı Ekle' })).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Kullanıcı Adı *'), { target: { value: 'newguy' } });
-    fireEvent.change(screen.getByLabelText('E-posta *'), { target: { value: 'newguy@test.com' } });
-    fireEvent.change(screen.getByLabelText('Şifre *'), { target: { value: 'secret123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Kullanıcı Ekle' }));
+    fireEvent.change(screen.getByLabelText(/Kullanıcı Adı/), { target: { value: 'newguy' } });
+    fireEvent.change(screen.getByLabelText(/E-posta/), {
+      target: { value: 'newguy@test.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Şifre/), { target: { value: 'secret123' } });
+    fireEvent.click(screen.getByRole('button', { name: /Kullanıcıyı Ekle/ }));
 
     await waitFor(() => {
       expect(apiModule.api.admin.createUser).toHaveBeenCalledWith(

@@ -21,6 +21,11 @@
 @import '@fontsource/ibm-plex-mono/500.css';
 @import '@fontsource/ibm-plex-mono/700.css';
 
+/* Café Concierge — admin-only typography. Scoped via .cafe-concierge class
+ * so the rest of the site (Cyber retro theme) is untouched. */
+@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/dm-sans';
+
 @import 'tailwindcss';
 @config "./tailwind.config.js";
 @source "./index.html";
@@ -1133,6 +1138,41 @@ body::after {
 
 .last-move-highlight {
   animation: last-move-highlight 0.3s ease-out forwards;
+}
+
+/* ── Café Concierge (admin scope) ──
+ * Warm parchment + ink + copper palette. Scoped to .cafe-concierge root so it
+ * doesn't bleed into the cyber-retro game UI. Applied on AdminDashboard's
+ * outermost element only. */
+.cafe-concierge {
+  font-family:
+    'DM Sans Variable',
+    'DM Sans',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: #1c1814;
+  background-color: #faf7f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.cafe-concierge h1,
+.cafe-concierge h2,
+.cafe-concierge h3,
+.cafe-concierge .cc-display {
+  font-family: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  font-variation-settings:
+    'opsz' 96,
+    'SOFT' 50;
+}
+.cafe-concierge .cc-mono {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+/* Hide the global Navbar/Footer chrome when concierge is the host so the
+ * admin gets a clean canvas. Selectors are limited to direct neighbours. */
+.cafe-concierge ::selection {
+  background: #c2622f;
+  color: #faf7f0;
 }
 
 /* ── Chess check pulse (RetroChess king-in-check indicator) ── */

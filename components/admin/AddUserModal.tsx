@@ -1,5 +1,19 @@
 import React from 'react';
+import { Modal } from './ui/Modal';
+import { Input } from './ui/Input';
+import { Select } from './ui/Select';
+import { Button } from './ui/Button';
 import { AddUserModalProps } from './types';
+
+const ROLE_OPTIONS = [
+  { value: 'user', label: 'Kullanıcı', description: 'Standart üyelik, oyun oynar' },
+  {
+    value: 'cafe_admin',
+    label: 'Kafe Yöneticisi',
+    description: 'Bir kafenin günlük operasyonu',
+  },
+  { value: 'admin', label: 'Sistem Yöneticisi', description: 'Tüm panele erişim' },
+];
 
 export const AddUserModal: React.FC<AddUserModalProps> = ({
   isOpen,
@@ -10,123 +24,79 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  if (!isOpen) return null;
+  const cafeOptions = [
+    { value: '', label: 'Kafe seçin', description: 'cafe_admin için zorunlu' },
+    ...cafes.map((c) => ({ value: String(c.id), label: c.name })),
+  ];
 
   return (
-    <div className="fixed inset-0 bg-[#02050f]/85 backdrop-blur-sm noise-bg flex items-center justify-center z-50 p-4">
-      <div className="rf-screen-card p-8 max-w-md w-full relative">
-        <p className="rf-terminal-strip mb-2">Kullanıcı Kayıt Arayüzü</p>
-        <h2 className="text-2xl font-display text-white tracking-[0.08em] mb-6 glitch-text" data-text="YENİ KULLANICI EKLE">
-          Yeni Kullanıcı Ekle
-        </h2>
-
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="new-user-username" className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">
-              Kullanıcı Adı *
-            </label>
-            <input
-              id="new-user-username"
-              type="text"
-              value={formData.username}
-              onChange={(e) => onFormChange({ ...formData, username: e.target.value })}
-              className="rf-input w-full p-3 text-white outline-none"
-              placeholder="Örn: yeni_kullanici"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="new-user-email" className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">
-              E-posta *
-            </label>
-            <input
-              id="new-user-email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => onFormChange({ ...formData, email: e.target.value })}
-              className="rf-input w-full p-3 text-white outline-none"
-              placeholder="ornek@mail.com"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="new-user-password" className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">
-              Şifre *
-            </label>
-            <input
-              id="new-user-password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => onFormChange({ ...formData, password: e.target.value })}
-              className="rf-input w-full p-3 text-white outline-none"
-              placeholder="En az 6 karakter"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Bölüm</label>
-            <input
-              type="text"
-              value={formData.department}
-              onChange={(e) => onFormChange({ ...formData, department: e.target.value })}
-              className="rf-input w-full p-3 text-white outline-none"
-              placeholder="Opsiyonel"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Rol</label>
-            <select
-              value={formData.role}
-              onChange={(e) =>
-                onFormChange({
-                  ...formData,
-                  role: e.target.value as typeof formData.role,
-                })
-              }
-              className="rf-input w-full p-3 text-white outline-none"
-            >
-              <option value="user">Kullanıcı</option>
-              <option value="cafe_admin">Kafe Yöneticisi</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          {formData.role === 'cafe_admin' && (
-            <div>
-              <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Kafe *</label>
-              <select
-                value={formData.cafe_id}
-                onChange={(e) => onFormChange({ ...formData, cafe_id: e.target.value })}
-                className="rf-input w-full p-3 text-white outline-none"
-              >
-                <option value="">Kafe seçin</option>
-                {cafes.map((cafe) => (
-                  <option key={String(cafe.id)} value={String(cafe.id)}>
-                    {cafe.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="flex gap-3 mt-8">
-            <button
-              onClick={onClose}
-              className="flex-1 bg-black/35 hover:bg-black/55 text-cyan-100 font-bold py-3 border-2 border-cyan-500/35 transition-colors uppercase tracking-[0.08em]"
-            >
-              İptal
-            </button>
-            <button
-              onClick={onSubmit}
-              disabled={isSubmitting}
-              className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-bold py-3 border-2 border-cyan-200 transition-colors uppercase tracking-[0.08em] disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Ekleniyor...' : 'Kullanıcı Ekle'}
-            </button>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      eyebrow="Personel Kaydı"
+      title="Yeni Kullanıcı Ekle"
+      size="md"
+      footer={
+        <div className="flex gap-3 justify-end">
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
+            İptal
+          </Button>
+          <Button variant="primary" onClick={onSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Ekleniyor…' : 'Kullanıcıyı Ekle'}
+          </Button>
         </div>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <Input
+          label="Kullanıcı Adı"
+          required
+          id="new-user-username"
+          value={formData.username}
+          onChange={(e) => onFormChange({ ...formData, username: e.target.value })}
+          placeholder="yeni_kullanici"
+        />
+        <Input
+          label="E-posta"
+          required
+          type="email"
+          id="new-user-email"
+          value={formData.email}
+          onChange={(e) => onFormChange({ ...formData, email: e.target.value })}
+          placeholder="ornek@mail.com"
+        />
+        <Input
+          label="Şifre"
+          required
+          type="password"
+          id="new-user-password"
+          value={formData.password}
+          onChange={(e) => onFormChange({ ...formData, password: e.target.value })}
+          helper="En az 6 karakter"
+        />
+        <Input
+          label="Bölüm"
+          value={formData.department}
+          onChange={(e) => onFormChange({ ...formData, department: e.target.value })}
+          placeholder="Opsiyonel — örn. İşletme"
+        />
+        <Select
+          label="Rol"
+          required
+          value={formData.role}
+          options={ROLE_OPTIONS}
+          onChange={(next) => onFormChange({ ...formData, role: next as typeof formData.role })}
+        />
+        {formData.role === 'cafe_admin' && (
+          <Select
+            label="Atanacak Kafe"
+            required
+            value={formData.cafe_id}
+            options={cafeOptions}
+            onChange={(next) => onFormChange({ ...formData, cafe_id: next })}
+          />
+        )}
       </div>
-    </div>
+    </Modal>
   );
 };
