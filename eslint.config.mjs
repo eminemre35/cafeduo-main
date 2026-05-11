@@ -104,16 +104,16 @@ export default [
       'no-useless-escape': 'warn',
       'no-redeclare': 'warn',
       'prefer-const': 'warn',
-      // Security-sensitive (warn for now — flip to error after refactoring 3 import.meta.env probes)
-      'no-eval': 'warn',
-      'no-implied-eval': 'warn',
-      'no-new-func': 'warn',
-      'no-script-url': 'warn',
+      // Security-sensitive: hard errors. `import.meta.env` access goes through lib/viteEnv.ts.
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'no-script-url': 'error',
     },
   },
   // Backend & migrations (CommonJS / Node)
   {
-    files: ['backend/**/*.js', 'migrations/**/*.js'],
+    files: ['backend/**/*.js', 'migrations/**/*.js', 'shared/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',

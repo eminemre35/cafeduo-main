@@ -1,7 +1,6 @@
-const DEFAULT_ALLOWED_ORIGINS = [
-  'https://cafeduotr.com',
-  'https://www.cafeduotr.com',
-];
+const { SUPPORTED_GAME_TYPES, GAME_TYPE_ALIASES } = require('../../shared/gameRegistry');
+
+const DEFAULT_ALLOWED_ORIGINS = ['https://cafeduotr.com', 'https://www.cafeduotr.com'];
 
 const LOCAL_ALLOWED_ORIGINS = [
   'http://localhost:3000',
@@ -10,41 +9,10 @@ const LOCAL_ALLOWED_ORIGINS = [
   'http://127.0.0.1:5173',
 ];
 
-const SUPPORTED_GAME_TYPES = new Set([
-  'Nişancı Düellosu',
-  'Retro Satranç',
-  'Bilgi Yarışı',
-]);
-
 const normalizeGameType = (value) => {
   const raw = String(value || '').trim();
   if (!raw) return null;
   if (SUPPORTED_GAME_TYPES.has(raw)) return raw;
-
-  const aliasMap = {
-    arena: 'Nişancı Düellosu',
-    aim: 'Nişancı Düellosu',
-    hedef: 'Nişancı Düellosu',
-    nisanci: 'Nişancı Düellosu',
-    nisanci_duellosu: 'Nişancı Düellosu',
-    ni_anc_d_ellosu: 'Nişancı Düellosu',
-    nisangah: 'Nişancı Düellosu',
-    nisangah_ustasi: 'Nişancı Düellosu',
-    rhythm: 'Nişancı Düellosu',
-    ritim_kopyala: 'Nişancı Düellosu',
-    tank: 'Nişancı Düellosu',
-    tank_duellosu: 'Nişancı Düellosu',
-    tank_d_ellosu: 'Nişancı Düellosu',
-    chess: 'Retro Satranç',
-    satranc: 'Retro Satranç',
-    retro_satranc: 'Retro Satranç',
-    strategy: 'Retro Satranç',
-    knowledge: 'Bilgi Yarışı',
-    quiz: 'Bilgi Yarışı',
-    trivia: 'Bilgi Yarışı',
-    bilgi: 'Bilgi Yarışı',
-    bilgi_yarisi: 'Bilgi Yarışı',
-  };
 
   const normalizedKey = raw
     .toLowerCase()
@@ -53,11 +21,13 @@ const normalizeGameType = (value) => {
     .replace(/_+/g, '_')
     .replace(/^_+|_+$/g, '');
 
-  return aliasMap[normalizedKey] || null;
+  return GAME_TYPE_ALIASES[normalizedKey] || null;
 };
 
 const normalizeTableCode = (rawValue) => {
-  const raw = String(rawValue || '').trim().toUpperCase();
+  const raw = String(rawValue || '')
+    .trim()
+    .toUpperCase();
   if (!raw) return null;
   if (raw.startsWith('MASA')) return raw;
   const numeric = Number(raw);

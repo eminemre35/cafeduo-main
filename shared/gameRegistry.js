@@ -1,0 +1,84 @@
+/**
+ * Single source of truth for cafeduo game types.
+ *
+ * Used by:
+ *   - backend/utils/serverConfig.js (SUPPORTED_GAME_TYPES, normalizeGameType)
+ *   - frontend components (ArenaBattle, KnowledgeQuiz, RetroChess, CreateGameModal)
+ *
+ * CommonJS export so that backend (Node CJS) and frontend (Vite/TS) can both
+ * consume it without a build step. Type definitions live in `gameRegistry.d.ts`.
+ */
+
+const AIM_GAME_TYPE = 'Nişancı Düellosu';
+const QUIZ_GAME_TYPE = 'Bilgi Yarışı';
+const CHESS_GAME_TYPE = 'Retro Satranç';
+
+/** Canonical game definitions keyed by their display type. */
+const GAME_REGISTRY = {
+  [AIM_GAME_TYPE]: {
+    type: AIM_GAME_TYPE,
+    mode: 'aim',
+    maxRounds: 5,
+    minPoints: 40,
+    submissionKeyPrefix: 'arena',
+    category: 'Refleks',
+    description: 'Nişangahı merkeze kilitle, tur tur isabet topla.',
+  },
+  [QUIZ_GAME_TYPE]: {
+    type: QUIZ_GAME_TYPE,
+    mode: 'quiz',
+    maxRounds: 10,
+    minPoints: 120,
+    submissionKeyPrefix: 'quiz',
+    category: 'Bilgi',
+    description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver.',
+  },
+  [CHESS_GAME_TYPE]: {
+    type: CHESS_GAME_TYPE,
+    mode: 'chess',
+    maxRounds: null,
+    minPoints: 90,
+    submissionKeyPrefix: 'chess',
+    category: 'Strateji',
+    description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.',
+  },
+};
+
+const SUPPORTED_GAME_TYPES = new Set(Object.keys(GAME_REGISTRY));
+const GAME_TYPE_LIST = Object.values(GAME_REGISTRY);
+
+/** Map of normalized slug → canonical game type. Used by serverConfig.normalizeGameType. */
+const GAME_TYPE_ALIASES = {
+  arena: AIM_GAME_TYPE,
+  aim: AIM_GAME_TYPE,
+  hedef: AIM_GAME_TYPE,
+  nisanci: AIM_GAME_TYPE,
+  nisanci_duellosu: AIM_GAME_TYPE,
+  ni_anc_d_ellosu: AIM_GAME_TYPE,
+  nisangah: AIM_GAME_TYPE,
+  nisangah_ustasi: AIM_GAME_TYPE,
+  rhythm: AIM_GAME_TYPE,
+  ritim_kopyala: AIM_GAME_TYPE,
+  tank: AIM_GAME_TYPE,
+  tank_duellosu: AIM_GAME_TYPE,
+  tank_d_ellosu: AIM_GAME_TYPE,
+  chess: CHESS_GAME_TYPE,
+  satranc: CHESS_GAME_TYPE,
+  retro_satranc: CHESS_GAME_TYPE,
+  strategy: CHESS_GAME_TYPE,
+  knowledge: QUIZ_GAME_TYPE,
+  quiz: QUIZ_GAME_TYPE,
+  trivia: QUIZ_GAME_TYPE,
+  bilgi: QUIZ_GAME_TYPE,
+  bilgi_yarisi: QUIZ_GAME_TYPE,
+};
+
+module.exports = {
+  AIM_GAME_TYPE,
+  QUIZ_GAME_TYPE,
+  CHESS_GAME_TYPE,
+  GAME_REGISTRY,
+  SUPPORTED_GAME_TYPES,
+  GAME_TYPE_LIST,
+  GAME_TYPE_ALIASES,
+};

@@ -13,6 +13,7 @@ import type {
   BuildMeta,
   DeleteCafeResult,
 } from '../types';
+import { getViteEnvVar } from './viteEnv';
 
 const withProtocol = (url: string): string => {
   if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
@@ -31,7 +32,9 @@ const enforceBrowserHttps = (url: string): string => {
 export const normalizeApiBaseUrl = (url: string): string => {
   const trimmed = url.trim();
   if (!trimmed) return '';
-  return enforceBrowserHttps(withProtocol(trimmed)).replace(/\/+$/, '').replace(/\/api$/, '');
+  return enforceBrowserHttps(withProtocol(trimmed))
+    .replace(/\/+$/, '')
+    .replace(/\/api$/, '');
 };
 
 /**
@@ -45,12 +48,8 @@ export function getCsrfToken(): string | null {
 }
 
 const resolveApiBaseUrl = (): string => {
-  try {
-    const viteBaseUrl = new Function('return import.meta.env?.VITE_API_BASE_URL || import.meta.env?.VITE_API_URL || ""')();
-    if (viteBaseUrl) return normalizeApiBaseUrl(String(viteBaseUrl));
-  } catch {
-    // ignore and continue with fallback
-  }
+  const viteBaseUrl = getViteEnvVar('VITE_API_BASE_URL') || getViteEnvVar('VITE_API_URL');
+  if (viteBaseUrl) return normalizeApiBaseUrl(viteBaseUrl);
   return '';
 };
 
@@ -207,7 +206,10 @@ const parseApiError = async (response: ApiErrorResponse): Promise<string> => {
  * @returns Parsed JSON response
  * @throws Error with message from server or network error
  */
-async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestInit = {}): Promise<TResponse> {
+async function fetchAPI<TResponse = unknown>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<TResponse> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -252,7 +254,9 @@ async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestI
 export const api = {
   meta: {
     getVersion: async (): Promise<BuildMeta & { nodeEnv?: string }> => {
-      const data = await fetchAPI<{ commit?: string; buildTime?: string | null; nodeEnv?: string }>('/meta/version');
+      const data = await fetchAPI<{ commit?: string; buildTime?: string | null; nodeEnv?: string }>(
+        '/meta/version'
+      );
       const rawVersion = String(data.commit || 'local').trim();
       const shortVersion = /^[a-f0-9]{8,}$/i.test(rawVersion)
         ? rawVersion.slice(0, 7)
@@ -296,7 +300,10 @@ export const api = {
       });
     },
 
-    resetPassword: async (token: string, password: string): Promise<{ success: boolean; message: string }> => {
+    resetPassword: async (
+      token: string,
+      password: string
+    ): Promise<{ success: boolean; message: string }> => {
       return await fetchAPI('/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({ token, password }),
@@ -320,7 +327,7 @@ export const api = {
       } catch {
         return null;
       }
-    }
+    },
   },
 
   // USERS
@@ -355,7 +362,7 @@ export const api = {
       } catch {
         return [];
       }
-    }
+    },
   },
 
   // CAFES
@@ -441,9 +448,14 @@ export const api = {
 
   // GAMES
   games: {
-    list: async (options?: { tableCode?: string; includeAll?: boolean }): Promise<GameRequest[]> => {
+    list: async (options?: {
+      tableCode?: string;
+      includeAll?: boolean;
+    }): Promise<GameRequest[]> => {
       const query = new URLSearchParams();
-      const normalizedTable = String(options?.tableCode || '').trim().toUpperCase();
+      const normalizedTable = String(options?.tableCode || '')
+        .trim()
+        .toUpperCase();
       if (normalizedTable) {
         query.set('table', normalizedTable);
       }
@@ -530,7 +542,12 @@ export const api = {
     drawOffer: async (
       gameId: number | string,
       action: 'offer' | 'accept' | 'reject' | 'cancel'
-    ): Promise<{ success: boolean; drawOffer?: unknown; winner?: string | null; draw?: boolean }> => {
+    ): Promise<{
+      success: boolean;
+      drawOffer?: unknown;
+      winner?: string | null;
+      draw?: boolean;
+    }> => {
       return await fetchAPI(`/games/${gameId}/draw-offer`, {
         method: 'POST',
         body: JSON.stringify({ action }),
@@ -587,7 +604,7 @@ export const api = {
       interval = setInterval(poll, 15000); // Poll every 15 seconds
 
       return () => clearInterval(interval); // Unsubscribe function
-    }
+    },
   },
 
   // REWARDS / SHOP
@@ -608,7 +625,7 @@ export const api = {
       await fetchAPI(`/rewards/${rewardId}`, {
         method: 'DELETE',
       });
-    }
+    },
   },
 
   shop: {
@@ -621,14 +638,14 @@ export const api = {
 
     inventory: async (userId: string | number): Promise<ShopInventoryRow[]> => {
       return await fetchAPI(`/shop/inventory/${userId}`);
-    }
+    },
   },
 
   // LEADERBOARD
   leaderboard: {
     get: async (): Promise<User[]> => {
       return await fetchAPI('/leaderboard');
-    }
+    },
   },
 
   // ACHIEVEMENTS
@@ -689,7 +706,11 @@ export const api = {
       return await fetchAPI('/admin/games');
     },
 
-    updateUserRole: async (userId: number | string, role: string, cafeId?: number | null): Promise<void> => {
+    updateUserRole: async (
+      userId: number | string,
+      role: string,
+      cafeId?: number | null
+    ): Promise<void> => {
       await fetchAPI(`/admin/users/${userId}/role`, {
         method: 'PUT',
         body: JSON.stringify({ role, cafe_id: cafeId }),
@@ -724,7 +745,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ code }),
       });
-    }
+    },
   },
 
   // STORE (Phase 3)
@@ -735,11 +756,18 @@ export const api = {
     inventory: async (): Promise<{ success: boolean; inventory: StoreInventoryItemPayload[] }> => {
       return await fetchAPI('/store/inventory', { method: 'GET' });
     },
-    buy: async (itemId: number): Promise<{ success: boolean; message: string; inventoryItem: StoreInventoryItemPayload; remainingPoints: number }> => {
+    buy: async (
+      itemId: number
+    ): Promise<{
+      success: boolean;
+      message: string;
+      inventoryItem: StoreInventoryItemPayload;
+      remainingPoints: number;
+    }> => {
       return await fetchAPI('/store/buy', {
         method: 'POST',
         body: JSON.stringify({ itemId }),
       });
-    }
-  }
+    },
+  },
 };

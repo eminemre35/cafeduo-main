@@ -9,8 +9,8 @@ const crypto = require('crypto');
 function loadEnvFile() {
   const possiblePaths = [
     path.resolve(__dirname, '../.env'), // Root (standard)
-    path.resolve(__dirname, '.env'),    // Backend folder
-    path.resolve(process.cwd(), '.env') // Current working dir
+    path.resolve(__dirname, '.env'), // Backend folder
+    path.resolve(process.cwd(), '.env'), // Current working dir
   ];
 
   for (const envPath of possiblePaths) {
@@ -21,15 +21,14 @@ function loadEnvFile() {
     }
   }
 
-  console.warn("⚠️  .env file NOT FOUND in any standard location!");
-  console.warn("Checked paths:", possiblePaths);
+  console.warn('⚠️  .env file NOT FOUND in any standard location!');
+  console.warn('Checked paths:', possiblePaths);
 }
 
 loadEnvFile();
 
-
 // Sentry APM Monitoring
-const Sentry = require("@sentry/node");
+const Sentry = require('@sentry/node');
 
 // Track if Sentry was successfully initialized
 let isSentryInitialized = false;
@@ -37,10 +36,10 @@ let isSentryInitialized = false;
 // Only initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
   const integrations = [];
-  
+
   // Try to load profiling integration (optional dependency)
   try {
-    const { ProfilingIntegration } = require("@sentry/profiling-node");
+    const { ProfilingIntegration } = require('@sentry/profiling-node');
     integrations.push(new ProfilingIntegration());
   } catch (e) {
     console.log('⚠️  @sentry/profiling-node not available - profiling disabled');
@@ -81,7 +80,7 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
-const { Server } = require("socket.io");
+const { Server } = require('socket.io');
 
 // Swagger UI
 const swaggerUi = require('swagger-ui-express');
@@ -153,16 +152,25 @@ const PORT = process.env.PORT || 3001;
 const REQUEST_LOG_SLOW_MS = Number(process.env.REQUEST_LOG_SLOW_MS || 1200);
 const LEGACY_RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const LEGACY_RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 0);
-const API_RATE_LIMIT_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS);
+const API_RATE_LIMIT_WINDOW_MS = Number(
+  process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS
+);
 const API_RATE_LIMIT_MAX_REQUESTS =
-  Number(process.env.API_RATE_LIMIT_MAX_REQUESTS || 0) || Math.max(LEGACY_RATE_LIMIT_MAX_REQUESTS, 600);
-const APP_VERSION = String(process.env.APP_VERSION || process.env.VITE_APP_VERSION || 'local').trim();
-const APP_BUILD_TIME = String(process.env.APP_BUILD_TIME || process.env.VITE_BUILD_TIME || '').trim();
+  Number(process.env.API_RATE_LIMIT_MAX_REQUESTS || 0) ||
+  Math.max(LEGACY_RATE_LIMIT_MAX_REQUESTS, 600);
+const APP_VERSION = String(
+  process.env.APP_VERSION || process.env.VITE_APP_VERSION || 'local'
+).trim();
+const APP_BUILD_TIME = String(
+  process.env.APP_BUILD_TIME || process.env.VITE_BUILD_TIME || ''
+).trim();
 
 if (process.env.TRUST_PROXY) {
   const trustProxyEnv = process.env.TRUST_PROXY.trim();
   const parsedTrustProxy = Number.isNaN(Number(trustProxyEnv))
-    ? (trustProxyEnv === 'true' ? true : trustProxyEnv)
+    ? trustProxyEnv === 'true'
+      ? true
+      : trustProxyEnv
     : Number(trustProxyEnv);
   app.set('trust proxy', parsedTrustProxy);
 } else if (process.env.NODE_ENV === 'production') {
@@ -211,8 +219,8 @@ app.use((req, res, next) => {
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true
+    methods: ['GET', 'POST'],
+    credentials: true,
   },
   transports: ['websocket', 'polling'], // Prefer WebSocket for lower latency
 });
@@ -236,14 +244,16 @@ const emitSocketRoomError = (socket, code) => {
   socket.emit('game_room_error', { code });
 };
 
-const isSocketAdmin = (socket) => Boolean(socket.user?.isAdmin || socket.user?.is_admin || socket.user?.role === 'admin');
+const isSocketAdmin = (socket) =>
+  Boolean(socket.user?.isAdmin || socket.user?.is_admin || socket.user?.role === 'admin');
 
-const normalizeMemoryGameForSocket = (game) => game && {
-  id: game.id,
-  host_name: game.host_name ?? game.hostName,
-  guest_name: game.guest_name ?? game.guestName,
-  status: game.status,
-};
+const normalizeMemoryGameForSocket = (game) =>
+  game && {
+    id: game.id,
+    host_name: game.host_name ?? game.hostName,
+    guest_name: game.guest_name ?? game.guestName,
+    status: game.status,
+  };
 
 const findMemorySocketGame = (normalizedGameId) => {
   if (!Array.isArray(memoryState.games)) {
@@ -331,8 +341,14 @@ io.on('connection', (socket) => {
 
   // 🔒 SECURITY: Allowed move action types for validation
   const ALLOWED_MOaE_ACTIONS = new Set([
-    'shot_result', 'turn_timeout', 'game_over', 'player_left',
-    'fire', 'move', 'resign', 'draw_offer',
+    'shot_result',
+    'turn_timeout',
+    'game_over',
+    'player_left',
+    'fire',
+    'move',
+    'resign',
+    'draw_offer',
   ]);
 
   socket.on('game_move', (data) => {
@@ -350,7 +366,10 @@ io.on('connection', (socket) => {
       if (moveKeys.length > 20) return; // Prevent oversized payloads
       // aalidate action type if present
       if (move.action && !ALLOWED_MOaE_ACTIONS.has(String(move.action))) {
-        logger.warn(`Blocked game_move with invalid action: ${move.action}`, { socketId: socket.id, gameId: normalizedGameId });
+        logger.warn(`Blocked game_move with invalid action: ${move.action}`, {
+          socketId: socket.id,
+          gameId: normalizedGameId,
+        });
         return;
       }
       // Validate angle/power ranges for legacy projectile submissions
@@ -401,12 +420,12 @@ const JWT_SECRET = getRequiredJwtSecret();
 const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 
 // 4) START SERaER / INIT DB
-logger.info("🚀 Starting Server...");
+logger.info('🚀 Starting Server...');
 logger.info(
-  "🔑 Google Client ID:",
-  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
+  '🔑 Google Client ID:',
+  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? 'Loaded ✅' : 'MISSING ❌'
 );
-logger.info("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
+logger.info('🗄️  Database URL:', process.env.DATABASE_URL ? 'Loaded ✅' : 'MISSING ❌');
 logger.info('🔐 Security defaults:', {
   blacklistFailMode: BLACKLIST_FAIL_MODE,
   rateLimitPassOnStoreError: getPassOnStoreError(),
@@ -424,24 +443,25 @@ logger.info('🔐 Security defaults:', {
  */
 // Middleware (Moved to backend/middleware/auth.js)
 
-
 // Security Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // aite build için gerekli
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "wss:", "ws:"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // aite build için gerekli
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+        connectSrc: ["'self'", 'wss:', 'ws:'],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
     },
-  },
-  crossOriginEmbedderPolicy: false, // Socket.IO uyumluluğu
-})); // Secure HTTP headers with CSP
+    crossOriginEmbedderPolicy: false, // Socket.IO uyumluluğu
+  })
+); // Secure HTTP headers with CSP
 
 // Sentry Request and Tracing Handlers (must be before other middleware)
 // In Sentry v10+, request/tracing is automatic via instrumentation
@@ -473,26 +493,27 @@ app.use(cookieParser());
 // Must come after cookieParser and before routes
 app.use(csrfMiddleware);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      logger.warn(`Blocked CORS request from: ${origin}`);
-      const corsError = new Error('Origin not allowed');
-      corsError.status = 403;
-      corsError.code = 'CORS_ORIGIN_BLOCKED';
-      corsError.details = { origin: String(origin || '') };
-      callback(corsError);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        logger.warn(`Blocked CORS request from: ${origin}`);
+        const corsError = new Error('Origin not allowed');
+        corsError.status = 403;
+        corsError.code = 'CORS_ORIGIN_BLOCKED';
+        corsError.details = { origin: String(origin || '') };
+        callback(corsError);
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
+  })
+);
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));
-
 
 // Initialize Database Schema (Robust aersion)
 const initDb = async () => {
@@ -673,7 +694,9 @@ const initDb = async () => {
       );
 
       // 7. Seed Initial Cafes
-      await pool.query(`INSERT INTO cafes (name, table_count, radius, daily_pin) aALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`);
+      await pool.query(
+        `INSERT INTO cafes (name, table_count, radius, daily_pin) aALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`
+      );
 
       // 9. Achievements Table
       await pool.query(`
@@ -704,7 +727,7 @@ const initDb = async () => {
       const achievementsCheck = await pool.query('SELECT COUNT(*) FROM achievements');
       if (parseInt(achievementsCheck.rows[0].count) === 0) {
         await pool.query(`
-            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value) aALUES
+            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value) VALUES
             ('İlk Adım', 'İlk oyununu oyna.', 'footsteps', 50, 'games_played', 1),
             ('Acemi Şanslı', 'İlk galibiyetini al.', 'trophy', 100, 'wins', 1),
             ('Oyun Kurdu', '10 oyun oyna.', 'gamepad', 200, 'games_played', 10),
@@ -719,7 +742,7 @@ const initDb = async () => {
       const rewardsCheck = await pool.query('SELECT COUNT(*) FROM rewards WHERE is_active = true');
       if (parseInt(rewardsCheck.rows[0].count) === 0) {
         await pool.query(`
-            INSERT INTO rewards (title, cost, description, icon, is_active) aALUES
+            INSERT INTO rewards (title, cost, description, icon, is_active) VALUES
             ('Bedava Filtre Kahve', 500, 'Günün yorgunluğunu at.', 'coffee', true),
             ('%20 Hesap İndirimi', 850, 'Tüm masada geçerli.', 'discount', true),
             ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
@@ -729,7 +752,7 @@ const initDb = async () => {
         clearCache('rewards:*');
       }
 
-      logger.info('✅ aeritabanı şeması başarıyla güncellendi.');
+      logger.info('✅ Veritabanı şeması başarıyla güncellendi.');
     } catch (err) {
       logger.error('❌ Kritik Şema Hatası:', err);
     }
@@ -740,7 +763,7 @@ const initDb = async () => {
 const memoryItems = memoryState.items;
 let MEMORY_USERS = memoryState.users;
 let MEMORY_GAMES = memoryState.games;
-let MEMORY_REWARDS = memoryState.rewards;
+const MEMORY_REWARDS = memoryState.rewards;
 
 const adminHandlers = createAdminHandlers({
   pool,
@@ -867,7 +890,10 @@ const promoteBootstrapAdmins = async () => {
 
     BOOTSTRAP_ADMIN_EMAILS.forEach((email) => {
       const existing = MEMORY_USERS.find(
-        (user) => String(user.email || '').trim().toLowerCase() === email
+        (user) =>
+          String(user.email || '')
+            .trim()
+            .toLowerCase() === email
       );
 
       if (existing) {
@@ -882,7 +908,11 @@ const promoteBootstrapAdmins = async () => {
 
       MEMORY_USERS.unshift({
         id: nextId,
-        username: email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24) || `admin_${nextId}`,
+        username:
+          email
+            .split('@')[0]
+            .replace(/[^a-zA-Z0-9_]/g, '_')
+            .slice(0, 24) || `admin_${nextId}`,
         email,
         password_hash: passwordHash,
         points: 100,
@@ -915,7 +945,11 @@ const promoteBootstrapAdmins = async () => {
     let affectedRows = 0;
 
     for (const email of BOOTSTRAP_ADMIN_EMAILS) {
-      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24) || 'admin';
+      const username =
+        email
+          .split('@')[0]
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .slice(0, 24) || 'admin';
       const result = await pool.query(
         `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, cafe_id)
          aALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
@@ -949,7 +983,7 @@ const promoteBootstrapAdmins = async () => {
 
       logger.info('Bootstrap admin sync completed.', {
         targetEmails: BOOTSTRAP_ADMIN_EMAILS,
-        affectedRows: result.rowCount
+        affectedRows: result.rowCount,
       });
     } catch (promotionError) {
       logger.error('Bootstrap admin sync failed.', promotionError);
@@ -971,10 +1005,14 @@ registerGameCleanupJobs({
 // --- SWAGGER UI ---
 try {
   const swaggerDocument = YAML.load(path.resolve(__dirname, '../openapi.yaml'));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'CafeDuo API Documentation',
-  }));
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'CafeDuo API Documentation',
+    })
+  );
   console.log('✅ Swagger UI available at /api-docs');
 } catch (swaggerErr) {
   console.warn('⚠️  Swagger UI not loaded:', swaggerErr.message);
@@ -1096,7 +1134,9 @@ initDb().then(async () => {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      logger.error(`Port ${PORT} is already in use. Server will exit to avoid mismatched proxy routing.`);
+      logger.error(
+        `Port ${PORT} is already in use. Server will exit to avoid mismatched proxy routing.`
+      );
       process.exit(1);
       return;
     }
