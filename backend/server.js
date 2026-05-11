@@ -1,4 +1,4 @@
-﻿const path = require('path');
+const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
@@ -525,9 +525,9 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          username aARCHAR(255) NOT NULL,
-          email aARCHAR(255) UNIQUE NOT NULL,
-          password_hash aARCHAR(255) NOT NULL,
+          username VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
           points INTEGER DEFAULT 0,
           wins INTEGER DEFAULT 0,
           games_played INTEGER DEFAULT 0,
@@ -540,11 +540,11 @@ const initDb = async () => {
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          token_hash aARCHAR(255) NOT NULL,
+          token_hash VARCHAR(255) NOT NULL,
           expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
           used_at TIMESTAMP WITH TIME ZONE,
-          request_ip aARCHAR(64),
-          user_agent aARCHAR(255),
+          request_ip VARCHAR(64),
+          user_agent VARCHAR(255),
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -559,7 +559,7 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS cafes (
           id SERIAL PRIMARY KEY,
-          name aARCHAR(255) NOT NULL UNIQUE,
+          name VARCHAR(255) NOT NULL UNIQUE,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -568,14 +568,14 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS games (
           id SERIAL PRIMARY KEY,
-          host_name aARCHAR(255) NOT NULL,
-          guest_name aARCHAR(255),
-          game_type aARCHAR(50) NOT NULL,
+          host_name VARCHAR(255) NOT NULL,
+          guest_name VARCHAR(255),
+          game_type VARCHAR(50) NOT NULL,
           points INTEGER NOT NULL,
-          table_code aARCHAR(50) NOT NULL,
-          status aARCHAR(20) DEFAULT 'waiting',
-          player1_move aARCHAR(50),
-          player2_move aARCHAR(50),
+          table_code VARCHAR(50) NOT NULL,
+          status VARCHAR(20) DEFAULT 'waiting',
+          player1_move VARCHAR(50),
+          player2_move VARCHAR(50),
           game_state JSONB,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
@@ -587,8 +587,8 @@ const initDb = async () => {
           id SERIAL PRIMARY KEY,
           user_id INTEGER REFERENCES users(id),
           item_id INTEGER NOT NULL,
-          item_title aARCHAR(255) NOT NULL,
-          code aARCHAR(50) NOT NULL,
+          item_title VARCHAR(255) NOT NULL,
+          code VARCHAR(50) NOT NULL,
           redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -597,10 +597,10 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS rewards (
           id SERIAL PRIMARY KEY,
-          title aARCHAR(255) NOT NULL,
+          title VARCHAR(255) NOT NULL,
           cost INTEGER NOT NULL,
           description TEXT,
-          icon aARCHAR(50),
+          icon VARCHAR(50),
           cafe_id INTEGER REFERENCES cafes(id),
           is_active BOOLEAN DEFAULT TRUE,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -623,23 +623,23 @@ const initDb = async () => {
         }
       };
 
-      await addColumn('users', 'department', 'aARCHAR(255)');
+      await addColumn('users', 'department', 'VARCHAR(255)');
       await addColumn('users', 'is_admin', 'BOOLEAN DEFAULT FALSE');
-      await addColumn('users', 'role', "aARCHAR(50) DEFAULT 'user'");
+      await addColumn('users', 'role', "VARCHAR(50) DEFAULT 'user'");
       await addColumn('users', 'cafe_id', 'INTEGER REFERENCES cafes(id)');
-      await addColumn('users', 'table_number', 'aARCHAR(10)'); // Store table number (e.g. "5" or "MASA05")
+      await addColumn('users', 'table_number', 'VARCHAR(10)'); // Store table number (e.g. "5" or "MASA05")
       await addColumn('users', 'last_daily_bonus', 'DATE');
-      await addColumn('users', 'avatar_url', 'aARCHAR(500)'); // Store Google Profile Picture URL
+      await addColumn('users', 'avatar_url', 'VARCHAR(500)'); // Store Google Profile Picture URL
 
       await addColumn('user_items', 'is_used', 'BOOLEAN DEFAULT FALSE');
       await addColumn('user_items', 'used_at', 'TIMESTAMP WITH TIME ZONE');
 
       // Games Table Updates
-      await addColumn('games', 'guest_name', 'aARCHAR(255)');
-      await addColumn('games', 'player1_move', 'aARCHAR(50)');
-      await addColumn('games', 'player2_move', 'aARCHAR(50)');
+      await addColumn('games', 'guest_name', 'VARCHAR(255)');
+      await addColumn('games', 'player1_move', 'VARCHAR(50)');
+      await addColumn('games', 'player2_move', 'VARCHAR(50)');
       await addColumn('games', 'game_state', 'JSONB');
-      await addColumn('games', 'winner', 'aARCHAR(255)');
+      await addColumn('games', 'winner', 'VARCHAR(255)');
 
       // Cafes Table Updates (Location System)
       await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
@@ -649,7 +649,7 @@ const initDb = async () => {
       await addColumn('cafes', 'secondary_latitude', 'DECIMAL(10, 8)');
       await addColumn('cafes', 'secondary_longitude', 'DECIMAL(11, 8)');
       await addColumn('cafes', 'secondary_radius', 'INTEGER');
-      await addColumn('cafes', 'daily_pin', "aARCHAR(6) DEFAULT '0000'"); // Daily PIN code
+      await addColumn('cafes', 'daily_pin', "VARCHAR(6) DEFAULT '0000'"); // Daily PIN code
 
       // 7. Performance Indexes (Sprint 5)
       await createIndex(
@@ -695,18 +695,18 @@ const initDb = async () => {
 
       // 7. Seed Initial Cafes
       await pool.query(
-        `INSERT INTO cafes (name, table_count, radius, daily_pin) aALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`
+        `INSERT INTO cafes (name, table_count, radius, daily_pin) VALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`
       );
 
       // 9. Achievements Table
       await pool.query(`
         CREATE TABLE IF NOT EXISTS achievements (
           id SERIAL PRIMARY KEY,
-          title aARCHAR(255) NOT NULL,
+          title VARCHAR(255) NOT NULL,
           description TEXT NOT NULL,
-          icon aARCHAR(50) NOT NULL,
+          icon VARCHAR(50) NOT NULL,
           points_reward INTEGER NOT NULL,
-          condition_type aARCHAR(50) NOT NULL, -- e.g., 'wins', 'games_played', 'points'
+          condition_type VARCHAR(50) NOT NULL, -- e.g., 'wins', 'games_played', 'points'
           condition_value INTEGER NOT NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
@@ -952,7 +952,7 @@ const promoteBootstrapAdmins = async () => {
           .slice(0, 24) || 'admin';
       const result = await pool.query(
         `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, cafe_id)
-         aALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
+         VALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
          ON CONFLICT (email) DO UPDATE
          SET password_hash = EXCLUDED.password_hash,
              role = 'admin',
