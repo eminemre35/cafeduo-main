@@ -29,7 +29,8 @@ const Dashboard = lazyWithRetry(
   'Dashboard'
 );
 const AdminDashboard = lazyWithRetry(
-  () => import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })),
+  () =>
+    import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })),
   'AdminDashboard'
 );
 const CafeDashboard = lazyWithRetry(
@@ -37,7 +38,10 @@ const CafeDashboard = lazyWithRetry(
   'CafeDashboard'
 );
 const ResetPasswordPage = lazyWithRetry(
-  () => import('./components/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })),
+  () =>
+    import('./components/ResetPasswordPage').then((module) => ({
+      default: module.ResetPasswordPage,
+    })),
   'ResetPasswordPage'
 );
 const Store = lazyWithRetry(
@@ -73,11 +77,7 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 );
 
 // Protected Route Component
-const ProtectedRoute = ({
-  children,
-  isAdminRoute = false,
-  requiredRole,
-}: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -101,7 +101,16 @@ const AppContent: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   // Auth context
-  const { user, isLoading, login, logout, updateUser, refreshUser, setHasSessionCheckIn, requiresCheckIn } = useAuth();
+  const {
+    user,
+    isLoading,
+    login,
+    logout,
+    updateUser,
+    refreshUser,
+    setHasSessionCheckIn,
+    requiresCheckIn,
+  } = useAuth();
 
   // Toast hook
   const toast = useToast();
@@ -121,6 +130,10 @@ const AppContent: React.FC = () => {
     return () => {
       socketService.disconnect();
     };
+    // user?.id is the only stable identity field we actually depend on; the
+    // user object reference changes on every refresh which would reconnect the
+    // socket unnecessarily.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // Handle auth query params
@@ -162,8 +175,8 @@ const AppContent: React.FC = () => {
 
   const handleLoginSuccess = async (userData: User) => {
     if (!userData || !userData.username) {
-      console.error("Invalid user data received:", userData);
-      toast.error("Giriş başarısız: Geçersiz kullanıcı verisi.");
+      console.error('Invalid user data received:', userData);
+      toast.error('Giriş başarısız: Geçersiz kullanıcı verisi.');
       return;
     }
 
@@ -173,7 +186,7 @@ const AppContent: React.FC = () => {
 
     // Check for Daily Bonus
     if (userData.bonusReceived) {
-      toast.success("🎉 Günlük giriş ödülü: 10 PUAN!");
+      toast.success('🎉 Günlük giriş ödülü: 10 PUAN!');
     } else {
       toast.success(`Hoş geldin, ${userData.username}!`);
     }
@@ -202,7 +215,7 @@ const AppContent: React.FC = () => {
       const serverUser = await api.users.update(updatedUser);
       updateUser(serverUser);
     } catch (error) {
-      console.error("Failed to update user", error);
+      console.error('Failed to update user', error);
       toast.error('Kullanıcı güncellenirken hata oluştu');
     }
   };
@@ -217,11 +230,11 @@ const AppContent: React.FC = () => {
 
   const handleCheckInSuccess = (cafeName: string, tableNumber: string, cafeId: string | number) => {
     if (user) {
-      const updatedUser = { 
-        ...user, 
-        cafe_name: cafeName, 
-        table_number: tableNumber, 
-        cafe_id: cafeId 
+      const updatedUser = {
+        ...user,
+        cafe_name: cafeName,
+        table_number: tableNumber,
+        cafe_id: cafeId,
       };
       updateUser(updatedUser);
       setHasSessionCheckIn(true);
@@ -231,75 +244,104 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
-      <Navbar 
-        isLoggedIn={!!user} 
-        user={user} 
-        onLogout={handleLogout} 
-      />
+      <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
 
       <main>
         <Suspense fallback={<PageLoader />}>
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
-              <Route path="/" element={
-                <PageTransition>
-                  <Hero
-                    onLogin={openLogin}
-                    onRegister={openRegister}
-                    isLoggedIn={!!user}
-                    userRole={user?.role}
-                    isAdmin={user?.isAdmin}
-                  />
-                  <HowItWorks />
-                  <Games onPlayClick={openRegister} />
-                  <About />
-                </PageTransition>
-              } />
-
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
+              <Route
+                path="/"
+                element={
                   <PageTransition>
-                    <ErrorBoundary>
-                      {requiresCheckIn() ? (
-                        <CafeSelection 
-                          currentUser={user!} 
-                          onCheckInSuccess={handleCheckInSuccess} 
-                        />
-                      ) : (
-                        <Dashboard
-                          currentUser={user!}
-                          onUpdateUser={handleUpdateUser}
-                          onRefreshUser={handleRefreshUser}
-                        />
-                      )}
-                    </ErrorBoundary>
+                    <Hero
+                      onLogin={openLogin}
+                      onRegister={openRegister}
+                      isLoggedIn={!!user}
+                      userRole={user?.role}
+                      isAdmin={user?.isAdmin}
+                    />
+                    <HowItWorks />
+                    <Games onPlayClick={openRegister} />
+                    <About />
                   </PageTransition>
-                </ProtectedRoute>
-              } />
+                }
+              />
 
-              <Route path="/admin" element={
-                <ProtectedRoute isAdminRoute={true}>
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <ErrorBoundary>
+                        {requiresCheckIn() ? (
+                          <CafeSelection
+                            currentUser={user!}
+                            onCheckInSuccess={handleCheckInSuccess}
+                          />
+                        ) : (
+                          <Dashboard
+                            currentUser={user!}
+                            onUpdateUser={handleUpdateUser}
+                            onRefreshUser={handleRefreshUser}
+                          />
+                        )}
+                      </ErrorBoundary>
+                    </PageTransition>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute isAdminRoute={true}>
+                    <PageTransition>
+                      <ErrorBoundary>
+                        <AdminDashboard currentUser={user!} />
+                      </ErrorBoundary>
+                    </PageTransition>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/cafe-admin"
+                element={
+                  <ProtectedRoute requiredRole="cafe_admin">
+                    <PageTransition>
+                      <ErrorBoundary>
+                        <CafeDashboard currentUser={user!} />
+                      </ErrorBoundary>
+                    </PageTransition>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/gizlilik"
+                element={
                   <PageTransition>
-                    <ErrorBoundary>
-                      <AdminDashboard currentUser={user!} />
-                    </ErrorBoundary>
+                    <PrivacyPolicy />
                   </PageTransition>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/cafe-admin" element={
-                <ProtectedRoute requiredRole="cafe_admin">
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
                   <PageTransition>
-                    <ErrorBoundary>
-                      <CafeDashboard currentUser={user!} />
-                    </ErrorBoundary>
+                    <ResetPasswordPage />
                   </PageTransition>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/gizlilik" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
-              <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
-              <Route path="/store" element={<PageTransition><Store user={user} updateUser={updateUser} onShowToast={toast} /></PageTransition>} />
+                }
+              />
+              <Route
+                path="/store"
+                element={
+                  <PageTransition>
+                    <Store user={user} updateUser={updateUser} onShowToast={toast} />
+                  </PageTransition>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>

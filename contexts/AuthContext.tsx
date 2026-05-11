@@ -1,6 +1,6 @@
 /**
  * AuthContext
- * 
+ *
  * @description Global authentication state yönetimi
  * @usage const { user, login, logout, updateUser } = useAuth();
  */
@@ -54,9 +54,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               if (cachedUser.isAdmin || cachedUser.role === 'cafe_admin') {
                 setHasSessionCheckInState(true);
               } else {
-                const table = String(cachedUser.table_number || '').trim().toUpperCase();
+                const table = String(cachedUser.table_number || '')
+                  .trim()
+                  .toUpperCase();
                 const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
-                setHasSessionCheckInState(hasStoredCheckIn && Boolean(cachedUser.cafe_id) && hasTable);
+                setHasSessionCheckInState(
+                  hasStoredCheckIn && Boolean(cachedUser.cafe_id) && hasTable
+                );
               }
             }
           } catch (parseErr) {
@@ -64,19 +68,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.removeItem('cafe_user');
           }
         }
-        
+
         // Verify token with backend
         const userData = await api.auth.verifyToken();
         if (userData) {
           setUser(userData);
           localStorage.setItem('cafe_user', JSON.stringify(userData));
-          
+
           // Update check-in state
           const hasStoredCheckIn = storedCheckInUserId === String(userData.id);
           if (userData.isAdmin || userData.role === 'cafe_admin') {
             setHasSessionCheckInState(true);
           } else {
-            const table = String(userData.table_number || '').trim().toUpperCase();
+            const table = String(userData.table_number || '')
+              .trim()
+              .toUpperCase();
             const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
             setHasSessionCheckInState(hasStoredCheckIn && Boolean(userData.cafe_id) && hasTable);
           }
@@ -130,7 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Kullanıcı bilgilerini güncelle (local)
    */
   const updateUser = useCallback((updates: Partial<User>) => {
-    setUser(prev => {
+    setUser((prev) => {
       if (!prev) return null;
       const updated = { ...prev, ...updates };
       localStorage.setItem('cafe_user', JSON.stringify(updated));
@@ -143,7 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const refreshUser = useCallback(async () => {
     if (!user?.id) return;
-    
+
     try {
       const userData = await api.users.get(user.id.toString());
       if (userData) {
@@ -158,15 +164,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Check-in state setter
    */
-  const setHasSessionCheckIn = useCallback((value: boolean) => {
-    setHasSessionCheckInState(value);
-    const currentUserId = user?.id ? String(user.id) : '';
-    if (value && currentUserId) {
-      sessionStorage.setItem(CHECK_IN_SESSION_KEY, currentUserId);
-    } else {
-      sessionStorage.removeItem(CHECK_IN_SESSION_KEY);
-    }
-  }, [CHECK_IN_SESSION_KEY, user?.id]);
+  const setHasSessionCheckIn = useCallback(
+    (value: boolean) => {
+      setHasSessionCheckInState(value);
+      const currentUserId = user?.id ? String(user.id) : '';
+      if (value && currentUserId) {
+        sessionStorage.setItem(CHECK_IN_SESSION_KEY, currentUserId);
+      } else {
+        sessionStorage.removeItem(CHECK_IN_SESSION_KEY);
+      }
+    },
+    // CHECK_IN_SESSION_KEY is a module-level const — removing it from deps as
+    // lint correctly flags. Only user?.id actually changes between renders.
+    [user?.id]
+  );
 
   /**
    * Check if user requires check-in
@@ -177,7 +188,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!hasSessionCheckIn) return true;
 
     const hasCafe = Boolean(user.cafe_id);
-    const table = String(user.table_number || '').trim().toUpperCase();
+    const table = String(user.table_number || '')
+      .trim()
+      .toUpperCase();
     const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
     return !(hasCafe && hasTable);
   }, [user, hasSessionCheckIn]);
@@ -195,11 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     requiresCheckIn,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 /**

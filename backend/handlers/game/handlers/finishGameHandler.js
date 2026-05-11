@@ -3,9 +3,7 @@
  * Handles game completion with winner determination and settlement
  */
 
-const {
-  isAdminActor,
-} = require('../validation');
+const { isAdminActor } = require('../validation');
 const { isChessGameType } = require('../chessUtils');
 const {
   assertGameStatusTransition,
@@ -57,7 +55,9 @@ const createFinishGameHandler = (deps) => {
 
         const participants = getGameParticipants(game);
         const stateResults =
-          game.game_state && typeof game.game_state.results === 'object' ? game.game_state.results : {};
+          game.game_state && typeof game.game_state.results === 'object'
+            ? game.game_state.results
+            : {};
         const winnerFromState = depsNormalizeParticipantName(game.game_state?.resolvedWinner, game);
         const winnerFromResults = pickWinnerFromResults(stateResults, participants);
         const winnerFromRequest = depsNormalizeParticipantName(requestedWinner, game);
@@ -66,15 +66,13 @@ const createFinishGameHandler = (deps) => {
         const manualWinnerAllowed = adminActor && Boolean(winnerFromRequest);
         const finalWinner = derivedWinner || (manualWinnerAllowed ? winnerFromRequest : null);
         const currentGameState =
-          game.game_state && typeof game.game_state === 'object'
-            ? { ...game.game_state }
-            : {};
+          game.game_state && typeof game.game_state === 'object' ? { ...game.game_state } : {};
         const chessState =
-          game.game_state && typeof game.game_state.chess === 'object' ? game.game_state.chess : null;
+          game.game_state && typeof game.game_state.chess === 'object'
+            ? game.game_state.chess
+            : null;
         const isChessDraw =
-          isChessGameType(game.game_type) &&
-          Boolean(chessState?.isGameOver) &&
-          !finalWinner;
+          isChessGameType(game.game_type) && Boolean(chessState?.isGameOver) && !finalWinner;
         const settlementAlreadyApplied = Boolean(currentGameState?.settlementApplied);
 
         if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
@@ -123,6 +121,16 @@ const createFinishGameHandler = (deps) => {
                 });
               }
               await client.query('COMMIT');
+              // Emit so disconnected clients picking up later see the updated
+              // stakeTransferred + settlementApplied flags.
+              emitRealtimeUpdate(id, {
+                type: 'game_finished',
+                gameId: id,
+                status: 'finished',
+                winner: null,
+                draw: true,
+                gameState: patchedState,
+              });
               return res.json({
                 success: true,
                 winner: null,
@@ -156,6 +164,17 @@ const createFinishGameHandler = (deps) => {
                 });
               }
               await client.query('COMMIT');
+              // Same rationale as the chess-draw branch above: emit so any
+              // peer that missed the original `game_finished` event picks up
+              // the late settlement.
+              emitRealtimeUpdate(id, {
+                type: 'game_finished',
+                gameId: id,
+                status: 'finished',
+                winner: game.winner || null,
+                draw: false,
+                gameState: patchedState,
+              });
               return res.json({
                 success: true,
                 winner: game.winner || null,
@@ -257,9 +276,7 @@ const createFinishGameHandler = (deps) => {
     const manualWinnerAllowed = adminActor && Boolean(winnerFromRequest);
     const finalWinner = derivedWinner || (manualWinnerAllowed ? winnerFromRequest : null);
     const isChessDraw =
-      isChessGameType(game.gameType) &&
-      Boolean(game.gameState?.chess?.isGameOver) &&
-      !finalWinner;
+      isChessGameType(game.gameType) && Boolean(game.gameState?.chess?.isGameOver) && !finalWinner;
 
     if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
       return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
@@ -283,7 +300,10 @@ const createFinishGameHandler = (deps) => {
     if (normalizeGameStatus(game.status) === GAME_STATUS.FINISHED) {
       const storedWinner = String(game.winner || '').trim();
       const targetWinner = String(finalWinner || '').trim();
-      if (storedWinner.toLowerCase() !== targetWinner.toLowerCase() && !(isChessDraw && !storedWinner && !targetWinner)) {
+      if (
+        storedWinner.toLowerCase() !== targetWinner.toLowerCase() &&
+        !(isChessDraw && !storedWinner && !targetWinner)
+      ) {
         return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
       }
       if (!settlementAlreadyApplied) {
@@ -300,6 +320,18 @@ const createFinishGameHandler = (deps) => {
           stakeTransferred: settlement.transferredPoints,
           settledAt: new Date().toISOString(),
         };
+        // Mirror the DB path: emit after the late settlement so any peer that
+        // already reconnected sees the updated gameState (stakeTransferred,
+        // settledAt). Without this, a client that dropped before the first
+        // emit will hold a stale UI until the next manual snapshot fetch.
+        emitRealtimeUpdate(id, {
+          type: 'game_finished',
+          gameId: id,
+          status: 'finished',
+          winner: game.winner || finalWinner || null,
+          draw: Boolean(isChessDraw),
+          gameState: game.gameState,
+        });
       }
       return res.json({
         success: true,
