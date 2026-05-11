@@ -1154,6 +1154,32 @@ body::after {
   animation: check-pulse 1.2s ease-in-out infinite;
 }
 
+/* ── Native <select> option dark theme ──
+ * Browsers (esp. Windows Chrome/Edge) render <option> with OS-level styling and
+ * ignore most CSS on the parent <select>. The few properties that DO propagate
+ * are `background-color` and `color`. Without this, the admin-modal cafe picker
+ * and game-type pickers show white dropdowns on our dark theme. */
+select.rf-input,
+select.rf-select-dark {
+  background-color: rgba(2, 7, 19, 0.85);
+  color: white;
+}
+
+select.rf-input option,
+select.rf-select-dark option,
+select option {
+  background-color: #06132b;
+  color: white;
+}
+
+select.rf-input optgroup,
+select.rf-select-dark optgroup,
+select optgroup {
+  background-color: #06132b;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
 /* ── Marquee / Scrolling text animation ── */
 @keyframes marquee {
   0% {
