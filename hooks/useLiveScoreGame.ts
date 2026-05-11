@@ -1,0 +1,389 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { User } from '../types';
+import { api } from '../lib/api';
+import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
+import { socketService } from '../lib/socket';
+
+/**
+ * Shared "live score" multiplayer game lifecycle hook.
+ *
+ * Encapsulates the parts of ArenaBattle and KnowledgeQuiz that were ~70% duplicate:
+ * snapshot fetching, opponent resolution, live progress submission, socket subscription,
+ * fallback polling, idempotent finish handling, and the final score reconciliation
+ * round (`submitScoreAndWaitForWinner`).
+ *
+ * The host component still owns game-specific UI, round indexing, and the per-tick
+ * mechanic — this hook only handles state that is identical across live-score games.
+ */
+
+export interface LiveSubmissionState {
+  score?: number;
+  roundsWon?: number;
+  round?: number;
+  done?: boolean;
+}
+
+export interface LiveGameSnapshot {
+  id: string | number;
+  status?: string;
+  winner?: string | null;
+  hostName?: string;
+  guestName?: string | null;
+  gameState?: {
+    resolvedWinner?: string;
+    live?: {
+      submissions?: Record<string, LiveSubmissionState>;
+      resolvedWinner?: string;
+    };
+  };
+}
+
+interface GameStateUpdatedPayload {
+  type?: string;
+  gameId?: string | number;
+}
+
+export interface UseLiveScoreGameOptions {
+  currentUser: User;
+  gameId: string | number | null;
+  isBot: boolean;
+  /** Game type sent to the server (e.g. 'Nişancı Düellosu', 'Bilgi Yarışı'). */
+  mode: string;
+  /** Prefix for the idempotent submissionKey (e.g. 'arena', 'quiz'). */
+  submissionKeyPrefix: string;
+  /** Fallback polling interval in milliseconds. */
+  pollIntervalMs?: number;
+  /**
+   * If set, when the player triggers final-round completion (`isDoneRound=true` in
+   * syncLiveProgress) the hook arms a fallback timer; if the server has not yet
+   * resolved the winner by then, the host's `finalizeMatch` is invoked locally.
+   */
+  finalizationTimeoutMs?: number;
+  /** Used in error logs to disambiguate concurrent games. Defaults to 'LiveScoreGame'. */
+  logName?: string;
+  onGameEnd: (winner: string, points: number) => void;
+}
+
+export interface UseLiveScoreGameResult {
+  playerScore: number;
+  setPlayerScore: React.Dispatch<React.SetStateAction<number>>;
+  opponentScore: number;
+  setOpponentScore: React.Dispatch<React.SetStateAction<number>>;
+  done: boolean;
+  setDone: React.Dispatch<React.SetStateAction<boolean>>;
+  resolvingMatch: boolean;
+  setResolvingMatch: React.Dispatch<React.SetStateAction<boolean>>;
+  hostName: string;
+  guestName: string;
+  /** Latest live submission `round` value reported by the actor in the snapshot. */
+  serverRound: number | null;
+  /** Idempotent ref guard so finishFromServer + finalizeMatch can't both fire. */
+  finishHandledRef: React.MutableRefObject<boolean>;
+  matchStartedAtRef: React.MutableRefObject<number>;
+  /** Force a fresh snapshot fetch (no-op for bot/local games). */
+  fetchSnapshot: (silent?: boolean) => Promise<LiveGameSnapshot | null>;
+  /** Send a live submission to the server. No-op for bot/local games. */
+  syncLiveProgress: (score: number, round: number, isDoneRound: boolean) => Promise<void>;
+  /** Final reconciliation step — sends total score, waits for server winner. */
+  finalizeMatch: (localWinner: string, playerScoreValue: number) => Promise<void>;
+  /** Resets all hook-managed state for a fresh match (call when gameId changes). */
+  reset: () => void;
+}
+
+const normalizeName = (value: unknown) => String(value || '').trim();
+
+export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScoreGameResult {
+  const {
+    currentUser,
+    gameId,
+    isBot,
+    mode,
+    submissionKeyPrefix,
+    pollIntervalMs = 2200,
+    finalizationTimeoutMs,
+    logName = 'LiveScoreGame',
+    onGameEnd,
+  } = options;
+
+  const [playerScore, setPlayerScore] = useState(0);
+  const [opponentScore, setOpponentScore] = useState(0);
+  const [done, setDone] = useState(false);
+  const [resolvingMatch, setResolvingMatch] = useState(false);
+  const [hostName, setHostName] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [serverRound, setServerRound] = useState<number | null>(null);
+
+  const finishHandledRef = useRef(false);
+  const matchStartedAtRef = useRef<number>(Date.now());
+  const pollRef = useRef<number | null>(null);
+  const finalizationTimeoutRef = useRef<number | null>(null);
+
+  const reset = useCallback(() => {
+    finishHandledRef.current = false;
+    matchStartedAtRef.current = Date.now();
+    setPlayerScore(0);
+    setOpponentScore(0);
+    setDone(false);
+    setResolvingMatch(false);
+    setServerRound(null);
+    if (finalizationTimeoutRef.current) {
+      window.clearTimeout(finalizationTimeoutRef.current);
+      finalizationTimeoutRef.current = null;
+    }
+  }, []);
+
+  const resolveActorAndOpponent = useCallback(
+    (snapshot: LiveGameSnapshot) => {
+      const actor = normalizeName(currentUser.username).toLowerCase();
+      const host = normalizeName(snapshot.hostName);
+      const guest = normalizeName(snapshot.guestName);
+      if (host && actor === host.toLowerCase()) {
+        return { actorName: host, opponentKey: guest };
+      }
+      if (guest && actor === guest.toLowerCase()) {
+        return { actorName: guest, opponentKey: host };
+      }
+      return { actorName: '', opponentKey: '' };
+    },
+    [currentUser.username]
+  );
+
+  const finishFromServer = useCallback(
+    (winnerRaw: string | null) => {
+      if (finishHandledRef.current) return;
+      finishHandledRef.current = true;
+      if (finalizationTimeoutRef.current) {
+        window.clearTimeout(finalizationTimeoutRef.current);
+        finalizationTimeoutRef.current = null;
+      }
+      const winner = normalizeName(winnerRaw) || 'Berabere';
+      const points =
+        winner.toLowerCase() === normalizeName(currentUser.username).toLowerCase() ? 10 : 0;
+      setDone(true);
+      window.setTimeout(() => onGameEnd(winner, points), 700);
+    },
+    [currentUser.username, onGameEnd]
+  );
+
+  const applySnapshot = useCallback(
+    (snapshot: LiveGameSnapshot) => {
+      if (snapshot.hostName) setHostName(String(snapshot.hostName));
+      if (snapshot.guestName) setGuestName(String(snapshot.guestName));
+      const { actorName, opponentKey } = resolveActorAndOpponent(snapshot);
+      const submissions = snapshot.gameState?.live?.submissions || {};
+      const actorLive = actorName ? submissions[actorName] : undefined;
+      const opponentLive = opponentKey ? submissions[opponentKey] : undefined;
+
+      if (typeof actorLive?.score === 'number') {
+        setPlayerScore((prev) => Math.max(prev, Number(actorLive.score)));
+      }
+      if (typeof opponentLive?.score === 'number') {
+        setOpponentScore((prev) => Math.max(prev, Number(opponentLive.score)));
+      }
+      if (typeof actorLive?.round === 'number') {
+        const safeRound = Math.max(1, Math.floor(Number(actorLive.round)));
+        setServerRound((prev) => (prev === null ? safeRound : Math.max(prev, safeRound)));
+      }
+
+      const winner =
+        normalizeName(
+          snapshot.gameState?.resolvedWinner ||
+            snapshot.gameState?.live?.resolvedWinner ||
+            snapshot.winner
+        ) || null;
+      if (String(snapshot.status || '').toLowerCase() === 'finished') {
+        finishFromServer(winner);
+      }
+    },
+    [finishFromServer, resolveActorAndOpponent]
+  );
+
+  const fetchSnapshot = useCallback(
+    async (silent = false): Promise<LiveGameSnapshot | null> => {
+      if (isBot || !gameId) return null;
+      try {
+        const snapshot = (await api.games.get(gameId)) as LiveGameSnapshot;
+        applySnapshot(snapshot);
+        return snapshot;
+      } catch (err) {
+        if (!silent) {
+          console.error(`${logName} snapshot error`, err);
+        }
+        return null;
+      }
+    },
+    [applySnapshot, gameId, isBot, logName]
+  );
+
+  const syncLiveProgress = useCallback(
+    async (score: number, round: number, isDoneRound: boolean) => {
+      if (isBot || !gameId) return;
+      try {
+        const safeScore = Math.max(0, Math.min(1000, Math.floor(score)));
+        const safeRound = Math.max(0, Math.min(1000, Math.floor(round)));
+        await api.games.move(gameId, {
+          liveSubmission: {
+            mode,
+            score: safeScore,
+            roundsWon: safeScore,
+            round: safeRound,
+            done: Boolean(isDoneRound),
+            submissionKey: `${submissionKeyPrefix}|${String(gameId)}|${currentUser.username}|${safeRound}|${safeScore}|${isDoneRound ? 1 : 0}`,
+          },
+        });
+      } catch (err) {
+        console.error(`${logName} live submission failed`, err);
+      }
+    },
+    [currentUser.username, gameId, isBot, logName, mode, submissionKeyPrefix]
+  );
+
+  const finalizeMatch = useCallback(
+    async (localWinner: string, playerScoreValue: number) => {
+      if (finishHandledRef.current) return;
+      if (isBot || !gameId) {
+        const points = localWinner === currentUser.username ? 10 : 0;
+        finishHandledRef.current = true;
+        window.setTimeout(() => onGameEnd(localWinner, points), 900);
+        return;
+      }
+
+      setResolvingMatch(true);
+
+      try {
+        const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
+        const { winner, finished } = await submitScoreAndWaitForWinner({
+          gameId,
+          username: currentUser.username,
+          score: playerScoreValue,
+          roundsWon: playerScoreValue,
+          durationMs,
+        });
+
+        if (!finished) {
+          finishHandledRef.current = true;
+          window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
+          return;
+        }
+
+        const resolvedWinner = winner || 'Berabere';
+        const points = winner && winner === currentUser.username ? 10 : 0;
+        finishHandledRef.current = true;
+        window.setTimeout(() => onGameEnd(resolvedWinner, points), 900);
+      } catch {
+        finishHandledRef.current = true;
+        window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
+      } finally {
+        setResolvingMatch(false);
+      }
+    },
+    [currentUser.username, gameId, isBot, onGameEnd]
+  );
+
+  // Reset state when gameId changes (new match).
+  useEffect(() => {
+    reset();
+  }, [gameId, reset]);
+
+  // Socket subscription + fallback polling for multiplayer games.
+  useEffect(() => {
+    if (isBot || !gameId) return undefined;
+
+    void fetchSnapshot();
+    const socket = socketService.getSocket();
+    socketService.joinGame(String(gameId));
+
+    const onRealtime = (payload: GameStateUpdatedPayload) => {
+      if (String(payload?.gameId || '') !== String(gameId)) return;
+      const type = payload?.type;
+      if (
+        type === 'live_submission' ||
+        type === 'score_submission' ||
+        type === 'game_finished' ||
+        type === 'game_state'
+      ) {
+        void fetchSnapshot(true);
+      }
+    };
+    socket.on('game_state_updated', onRealtime);
+
+    pollRef.current = window.setInterval(() => {
+      if (document.visibilityState === 'hidden' || done) return;
+      void fetchSnapshot(true);
+    }, pollIntervalMs);
+
+    return () => {
+      socket.off('game_state_updated', onRealtime);
+      if (pollRef.current) {
+        window.clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [done, fetchSnapshot, gameId, isBot, pollIntervalMs]);
+
+  // Component unmount: clear timers.
+  useEffect(
+    () => () => {
+      if (finalizationTimeoutRef.current) {
+        window.clearTimeout(finalizationTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  // When the host signals the final round, arm a fallback finalize timer (opt-in).
+  const armFinalizationFallback = useCallback(
+    (fallbackLocalWinner: string, playerScoreValue: number) => {
+      if (!finalizationTimeoutMs || isBot || !gameId) return;
+      if (finalizationTimeoutRef.current) {
+        window.clearTimeout(finalizationTimeoutRef.current);
+      }
+      finalizationTimeoutRef.current = window.setTimeout(() => {
+        if (!finishHandledRef.current) {
+          void finalizeMatch(fallbackLocalWinner, playerScoreValue);
+        }
+      }, finalizationTimeoutMs);
+    },
+    [finalizationTimeoutMs, finalizeMatch, gameId, isBot]
+  );
+
+  // Wrap syncLiveProgress so that calling it with isDoneRound=true arms the fallback.
+  const syncLiveProgressWithFallback = useCallback(
+    async (score: number, round: number, isDoneRound: boolean) => {
+      await syncLiveProgress(score, round, isDoneRound);
+      if (isDoneRound) {
+        const fallbackWinner =
+          score >= opponentScore ? currentUser.username : guestName || hostName || 'Rakip';
+        armFinalizationFallback(fallbackWinner, score);
+      }
+    },
+    [
+      armFinalizationFallback,
+      currentUser.username,
+      guestName,
+      hostName,
+      opponentScore,
+      syncLiveProgress,
+    ]
+  );
+
+  return {
+    playerScore,
+    setPlayerScore,
+    opponentScore,
+    setOpponentScore,
+    done,
+    setDone,
+    resolvingMatch,
+    setResolvingMatch,
+    hostName,
+    guestName,
+    serverRound,
+    finishHandledRef,
+    matchStartedAtRef,
+    fetchSnapshot,
+    syncLiveProgress: syncLiveProgressWithFallback,
+    finalizeMatch,
+    reset,
+  };
+}
