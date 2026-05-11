@@ -113,19 +113,35 @@ function csrfMiddleware(req, res, next) {
 
   // Get CSRF token from cookie
   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
-  
+
   // Get CSRF token from header
   const headerToken = req.headers?.[CSRF_HEADER_NAME];
 
-  // Validate CSRF token
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+  // Constant-time compare. A naive `cookieToken !== headerToken` leaks token
+  // bytes through response-time differences; an on-path attacker could refine
+  // a victim's token through repeated XHRs. crypto.timingSafeEqual requires
+  // equal-length Buffers, so we length-check first.
+  const tokensMatch = (() => {
+    if (!cookieToken || !headerToken) return false;
+    const cookieBuf = Buffer.from(String(cookieToken));
+    const headerBuf = Buffer.from(String(headerToken));
+    if (cookieBuf.length !== headerBuf.length) return false;
+    try {
+      return crypto.timingSafeEqual(cookieBuf, headerBuf);
+    } catch {
+      return false;
+    }
+  })();
+
+  if (!tokensMatch) {
     logger.warn('CSRF token validation failed', {
       method: req.method,
       path: req.path,
       ip: req.ip,
       hasCookieToken: !!cookieToken,
       hasHeaderToken: !!headerToken,
-      tokensMatch: cookieToken === headerToken,
+      // Do NOT log `tokensMatch === (a===b)` here — that would leak partial
+      // info about which compare branch tripped.
     });
 
     return res.status(403).json({

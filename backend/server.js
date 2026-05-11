@@ -139,7 +139,17 @@ const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
   process.env.BOOTSTRAP_ADMIN_EMAILS || process.env.ADMIN_EMAILS,
   ['emin3619@gmail.com']
 );
-const BOOTSTRAP_ADMIN_PASSWORD = String(process.env.BOOTSTRAP_ADMIN_PASSWORD || 'eminemre');
+// No hard-coded default — the previous fallback ('eminemre') was a real credential in source.
+// If the env var is missing, leave the password empty so the bootstrap upsert at startup
+// (see initDb) silently skips admin creation instead of installing a known-weak password.
+const BOOTSTRAP_ADMIN_PASSWORD = String(process.env.BOOTSTRAP_ADMIN_PASSWORD || '');
+if (!BOOTSTRAP_ADMIN_PASSWORD) {
+  // Logger isn't initialized yet at this point; use plain console so the warning still surfaces.
+
+  console.warn(
+    '[bootstrap] BOOTSTRAP_ADMIN_PASSWORD is unset — admin upsert will be skipped on startup.'
+  );
+}
 
 const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
 
@@ -883,6 +893,13 @@ const systemRoutes = createSystemRoutes({
 
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
+  if (!BOOTSTRAP_ADMIN_PASSWORD) {
+    logger.warn(
+      'Skipping bootstrap admin upsert: BOOTSTRAP_ADMIN_PASSWORD is empty. ' +
+        'Set the env var to enable initial admin provisioning.'
+    );
+    return;
+  }
 
   const syncMemoryBootstrapAdmins = async () => {
     const passwordHash = await bcrypt.hash(BOOTSTRAP_ADMIN_PASSWORD, 10);
