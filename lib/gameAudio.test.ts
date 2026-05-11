@@ -76,6 +76,6 @@ describe('gameAudio', () => {
       value: 'Mozilla/5.0',
     });
 
-    expect(() => playGameSfx('win')).not.toThrow();
+    expect(() => playGameSfx('hit')).not.toThrow();
   });
 });
