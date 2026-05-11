@@ -37,11 +37,17 @@ interface DashboardProps {
   onRefreshUser?: () => Promise<void> | void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser, onRefreshUser }) => {
+export const Dashboard: React.FC<DashboardProps> = ({
+  currentUser,
+  onUpdateUser,
+  onRefreshUser,
+}) => {
   const toast = useToast();
 
   const normalizeTableCode = (raw: unknown): string => {
-    const value = String(raw || '').trim().toUpperCase();
+    const value = String(raw || '')
+      .trim()
+      .toUpperCase();
     if (!value || value === 'NULL' || value === 'UNDEFINED') return '';
     return value.startsWith('MASA') ? value : `MASA${value.padStart(2, '0')}`;
   };
@@ -55,14 +61,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
 
   // Masa kodu state
   const [tableCode, setTableCode] = useState(normalizeTableCode(currentUser.table_number));
-  const [isMatched, setIsMatched] = useState(Boolean(currentUser.cafe_id) && Boolean(normalizeTableCode(currentUser.table_number)));
+  const [isMatched, setIsMatched] = useState(
+    Boolean(currentUser.cafe_id) && Boolean(normalizeTableCode(currentUser.table_number))
+  );
 
   // Modal state'leri
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
-  const [gameResult, setGameResult] = useState<{ winner: string; earnedPoints: number } | null>(null);
+  const [gameResult, setGameResult] = useState<{ winner: string; earnedPoints: number } | null>(
+    null
+  );
   const [leavingGame, setLeavingGame] = useState(false);
   const [showGlitchAnim, setShowGlitchAnim] = useState(false);
   const gameEndHandledRef = useRef(false);
@@ -86,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     joinGame,
     cancelGame,
     leaveGame,
-    setActiveGame
+    setActiveGame,
   } = useGames({ currentUser, tableCode });
 
   const {
@@ -96,7 +106,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     inventoryLoading,
     activeTab: rewardTab,
     setActiveTab: setRewardTab,
-    buyReward
+    buyReward,
   } = useRewards({ currentUser });
 
   useEffect(() => {
@@ -154,9 +164,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
       await joinGame(gameId);
     } catch (err) {
       const message =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Oyuna katılırken hata oluştu.';
+        err instanceof Error && err.message ? err.message : 'Oyuna katılırken hata oluştu.';
       toast.error(message);
     }
   };
@@ -169,11 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
           ? serverActiveGame.guestName || 'Rakip'
           : serverActiveGame.hostName;
 
-      setActiveGame(
-        serverActiveGame.id,
-        serverActiveGame.gameType,
-        rejoinOpponent
-      );
+      setActiveGame(serverActiveGame.id, serverActiveGame.gameType, rejoinOpponent);
     }
   };
 
@@ -185,15 +189,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
       // Kullanıcı puanını güncelle
       onUpdateUser({
         ...currentUser,
-        points: result.newPoints
+        points: result.newPoints,
       });
 
       toast.success(`${reward.title} satın alındı! Kupon kodu: ${result.code}`);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Satın alma başarısız.';
+      const message = err instanceof Error && err.message ? err.message : 'Satın alma başarısız.';
       toast.error(message);
     }
   };
@@ -235,37 +236,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     }
   };
 
-  const resolveOpponentForForfeit = async (): Promise<string | null> => {
-    if (opponentName && opponentName.trim()) {
-      return opponentName.trim();
-    }
-    if (!activeGameId) return null;
-    try {
-      const liveGame = await api.games.get(activeGameId);
-      const host = String(liveGame?.hostName || '').trim();
-      const guest = String(liveGame?.guestName || '').trim();
-      const actor = String(currentUser.username || '').trim().toLowerCase();
-      if (host && host.toLowerCase() !== actor) return host;
-      if (guest && guest.toLowerCase() !== actor) return guest;
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
   const performLeaveGame = async () => {
     if (leavingGame) return;
     setLeavingGame(true);
     try {
       const shouldApplyForfeit = Boolean(activeGameId) && !isBot && !gameResult;
       if (shouldApplyForfeit && activeGameId) {
-        const winnerByForfeit = await resolveOpponentForForfeit();
-        if (winnerByForfeit) {
-          try {
-            await api.games.finish(activeGameId, winnerByForfeit);
-          } catch (err) {
-            console.error('Forfeit finish request failed:', err);
-          }
+        // Use /resign instead of /finish: finishGameHandler rejects non-admin callers
+        // when there's no server-resolved winner yet (returns 409 server_result_pending),
+        // which let aim/quiz forfeiters escape with no penalty. /resign lets the actor
+        // declare themselves the loser, server picks the opponent as winner, settlement
+        // runs as normal. For chess, RetroChess already called /resign first; the second
+        // call below will 409 (status already finished) and be safely swallowed.
+        try {
+          await api.games.resign(activeGameId);
+        } catch (err) {
+          // Already-resigned / race-with-finish are expected here — log and continue.
+          console.error('Forfeit resign request failed:', err);
         }
       }
       leaveGame();
@@ -281,7 +268,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
 
   const handleLeaveGame = () => {
     if (!gameResult) {
-      const accepted = window.confirm('Oyundan çıkarsan mağlup sayılacaksın. Oyundan çıkmak istiyor musun?');
+      const accepted = window.confirm(
+        'Oyundan çıkarsan mağlup sayılacaksın. Oyundan çıkmak istiyor musun?'
+      );
       if (!accepted) return;
     }
     void performLeaveGame();
@@ -346,7 +335,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
                 {gameResult.winner ? `${gameResult.winner} kazandı` : 'Maç berabere bitti'}
               </p>
               <p className="text-sm text-[var(--rf-muted)] mt-1">
-                Puan etkisi: {gameResult.earnedPoints > 0 ? `+${gameResult.earnedPoints}` : gameResult.earnedPoints}
+                Puan etkisi:{' '}
+                {gameResult.earnedPoints > 0
+                  ? `+${gameResult.earnedPoints}`
+                  : gameResult.earnedPoints}
               </p>
               <div className="mt-3">
                 <RetroButton onClick={handleBackToLobby} variant="primary" disabled={leavingGame}>
@@ -406,7 +398,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
-
         {/* Status Bar */}
         <StatusBar
           user={currentUser}
@@ -419,9 +410,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
         <div className="relative bg-cyber-dark border-4 border-cyber-border p-2 md:p-3 shadow-[8px_8px_0_rgba(0,243,255,0.15)] flex flex-col">
           <div className="flex items-center gap-2 md:gap-4">
             {[
-              { id: 'games', label: 'OYUNLAR', mobileLabel: 'OYUN', icon: Gamepad2, hoverColor: 'hover:border-neon-blue hover:text-neon-blue', activeColor: 'border-neon-blue text-cyber-dark bg-neon-blue' },
-              { id: 'leaderboard', label: 'SIRALAMA', mobileLabel: 'SIRA', icon: Trophy, hoverColor: 'hover:border-neon-pink hover:text-neon-pink', activeColor: 'border-neon-pink text-cyber-dark bg-neon-pink' },
-              { id: 'achievements', label: 'BAŞARI', mobileLabel: 'BAŞARI', icon: Gift, hoverColor: 'hover:border-neon-green hover:text-neon-green', activeColor: 'border-neon-green text-cyber-dark bg-neon-green' }
+              {
+                id: 'games',
+                label: 'OYUNLAR',
+                mobileLabel: 'OYUN',
+                icon: Gamepad2,
+                hoverColor: 'hover:border-neon-blue hover:text-neon-blue',
+                activeColor: 'border-neon-blue text-cyber-dark bg-neon-blue',
+              },
+              {
+                id: 'leaderboard',
+                label: 'SIRALAMA',
+                mobileLabel: 'SIRA',
+                icon: Trophy,
+                hoverColor: 'hover:border-neon-pink hover:text-neon-pink',
+                activeColor: 'border-neon-pink text-cyber-dark bg-neon-pink',
+              },
+              {
+                id: 'achievements',
+                label: 'BAŞARI',
+                mobileLabel: 'BAŞARI',
+                icon: Gift,
+                hoverColor: 'hover:border-neon-green hover:text-neon-green',
+                activeColor: 'border-neon-green text-cyber-dark bg-neon-green',
+              },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = mainTab === tab.id;
@@ -438,7 +450,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
                   <span className="relative z-10 flex items-center justify-center gap-2 min-w-0">
                     <Icon size={24} className={isActive ? '' : 'opacity-70'} />
                     <span className="hidden sm:inline truncate">{tab.label}</span>
-                    <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
+                    <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">
+                      {tab.mobileLabel}
+                    </span>
                   </span>
 
                   {isActive && (
@@ -499,13 +513,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               </div>
             )}
 
-            {mainTab === 'leaderboard' && (
-              <Leaderboard />
-            )}
+            {mainTab === 'leaderboard' && <Leaderboard />}
 
-            {mainTab === 'achievements' && (
-              <Achievements userId={currentUser.id} />
-            )}
+            {mainTab === 'achievements' && <Achievements userId={currentUser.id} />}
           </motion.div>
         </AnimatePresence>
 
