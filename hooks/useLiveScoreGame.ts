@@ -31,12 +31,19 @@ export interface LiveGameSnapshot {
   guestName?: string | null;
   gameState?: {
     resolvedWinner?: string;
+    /** Set by the backend after settlement runs; the actual points moved to the winner. */
+    stakeTransferred?: number;
+    settlementApplied?: boolean;
     live?: {
       submissions?: Record<string, LiveSubmissionState>;
       resolvedWinner?: string;
     };
   };
 }
+
+/** Bot/local games never run server settlement; we keep a cosmetic reward so the user
+ * still sees a "won X points" toast. Production stats and wallet are unaffected. */
+const BOT_WIN_REWARD = 10;
 
 interface GameStateUpdatedPayload {
   type?: string;
@@ -149,7 +156,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
   );
 
   const finishFromServer = useCallback(
-    (winnerRaw: string | null) => {
+    (winnerRaw: string | null, stakeTransferred: number) => {
       if (finishHandledRef.current) return;
       finishHandledRef.current = true;
       if (finalizationTimeoutRef.current) {
@@ -157,8 +164,9 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         finalizationTimeoutRef.current = null;
       }
       const winner = normalizeName(winnerRaw) || 'Berabere';
-      const points =
-        winner.toLowerCase() === normalizeName(currentUser.username).toLowerCase() ? 10 : 0;
+      const isWinner = winner.toLowerCase() === normalizeName(currentUser.username).toLowerCase();
+      const safeStake = Math.max(0, Math.floor(Number(stakeTransferred) || 0));
+      const points = isWinner ? safeStake : 0;
       setDone(true);
       window.setTimeout(() => onGameEnd(winner, points), 700);
     },
@@ -192,7 +200,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
             snapshot.winner
         ) || null;
       if (String(snapshot.status || '').toLowerCase() === 'finished') {
-        finishFromServer(winner);
+        const serverStake = Number(snapshot.gameState?.stakeTransferred) || 0;
+        finishFromServer(winner, serverStake);
       }
     },
     [finishFromServer, resolveActorAndOpponent]
@@ -242,7 +251,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
     async (localWinner: string, playerScoreValue: number) => {
       if (finishHandledRef.current) return;
       if (isBot || !gameId) {
-        const points = localWinner === currentUser.username ? 10 : 0;
+        // Bot/local: no server settlement, show cosmetic reward only.
+        const points = localWinner === currentUser.username ? BOT_WIN_REWARD : 0;
         finishHandledRef.current = true;
         window.setTimeout(() => onGameEnd(localWinner, points), 900);
         return;
@@ -266,8 +276,19 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
           return;
         }
 
+        // Re-read snapshot to get the actual `stakeTransferred` the backend wrote
+        // during settlement. Without this we'd be guessing the reward amount.
+        let serverStake = 0;
+        try {
+          const finalSnapshot = (await api.games.get(gameId)) as LiveGameSnapshot;
+          serverStake = Number(finalSnapshot?.gameState?.stakeTransferred) || 0;
+        } catch {
+          // Snapshot fetch failed — fall back to zero so we don't fabricate a reward.
+        }
+
         const resolvedWinner = winner || 'Berabere';
-        const points = winner && winner === currentUser.username ? 10 : 0;
+        const isWinner = Boolean(winner) && winner === currentUser.username;
+        const points = isWinner ? Math.max(0, Math.floor(serverStake)) : 0;
         finishHandledRef.current = true;
         window.setTimeout(() => onGameEnd(resolvedWinner, points), 900);
       } catch {

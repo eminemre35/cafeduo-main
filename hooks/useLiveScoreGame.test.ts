@@ -173,8 +173,19 @@ describe('useLiveScoreGame', () => {
     expect(lastCall.liveSubmission.round).toBe(1000);
   });
 
-  it('finalizeMatch resolves with server winner', async () => {
+  it('finalizeMatch resolves with server winner and uses snapshot stakeTransferred', async () => {
     mockSubmitScore.mockResolvedValue({ winner: 'alice', finished: true });
+    // Hook now re-reads the snapshot after submitScoreAndWaitForWinner to pick up the
+    // real `stakeTransferred` value the backend wrote during settlement.
+    mockApi.games.get.mockResolvedValue({
+      ...baseSnapshot,
+      status: 'finished',
+      winner: 'alice',
+      gameState: {
+        ...baseSnapshot.gameState,
+        stakeTransferred: 25,
+      },
+    });
     const onGameEnd = jest.fn();
     const { result } = renderHook(() =>
       useLiveScoreGame({
@@ -200,7 +211,7 @@ describe('useLiveScoreGame', () => {
     act(() => {
       jest.advanceTimersByTime(1000);
     });
-    expect(onGameEnd).toHaveBeenCalledWith('alice', 10);
+    expect(onGameEnd).toHaveBeenCalledWith('alice', 25);
   });
 
   it('finalizeMatch returns immediately for bot/local mode', async () => {
