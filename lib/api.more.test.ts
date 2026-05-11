@@ -71,13 +71,25 @@ describe('API Layer additional coverage', () => {
       json: async () => ({ success: true }),
     });
 
-    await api.cafes.checkIn({ cafeId: 7, tableNumber: 3, latitude: 37.741, longitude: 29.101, accuracy: 12 });
+    await api.cafes.checkIn({
+      cafeId: 7,
+      tableNumber: 3,
+      latitude: 37.741,
+      longitude: 29.101,
+      accuracy: 12,
+    });
 
     expect(fetch).toHaveBeenCalledWith(
       '/api/cafes/7/check-in',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ cafeId: 7, tableNumber: 3, latitude: 37.741, longitude: 29.101, accuracy: 12 }),
+        body: JSON.stringify({
+          cafeId: 7,
+          tableNumber: 3,
+          latitude: 37.741,
+          longitude: 29.101,
+          accuracy: 12,
+        }),
       })
     );
   });
@@ -85,15 +97,12 @@ describe('API Layer additional coverage', () => {
   it('rewards.list appends cafeId query when provided', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => [],
+      json: async (): Promise<unknown[]> => [],
     });
 
     await api.rewards.list(9);
 
-    expect(fetch).toHaveBeenCalledWith(
-      '/api/rewards?cafeId=9',
-      expect.any(Object)
-    );
+    expect(fetch).toHaveBeenCalledWith('/api/rewards?cafeId=9', expect.any(Object));
   });
 
   it('admin.updateUserRole sends role with optional cafe id', async () => {
@@ -229,7 +238,9 @@ describe('API Layer additional coverage', () => {
       });
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval').mockImplementation(() => {});
 
-    const getSpy = jest.spyOn(api.games, 'get').mockResolvedValue({ id: 1, status: 'playing' } as any);
+    const getSpy = jest
+      .spyOn(api.games, 'get')
+      .mockResolvedValue({ id: 1, status: 'playing' } as any);
     const callback = jest.fn();
 
     const unsubscribe = api.games.onGameChange('1', callback);
@@ -298,7 +309,11 @@ describe('API Layer additional coverage', () => {
     await api.games.delete(12);
 
     expect(fetch).toHaveBeenNthCalledWith(1, '/api/games/11', expect.any(Object));
-    expect(fetch).toHaveBeenNthCalledWith(2, '/api/games', expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/games',
+      expect.objectContaining({ method: 'POST' })
+    );
     expect(fetch).toHaveBeenNthCalledWith(
       3,
       '/api/games/12/join',
@@ -314,7 +329,11 @@ describe('API Layer additional coverage', () => {
         body: JSON.stringify({ scoreSubmission: { username: 'emin', score: 3, roundsWon: 3 } }),
       })
     );
-    expect(fetch).toHaveBeenNthCalledWith(7, '/api/games/12', expect.objectContaining({ method: 'DELETE' }));
+    expect(fetch).toHaveBeenNthCalledWith(
+      7,
+      '/api/games/12',
+      expect.objectContaining({ method: 'DELETE' })
+    );
   });
 
   it('onLobbyChange polls and unsubscribe clears interval', async () => {
@@ -352,16 +371,24 @@ describe('API Layer additional coverage', () => {
     await api.rewards.delete(90);
     await api.shop.inventory(1);
 
-    expect(fetch).toHaveBeenNthCalledWith(1, '/api/rewards', expect.objectContaining({ method: 'POST' }));
-    expect(fetch).toHaveBeenNthCalledWith(2, '/api/rewards/90', expect.objectContaining({ method: 'DELETE' }));
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/rewards',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      '/api/rewards/90',
+      expect.objectContaining({ method: 'DELETE' })
+    );
     expect(fetch).toHaveBeenNthCalledWith(3, '/api/shop/inventory/1', expect.any(Object));
   });
 
   it('leaderboard and admin wrappers call expected endpoints', async () => {
     (fetch as jest.Mock)
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // leaderboard
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // admin users
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // admin games
+      .mockResolvedValueOnce({ ok: true, json: async (): Promise<unknown[]> => [] }) // leaderboard
+      .mockResolvedValueOnce({ ok: true, json: async (): Promise<unknown[]> => [] }) // admin users
+      .mockResolvedValueOnce({ ok: true, json: async (): Promise<unknown[]> => [] }) // admin games
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // update cafe
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 5 }) }) // create cafe
       .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) }); // delete cafe
@@ -376,8 +403,20 @@ describe('API Layer additional coverage', () => {
     expect(fetch).toHaveBeenNthCalledWith(1, '/api/leaderboard', expect.any(Object));
     expect(fetch).toHaveBeenNthCalledWith(2, '/api/admin/users', expect.any(Object));
     expect(fetch).toHaveBeenNthCalledWith(3, '/api/admin/games', expect.any(Object));
-    expect(fetch).toHaveBeenNthCalledWith(4, '/api/admin/cafes/2', expect.objectContaining({ method: 'PUT' }));
-    expect(fetch).toHaveBeenNthCalledWith(5, '/api/admin/cafes', expect.objectContaining({ method: 'POST' }));
-    expect(fetch).toHaveBeenNthCalledWith(6, '/api/admin/cafes/2', expect.objectContaining({ method: 'DELETE' }));
+    expect(fetch).toHaveBeenNthCalledWith(
+      4,
+      '/api/admin/cafes/2',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      5,
+      '/api/admin/cafes',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      6,
+      '/api/admin/cafes/2',
+      expect.objectContaining({ method: 'DELETE' })
+    );
   });
 });

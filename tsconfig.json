@@ -4,11 +4,7 @@
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["jest", "@testing-library/jest-dom", "node", "vite/client"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -18,11 +14,10 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "allowImportingTsExtensions": true,
+    "noImplicitAny": true,
     "noEmit": true
   },
   "include": [
@@ -41,9 +36,5 @@
     "**/*.test.tsx",
     "**/*.test.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage"
-  ]
+  "exclude": ["node_modules", "dist", "coverage"]
 }

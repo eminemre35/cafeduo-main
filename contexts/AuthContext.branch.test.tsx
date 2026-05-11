@@ -58,10 +58,16 @@ const checkedInUser: User = {
 
 const FullConsumer = () => {
   const {
-    user, isLoading, isAuthenticated,
-    hasSessionCheckIn, login, logout,
-    updateUser, refreshUser,
-    setHasSessionCheckIn, requiresCheckIn,
+    user,
+    isLoading,
+    isAuthenticated,
+    hasSessionCheckIn,
+    login,
+    logout,
+    updateUser,
+    refreshUser,
+    setHasSessionCheckIn,
+    requiresCheckIn,
   } = useAuth();
 
   return (
@@ -187,7 +193,9 @@ describe('AuthContext branch coverage', () => {
     });
 
     it('handles cached user without id gracefully', async () => {
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(JSON.stringify({ username: 'no-id' }));
+      (window.localStorage.getItem as jest.Mock).mockReturnValue(
+        JSON.stringify({ username: 'no-id' })
+      );
       mockVerifyToken.mockResolvedValue(null);
 
       renderWithProvider();
@@ -213,7 +221,11 @@ describe('AuthContext branch coverage', () => {
     });
 
     it('handles user with undefined table_number', async () => {
-      const userNoTable = { ...baseUser, cafe_id: 1, table_number: undefined };
+      const userNoTable = {
+        ...baseUser,
+        cafe_id: 1,
+        table_number: undefined as string | undefined,
+      };
       (window.localStorage.getItem as jest.Mock).mockReturnValue(JSON.stringify(userNoTable));
       (window.sessionStorage.getItem as jest.Mock).mockReturnValue('10');
       mockVerifyToken.mockResolvedValue(userNoTable);

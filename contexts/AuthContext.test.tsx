@@ -180,7 +180,7 @@ describe('AuthContext', () => {
   it('throws if useAuth is used outside provider', () => {
     const consoleSpy = suppressExpectedReactError();
 
-    const Broken = () => {
+    const Broken = (): null => {
       useAuth();
       return null;
     };
@@ -191,7 +191,9 @@ describe('AuthContext', () => {
       </HookErrorBoundary>
     );
 
-    expect(screen.getByTestId('hook-error')).toHaveTextContent('useAuth must be used within an AuthProvider');
+    expect(screen.getByTestId('hook-error')).toHaveTextContent(
+      'useAuth must be used within an AuthProvider'
+    );
     consoleSpy.mockRestore();
   });
 });

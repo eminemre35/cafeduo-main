@@ -6,7 +6,7 @@ import { suppressExpectedReactError } from '../test-utils/suppressReactError';
 // Test component that uses toast
 const TestComponent = () => {
   const toast = useToast();
-  
+
   return (
     <div>
       <button onClick={() => toast.success('Başarılı!')}>Success</button>
@@ -19,11 +19,7 @@ const TestComponent = () => {
 };
 
 const renderWithProvider = (component: React.ReactElement) => {
-  return render(
-    <ToastProvider>
-      {component}
-    </ToastProvider>
-  );
+  return render(<ToastProvider>{component}</ToastProvider>);
 };
 
 class HookErrorBoundary extends React.Component<
@@ -66,7 +62,7 @@ describe('ToastContext', () => {
 
   it('shows success toast', () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Success').click();
     });
@@ -76,7 +72,7 @@ describe('ToastContext', () => {
 
   it('shows error toast', () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Error').click();
     });
@@ -86,7 +82,7 @@ describe('ToastContext', () => {
 
   it('shows warning toast', () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Warning').click();
     });
@@ -96,7 +92,7 @@ describe('ToastContext', () => {
 
   it('shows loading toast', () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Loading').click();
     });
@@ -106,7 +102,7 @@ describe('ToastContext', () => {
 
   it('auto-dismisses toast after duration', async () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Success').click();
     });
@@ -125,7 +121,7 @@ describe('ToastContext', () => {
 
   it('keeps loading toast until manually dismissed', async () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Loading').click();
     });
@@ -143,7 +139,7 @@ describe('ToastContext', () => {
 
   it('shows multiple toasts', () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Success').click();
       screen.getByText('Error').click();
@@ -157,13 +153,13 @@ describe('ToastContext', () => {
 
   it('allows manual dismiss via close button', async () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Success').click();
     });
 
     const closeButton = screen.getByTestId('toast-close');
-    
+
     fireEvent.click(closeButton);
 
     await waitFor(() => {
@@ -174,7 +170,7 @@ describe('ToastContext', () => {
   it('throws error when useToast is used outside provider', () => {
     const consoleSpy = suppressExpectedReactError();
 
-    const BrokenComponent = () => {
+    const BrokenComponent = (): null => {
       useToast();
       return null;
     };
@@ -185,14 +181,16 @@ describe('ToastContext', () => {
       </HookErrorBoundary>
     );
 
-    expect(screen.getByTestId('hook-error')).toHaveTextContent('useToast must be used within ToastProvider');
+    expect(screen.getByTestId('hook-error')).toHaveTextContent(
+      'useToast must be used within ToastProvider'
+    );
 
     consoleSpy.mockRestore();
   });
 
   it('error toast has longer duration (4s)', async () => {
     renderWithProvider(<TestComponent />);
-    
+
     act(() => {
       screen.getByText('Error').click();
     });

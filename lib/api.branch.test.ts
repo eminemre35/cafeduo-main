@@ -136,11 +136,11 @@ describe('API branch coverage', () => {
         ok: false,
         status: 400,
         clone: () => ({
-          json: async () => null,
-          text: async () => 'Bad request text', // clone().text() is called first in readText()
+          json: async (): Promise<unknown> => null,
+          text: async (): Promise<string> => 'Bad request text', // clone().text() is called first in readText()
         }),
-        json: async () => null,
-        text: async () => 'Bad request text',
+        json: async (): Promise<unknown> => null,
+        text: async (): Promise<string> => 'Bad request text',
       });
 
       await expect(api.games.list()).rejects.toThrow('Bad request text');
@@ -151,11 +151,19 @@ describe('API branch coverage', () => {
         ok: false,
         status: 502,
         clone: () => ({
-          json: async () => { throw new Error('bad'); },
-          text: async () => { throw new Error('bad'); },
+          json: async () => {
+            throw new Error('bad');
+          },
+          text: async () => {
+            throw new Error('bad');
+          },
         }),
-        json: async () => { throw new Error('bad'); },
-        text: async () => { throw new Error('bad'); },
+        json: async () => {
+          throw new Error('bad');
+        },
+        text: async () => {
+          throw new Error('bad');
+        },
       });
 
       await expect(api.games.list()).rejects.toThrow('HTTP 502');
@@ -166,10 +174,12 @@ describe('API branch coverage', () => {
         ok: false,
         status: 429,
         json: async () => ({ error: 'Too many requests' }),
-        headers: { get: (name: string) => name === 'retry-after' ? '30' : null },
+        headers: { get: (name: string) => (name === 'retry-after' ? '30' : null) },
       });
 
-      await expect(api.games.list()).rejects.toThrow('Too many requests 30 sn sonra tekrar deneyin.');
+      await expect(api.games.list()).rejects.toThrow(
+        'Too many requests 30 sn sonra tekrar deneyin.'
+      );
     });
 
     it('does not add retry hint when retry-after is not a valid number', async () => {
@@ -177,7 +187,7 @@ describe('API branch coverage', () => {
         ok: false,
         status: 429,
         json: async () => ({ error: 'Rate limited' }),
-        headers: { get: (name: string) => name === 'retry-after' ? 'invalid' : null },
+        headers: { get: (name: string) => (name === 'retry-after' ? 'invalid' : null) },
       });
 
       await expect(api.games.list()).rejects.toThrow('Rate limited');
@@ -199,19 +209,25 @@ describe('API branch coverage', () => {
     it('returns short version for hex commit hash', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ commit: '1cf014a485f1dbd3dfa2ea22c4af647067b4633f', buildTime: '2026-04-01T10:00:00Z' }),
+        json: async () => ({
+          commit: '1cf014a485f1dbd3dfa2ea22c4af647067b4633f',
+          buildTime: '2026-04-01T10:00:00Z',
+        }),
       });
 
       const result = await api.meta.getVersion();
       expect(result.version).toBe('1cf014a485f1dbd3dfa2ea22c4af647067b4633f');
       expect(result.shortVersion).toBe('1cf014a');
-      expect(result.buildTime).toBe('2026-04-01T10:00:00Z');
+      expect(result.buildTime as string).toBe('2026-04-01T10:00:00Z');
     });
 
     it('returns short version for non-hex version string', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ commit: 'v2.1.0-beta', buildTime: null }),
+        json: async (): Promise<{ commit: string; buildTime: string | null }> => ({
+          commit: 'v2.1.0-beta',
+          buildTime: null,
+        }),
       });
 
       const result = await api.meta.getVersion();
@@ -234,7 +250,11 @@ describe('API branch coverage', () => {
     it('includes nodeEnv when present', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ commit: 'abc1234567', buildTime: '2026-01-01', nodeEnv: 'production' }),
+        json: async () => ({
+          commit: 'abc1234567',
+          buildTime: '2026-01-01',
+          nodeEnv: 'production',
+        }),
       });
 
       const result = await api.meta.getVersion();
@@ -291,7 +311,13 @@ describe('API branch coverage', () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { id: 1, title: 'First Win', description: 'Win your first game', unlocked: true, unlockedAt: '2026-01-01' },
+          {
+            id: 1,
+            title: 'First Win',
+            description: 'Win your first game',
+            unlocked: true,
+            unlockedAt: '2026-01-01',
+          },
           { id: 2 }, // minimal object
         ],
       });
@@ -392,21 +418,18 @@ describe('API branch coverage', () => {
     it('sends query params for tableCode and includeAll', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => [],
+        json: async (): Promise<unknown[]> => [],
       });
 
       await api.games.list({ tableCode: 'MASA05', includeAll: true });
 
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/games?table=MASA05&scope=all',
-        expect.any(Object)
-      );
+      expect(fetch).toHaveBeenCalledWith('/api/games?table=MASA05&scope=all', expect.any(Object));
     });
 
     it('sends request without query params when no options', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => [],
+        json: async (): Promise<unknown[]> => [],
       });
 
       await api.games.list();
@@ -417,15 +440,12 @@ describe('API branch coverage', () => {
     it('normalizes table code to uppercase', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => [],
+        json: async (): Promise<unknown[]> => [],
       });
 
       await api.games.list({ tableCode: 'masa05' });
 
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/games?table=MASA05',
-        expect.any(Object)
-      );
+      expect(fetch).toHaveBeenCalledWith('/api/games?table=MASA05', expect.any(Object));
     });
   });
 
@@ -485,7 +505,19 @@ describe('API branch coverage', () => {
     it('store.items fetches items', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, items: [{ id: 1, title: 'Frame', code: 'frame-1', price: 100, type: 'frame', description: 'A frame' }] }),
+        json: async () => ({
+          success: true,
+          items: [
+            {
+              id: 1,
+              title: 'Frame',
+              code: 'frame-1',
+              price: 100,
+              type: 'frame',
+              description: 'A frame',
+            },
+          ],
+        }),
       });
 
       const result = await api.store.items();
@@ -496,7 +528,10 @@ describe('API branch coverage', () => {
     it('store.inventory fetches inventory', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, inventory: [] }),
+        json: async (): Promise<{ success: boolean; inventory: unknown[] }> => ({
+          success: true,
+          inventory: [],
+        }),
       });
 
       const result = await api.store.inventory();
@@ -509,7 +544,14 @@ describe('API branch coverage', () => {
         json: async () => ({
           success: true,
           message: 'Item purchased',
-          inventoryItem: { id: 1, user_id: 1, item_id: 2, item_title: 'Frame', code: 'frame-1', is_used: false },
+          inventoryItem: {
+            id: 1,
+            user_id: 1,
+            item_id: 2,
+            item_title: 'Frame',
+            code: 'frame-1',
+            is_used: false,
+          },
           remainingPoints: 50,
         }),
       });
@@ -534,7 +576,7 @@ describe('API branch coverage', () => {
 
       // Flush microtasks (poll() is async, needs multiple ticks)
       for (let i = 0; i < 10; i++) {
-        await new Promise(r => setImmediate(r));
+        await new Promise((r) => setImmediate(r));
       }
 
       // Callback should NOT have been called since get failed
@@ -558,7 +600,7 @@ describe('API branch coverage', () => {
 
       // Flush microtasks
       for (let i = 0; i < 10; i++) {
-        await new Promise(r => setImmediate(r));
+        await new Promise((r) => setImmediate(r));
       }
 
       expect(globalConsoleError).toHaveBeenCalledWith('Lobby polling error:', expect.any(Error));
@@ -572,7 +614,7 @@ describe('API branch coverage', () => {
     it('calls /rewards without query param', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => [],
+        json: async (): Promise<unknown[]> => [],
       });
 
       await api.rewards.list();

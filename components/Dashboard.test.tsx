@@ -1,6 +1,6 @@
 ﻿/**
  * Dashboard Integration Tests
- * 
+ *
  * @description Dashboard component data flow and integration tests
  * Tests: Tab switching, game flow, reward flow, user interactions
  */
@@ -14,11 +14,11 @@ import { ToastProvider } from '../contexts/ToastContext';
 
 // Mock hooks
 jest.mock('../hooks/useGames', () => ({
-  useGames: jest.fn()
+  useGames: jest.fn(),
 }));
 
 jest.mock('../hooks/useRewards', () => ({
-  useRewards: jest.fn()
+  useRewards: jest.fn(),
 }));
 
 // Mock lib/socket (import.meta.env issue)
@@ -34,7 +34,7 @@ jest.mock('../lib/socket', () => ({
       on: jest.fn(),
       off: jest.fn(),
     }),
-  }
+  },
 }));
 
 // Mock sub-components
@@ -44,7 +44,7 @@ jest.mock('./dashboard/StatusBar', () => ({
       <span data-testid="user-name">{user.username}</span>
       <span data-testid="match-status">{isMatched ? 'Connected' : 'Not Connected'}</span>
     </div>
-  )
+  ),
 }));
 
 jest.mock('./dashboard/GameSection', () => ({
@@ -56,7 +56,7 @@ jest.mock('./dashboard/GameSection', () => ({
     serverActiveGame,
     onCreateGame,
     onJoinGame,
-    onRejoinGame
+    onRejoinGame,
   }: any) => {
     // Aktif oyun banner'ı göster
     if (serverActiveGame) {
@@ -91,7 +91,7 @@ jest.mock('./dashboard/GameSection', () => ({
         ))}
       </div>
     );
-  }
+  },
 }));
 
 jest.mock('./dashboard/RewardSection', () => ({
@@ -102,7 +102,7 @@ jest.mock('./dashboard/RewardSection', () => ({
     inventory,
     activeTab,
     onTabChange,
-    onBuyReward
+    onBuyReward,
   }: any) => (
     <div data-testid="reward-section">
       <button
@@ -133,7 +133,7 @@ jest.mock('./dashboard/RewardSection', () => ({
         </button>
       ))}
     </div>
-  )
+  ),
 }));
 
 jest.mock('./Leaderboard', () => ({
@@ -141,7 +141,7 @@ jest.mock('./Leaderboard', () => ({
     <div data-testid="leaderboard">
       <span>Sıralama Tablosu</span>
     </div>
-  )
+  ),
 }));
 
 jest.mock('./Achievements', () => ({
@@ -149,7 +149,7 @@ jest.mock('./Achievements', () => ({
     <div data-testid="achievements">
       <span>Başarımlar - Kullanıcı #{userId}</span>
     </div>
-  )
+  ),
 }));
 
 // Mock game components (they use socket internally)
@@ -159,7 +159,7 @@ jest.mock('./ArenaBattle', () => ({
       <span>Nişancı Düellosu - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
-  )
+  ),
 }));
 
 jest.mock('./KnowledgeQuiz', () => ({
@@ -168,7 +168,7 @@ jest.mock('./KnowledgeQuiz', () => ({
       <span>Bilgi Yarışı - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
-  )
+  ),
 }));
 
 jest.mock('./RetroChess', () => ({
@@ -177,7 +177,7 @@ jest.mock('./RetroChess', () => ({
       <span>Retro Satranç - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 12)}>Savaşı Bitir</button>
     </div>
-  )
+  ),
 }));
 
 // Mock framer-motion
@@ -212,7 +212,9 @@ describe('Dashboard Integration', () => {
 
   const mockOnUpdateUser = jest.fn();
 
-  const defaultGamesState = {
+  // Cast through ReturnType so empty arrays/null fields don't widen to `any`
+  // when noImplicitAny is enabled. Mock state must satisfy the hook's contract.
+  const defaultGamesState: ReturnType<typeof useGames> = {
     games: [],
     loading: false,
     error: null,
@@ -229,9 +231,9 @@ describe('Dashboard Integration', () => {
     leaveGame: jest.fn(),
     setActiveGame: jest.fn(),
     refetch: jest.fn(),
-  };
+  } as ReturnType<typeof useGames>;
 
-  const defaultRewardsState = {
+  const defaultRewardsState: ReturnType<typeof useRewards> = {
     rewards: [],
     rewardsLoading: false,
     rewardsError: null,
@@ -244,17 +246,13 @@ describe('Dashboard Integration', () => {
     refetchRewards: jest.fn(),
     refetchInventory: jest.fn(),
     canAfford: (cost: number) => cost <= 1000,
-  };
+  } as ReturnType<typeof useRewards>;
 
   const renderDashboard = (props = {}) => {
     return render(
       <ToastProvider>
         <AuthProvider>
-          <Dashboard
-            currentUser={mockUser}
-            onUpdateUser={mockOnUpdateUser}
-            {...props}
-          />
+          <Dashboard currentUser={mockUser} onUpdateUser={mockOnUpdateUser} {...props} />
         </AuthProvider>
       </ToastProvider>
     );
@@ -265,7 +263,7 @@ describe('Dashboard Integration', () => {
     mockUseGames.mockReturnValue(defaultGamesState);
     mockUseRewards.mockReturnValue(defaultRewardsState);
     // Mock localStorage
-    Storage.prototype.getItem = jest.fn(() => null);
+    Storage.prototype.getItem = jest.fn((): string | null => null);
     Storage.prototype.setItem = jest.fn();
     Storage.prototype.removeItem = jest.fn();
     window.confirm = jest.fn(() => true);
@@ -342,8 +340,22 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         games: [
-          { id: 1, gameType: 'Nişancı Düellosu', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
-          { id: 2, gameType: 'Retro Satranç', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
+          {
+            id: 1,
+            gameType: 'Nişancı Düellosu',
+            points: 50,
+            hostName: 'user1',
+            table: 'A1',
+            status: 'waiting',
+          },
+          {
+            id: 2,
+            gameType: 'Retro Satranç',
+            points: 100,
+            hostName: 'user2',
+            table: 'B2',
+            status: 'waiting',
+          },
         ],
       });
 
@@ -374,7 +386,16 @@ describe('Dashboard Integration', () => {
       const mockJoinGame = jest.fn().mockResolvedValue(undefined);
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
-        games: [{ id: 1, gameType: 'Nişancı Düellosu', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' }],
+        games: [
+          {
+            id: 1,
+            gameType: 'Nişancı Düellosu',
+            points: 50,
+            hostName: 'user1',
+            table: 'A1',
+            status: 'waiting',
+          },
+        ],
         joinGame: mockJoinGame,
       });
 
@@ -548,7 +569,7 @@ describe('Dashboard Integration', () => {
       const mockBuyReward = jest.fn().mockResolvedValue({
         success: true,
         code: 'COUPON123',
-        newPoints: 900
+        newPoints: 900,
       });
       mockUseRewards.mockReturnValue({
         ...defaultRewardsState,
@@ -578,8 +599,28 @@ describe('Dashboard Integration', () => {
       mockUseRewards.mockReturnValue({
         ...defaultRewardsState,
         inventory: [
-          { redeemId: '1', id: 1, title: 'Kahve', description: 'Kahve', cost: 100, icon: 'coffee', code: 'ABC', redeemedAt: new Date(), isUsed: false },
-          { redeemId: '2', id: 2, title: 'Tatlı', description: 'Tatlı', cost: 200, icon: 'dessert', code: 'DEF', redeemedAt: new Date(), isUsed: false },
+          {
+            redeemId: '1',
+            id: 1,
+            title: 'Kahve',
+            description: 'Kahve',
+            cost: 100,
+            icon: 'coffee',
+            code: 'ABC',
+            redeemedAt: new Date(),
+            isUsed: false,
+          },
+          {
+            redeemId: '2',
+            id: 2,
+            title: 'Tatlı',
+            description: 'Tatlı',
+            cost: 200,
+            icon: 'dessert',
+            code: 'DEF',
+            redeemedAt: new Date(),
+            isUsed: false,
+          },
         ],
       });
 
@@ -614,10 +655,7 @@ describe('Dashboard Integration', () => {
     it('shows not connected status', () => {
       render(
         <ToastProvider>
-          <Dashboard
-            currentUser={userWithoutTable}
-            onUpdateUser={mockOnUpdateUser}
-          />
+          <Dashboard currentUser={userWithoutTable} onUpdateUser={mockOnUpdateUser} />
         </ToastProvider>
       );
 
@@ -627,10 +665,7 @@ describe('Dashboard Integration', () => {
     it('disables game buttons when not connected', () => {
       render(
         <ToastProvider>
-          <Dashboard
-            currentUser={userWithoutTable}
-            onUpdateUser={mockOnUpdateUser}
-          />
+          <Dashboard currentUser={userWithoutTable} onUpdateUser={mockOnUpdateUser} />
         </ToastProvider>
       );
 
