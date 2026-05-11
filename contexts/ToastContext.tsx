@@ -1,6 +1,6 @@
 /**
  * ToastContext
- * 
+ *
  * @description Global toast/notification sistemi
  * @usage const { toast } = useToast();
  *         toast.success('Başarılı!');
@@ -59,25 +59,30 @@ const ToastStyles = {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, type: ToastType, duration: number = 3000) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newToast: Toast = { id, message, type, duration };
-    
-    setToasts((prev) => [...prev, newToast]);
-
-    // Loading toast'u otomatik kapatma
-    if (type !== 'loading' && duration > 0) {
-      setTimeout(() => {
-        dismissToast(id);
-      }, duration);
-    }
-
-    return id;
-  }, []);
-
+  // Declared before addToast so the closure captures the stable callback reference
+  // and the auto-dismiss setTimeout can call it without an exhaustive-deps warning.
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  const addToast = useCallback(
+    (message: string, type: ToastType, duration: number = 3000) => {
+      const id = Math.random().toString(36).substring(2, 9);
+      const newToast: Toast = { id, message, type, duration };
+
+      setToasts((prev) => [...prev, newToast]);
+
+      // Loading toast'u otomatik kapatma
+      if (type !== 'loading' && duration > 0) {
+        setTimeout(() => {
+          dismissToast(id);
+        }, duration);
+      }
+
+      return id;
+    },
+    [dismissToast]
+  );
 
   const toast = {
     success: (message: string, duration = 3000) => addToast(message, 'success', duration),

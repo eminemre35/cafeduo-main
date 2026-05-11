@@ -1,6 +1,6 @@
 /**
  * useGames Hook
- * 
+ *
  * @description Oyun listesi ve aktif oyun yönetimi için custom hook
  * @returns Oyun verileri ve yönetim fonksiyonları
  */
@@ -23,14 +23,14 @@ interface UseGamesReturn {
   gameHistory: GameHistoryEntry[];
   historyLoading: boolean;
   refetch: () => Promise<void>;
-  
+
   // Aktif oyun
   activeGameId: string | number | null;
   activeGameType: string;
   opponentName: string | undefined;
   isBot: boolean;
   serverActiveGame: GameRequest | null;
-  
+
   // Oyun yönetimi
   createGame: (
     gameType: string,
@@ -40,7 +40,12 @@ interface UseGamesReturn {
   joinGame: (gameId: number) => Promise<void>;
   cancelGame: (gameId: number | string) => Promise<void>;
   leaveGame: () => void;
-  setActiveGame: (gameId: string | number | null, gameType?: string, opponent?: string, bot?: boolean) => void;
+  setActiveGame: (
+    gameId: string | number | null,
+    gameType?: string,
+    opponent?: string,
+    bot?: boolean
+  ) => void;
 }
 
 const toMessage = (err: unknown, fallback: string) =>
@@ -49,15 +54,13 @@ const toMessage = (err: unknown, fallback: string) =>
 const isNotFoundError = (err: unknown): boolean => {
   if (!(err instanceof Error)) return false;
   const message = String(err.message || '').toLowerCase();
-  return (
-    message.includes('404') ||
-    message.includes('bulunamadı') ||
-    message.includes('not found')
-  );
+  return message.includes('404') || message.includes('bulunamadı') || message.includes('not found');
 };
 
 const normalizeTableCode = (rawValue: unknown): string => {
-  const raw = String(rawValue || '').trim().toUpperCase();
+  const raw = String(rawValue || '')
+    .trim()
+    .toUpperCase();
   if (!raw || raw === 'NULL' || raw === 'UNDEFINED') return '';
   if (raw.startsWith('MASA')) return raw;
   const numeric = Number(raw);
@@ -156,10 +159,7 @@ const isSameActiveGame = (a: GameRequest | null, b: GameRequest | null): boolean
 
 const normalizeGameId = (game: Partial<GameRequest>): string => String(game.id ?? '').trim();
 
-const normalizeLobbyList = (
-  data: unknown,
-  resolvedTableCode: string
-): GameRequest[] => {
+const normalizeLobbyList = (data: unknown, resolvedTableCode: string): GameRequest[] => {
   if (!Array.isArray(data)) return [];
 
   const seenIds = new Set<string>();
@@ -183,8 +183,12 @@ const normalizeLobbyList = (
       if (leftSameTable !== rightSameTable) {
         return rightSameTable - leftSameTable;
       }
-      const leftCreatedAt = new Date(String((left as { createdAt?: unknown }).createdAt || 0)).getTime();
-      const rightCreatedAt = new Date(String((right as { createdAt?: unknown }).createdAt || 0)).getTime();
+      const leftCreatedAt = new Date(
+        String((left as { createdAt?: unknown }).createdAt || 0)
+      ).getTime();
+      const rightCreatedAt = new Date(
+        String((right as { createdAt?: unknown }).createdAt || 0)
+      ).getTime();
       return rightCreatedAt - leftCreatedAt;
     });
 };
@@ -199,14 +203,14 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const [error, setError] = useState<string | null>(null);
   const [gameHistory, setGameHistory] = useState<GameHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  
+
   // Aktif oyun state'leri
   const [activeGameId, setActiveGameId] = useState<string | number | null>(null);
   const [activeGameType, setActiveGameType] = useState<string>('');
   const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
   const [isBot, setIsBot] = useState<boolean>(false);
   const [serverActiveGame, setServerActiveGame] = useState<GameRequest | null>(null);
-  
+
   // Polling interval ref'i
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const missingActivePollCountRef = useRef(0);
@@ -224,205 +228,213 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   /**
    * Oyun listesini API'den çek
    */
-  const fetchGames = useCallback(async (options?: { silent?: boolean }) => {
-    const silent = Boolean(options?.silent);
-    if (gamesRequestInFlightRef.current) return;
-    gamesRequestInFlightRef.current = true;
-    try {
-      if (!silent) {
-        setLoading(true);
+  const fetchGames = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = Boolean(options?.silent);
+      if (gamesRequestInFlightRef.current) return;
+      gamesRequestInFlightRef.current = true;
+      try {
+        if (!silent) {
+          setLoading(true);
+        }
+        const data = await api.games.list({
+          tableCode: resolvedTableCode,
+          includeAll: isAdminActor || Boolean(resolvedTableCode),
+        });
+        const list = normalizeLobbyList(data, resolvedTableCode);
+        setGames((prev) => (isSameGameList(prev, list) ? prev : list));
+        setError((prev) => (prev ? null : prev));
+      } catch (err) {
+        console.error('Failed to load games:', err);
+        if (!silent) {
+          setError('Oyunlar yüklenemedi');
+        }
+      } finally {
+        gamesRequestInFlightRef.current = false;
+        if (!silent) {
+          setLoading(false);
+        }
       }
-      const data = await api.games.list({
-        tableCode: resolvedTableCode,
-        includeAll: isAdminActor || Boolean(resolvedTableCode),
-      });
-      const list = normalizeLobbyList(data, resolvedTableCode);
-      setGames((prev) => (isSameGameList(prev, list) ? prev : list));
-      setError((prev) => (prev ? null : prev));
-    } catch (err) {
-      console.error('Failed to load games:', err);
-      if (!silent) {
-        setError('Oyunlar yüklenemedi');
-      }
-    } finally {
-      gamesRequestInFlightRef.current = false;
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }, [resolvedTableCode, isAdminActor]);
+    },
+    [resolvedTableCode, isAdminActor]
+  );
 
   /**
    * Kullanıcının tamamlanmış oyun geçmişini çek
    */
-  const fetchGameHistory = useCallback(async (options?: { silent?: boolean }) => {
-    const silent = Boolean(options?.silent);
-    if (historyRequestInFlightRef.current) return;
-    historyRequestInFlightRef.current = true;
-    try {
-      if (!silent) {
-        setHistoryLoading(true);
+  const fetchGameHistory = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = Boolean(options?.silent);
+      if (historyRequestInFlightRef.current) return;
+      historyRequestInFlightRef.current = true;
+      try {
+        if (!silent) {
+          setHistoryLoading(true);
+        }
+        const history = await api.users.getGameHistory(currentUser.username);
+        const list = Array.isArray(history) ? history : [];
+        setGameHistory((prev) => (isSameHistory(prev, list) ? prev : list));
+      } catch (err) {
+        console.error('Failed to load game history:', err);
+        if (!silent) {
+          setGameHistory([]);
+        }
+      } finally {
+        historyRequestInFlightRef.current = false;
+        if (!silent) {
+          setHistoryLoading(false);
+        }
       }
-      const history = await api.users.getGameHistory(currentUser.username);
-      const list = Array.isArray(history) ? history : [];
-      setGameHistory((prev) => (isSameHistory(prev, list) ? prev : list));
-    } catch (err) {
-      console.error('Failed to load game history:', err);
-      if (!silent) {
-        setGameHistory([]);
-      }
-    } finally {
-      historyRequestInFlightRef.current = false;
-      if (!silent) {
-        setHistoryLoading(false);
-      }
-    }
-  }, [currentUser.username]);
+    },
+    [currentUser.username]
+  );
 
   /**
    * Kullanıcının aktif oyununu kontrol et
    */
-  const checkActiveGame = useCallback(async (options?: { preserveUntilConfirmedEmpty?: boolean; ignoreLocalActive?: boolean }) => {
-    // Eğer lokalde aktif oyun varsa, server'dan gelen null ile üzerine yazma
-    if (activeGameId && !options?.ignoreLocalActive) return;
-    if (activeGameRequestInFlightRef.current) return;
-    activeGameRequestInFlightRef.current = true;
-    
-    try {
-      const game = await api.users.getActiveGame(currentUser.username);
-      if (game) {
+  const checkActiveGame = useCallback(
+    async (options?: { preserveUntilConfirmedEmpty?: boolean; ignoreLocalActive?: boolean }) => {
+      // Eğer lokalde aktif oyun varsa, server'dan gelen null ile üzerine yazma
+      if (activeGameId && !options?.ignoreLocalActive) return;
+      if (activeGameRequestInFlightRef.current) return;
+      activeGameRequestInFlightRef.current = true;
+
+      try {
+        const game = await api.users.getActiveGame(currentUser.username);
+        if (game) {
+          missingActivePollCountRef.current = 0;
+          setServerActiveGame((prev) => (isSameActiveGame(prev, game) ? prev : game));
+          return;
+        }
+
+        // Polling sırasında tek seferlik null cevaplarda banner'ı hemen düşürme.
+        if (options?.preserveUntilConfirmedEmpty) {
+          missingActivePollCountRef.current += 1;
+          if (missingActivePollCountRef.current < 2) return;
+        }
+
         missingActivePollCountRef.current = 0;
-        setServerActiveGame((prev) => (isSameActiveGame(prev, game) ? prev : game));
-        return;
+        setServerActiveGame((prev) => (prev === null ? prev : null));
+      } catch (err) {
+        console.error('Failed to check active game:', err);
+      } finally {
+        activeGameRequestInFlightRef.current = false;
       }
-
-      // Polling sırasında tek seferlik null cevaplarda banner'ı hemen düşürme.
-      if (options?.preserveUntilConfirmedEmpty) {
-        missingActivePollCountRef.current += 1;
-        if (missingActivePollCountRef.current < 2) return;
-      }
-
-      missingActivePollCountRef.current = 0;
-      setServerActiveGame((prev) => (prev === null ? prev : null));
-    } catch (err) {
-      console.error('Failed to check active game:', err);
-    } finally {
-      activeGameRequestInFlightRef.current = false;
-    }
-  }, [currentUser.username, activeGameId]);
+    },
+    [currentUser.username, activeGameId]
+  );
 
   /**
    * Oyun listesini yenile
    */
   const refetch = useCallback(async () => {
-    await Promise.all([
-      fetchGames(),
-      checkActiveGame(),
-      fetchGameHistory(),
-    ]);
+    await Promise.all([fetchGames(), checkActiveGame(), fetchGameHistory()]);
   }, [fetchGames, checkActiveGame, fetchGameHistory]);
 
   /**
    * Yeni oyun kur
    */
-  const createGame = useCallback(async (
-    gameType: string,
-    points: number,
-    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
-  ) => {
-    try {
-      const newGame = await api.games.create({
-        hostName: currentUser.username,
-        gameType,
-        points,
-        table: tableCode || currentUser.table_number || 'MASA00',
-        ...(options?.chessClock ? { chessClock: options.chessClock } : {}),
-      });
+  const createGame = useCallback(
+    async (
+      gameType: string,
+      points: number,
+      options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+    ) => {
+      try {
+        const newGame = await api.games.create({
+          hostName: currentUser.username,
+          gameType,
+          points,
+          table: tableCode || currentUser.table_number || 'MASA00',
+          ...(options?.chessClock ? { chessClock: options.chessClock } : {}),
+        });
 
-      // Oyun listesine ekle
-      setGames((prev) => [newGame, ...prev]);
+        // Oyun listesine ekle
+        setGames((prev) => [newGame, ...prev]);
 
-      // Host doğrudan oyuna alınmaz; lobby'de bekler.
-      // Rakip katıldığında active-game endpoint'i üzerinden geri döner.
-      setActiveGameId(null);
-      setActiveGameType('');
-      setOpponentName(undefined);
-      setIsBot(false);
-      await Promise.all([
-        fetchGames({ silent: true }),
-        fetchGameHistory({ silent: true }),
-      ]);
-    } catch (err) {
-      console.error('Failed to create game:', err);
-      throw new Error(toMessage(err, 'Oyun kurulurken hata oluştu'));
-    }
-  }, [currentUser.username, currentUser.table_number, tableCode, fetchGames, fetchGameHistory]);
-
-  /**
-   * Mevcut oyuna katıl
-   */
-  const joinGame = useCallback(async (gameId: number) => {
-    try {
-      await api.games.join(gameId, currentUser.username);
-
-      // Katılım sonrası güncel oyunu sunucudan al
-      const joinedGame = await api.games.get(gameId);
-      const gameType = joinedGame?.gameType || games.find(g => g.id === gameId)?.gameType || '';
-      const hostName = joinedGame?.hostName || games.find(g => g.id === gameId)?.hostName;
-
-      setActiveGameId(gameId);
-      setActiveGameType(gameType);
-      setOpponentName(hostName);
-      setIsBot(false);
-      setServerActiveGame(null);
-      missingActivePollCountRef.current = 0;
-      setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
-
-      // Lobi listesini tazele (oyun waiting listesinden düşmeli)
-      await Promise.all([
-        fetchGames({ silent: true }),
-        fetchGameHistory({ silent: true }),
-      ]);
-    } catch (err) {
-      console.error('Failed to join game:', err);
-      throw new Error(toMessage(err, 'Oyuna katılırken hata oluştu'));
-    }
-  }, [currentUser.username, games, fetchGames, fetchGameHistory]);
-
-  /**
-   * Bekleyen oyunu iptal et
-   */
-  const cancelGame = useCallback(async (gameId: number | string) => {
-    try {
-      await api.games.delete(gameId);
-      setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
-      if (String(activeGameId) === String(gameId)) {
+        // Host doğrudan oyuna alınmaz; lobby'de bekler.
+        // Rakip katıldığında active-game endpoint'i üzerinden geri döner.
         setActiveGameId(null);
         setActiveGameType('');
         setOpponentName(undefined);
         setIsBot(false);
+        await Promise.all([fetchGames({ silent: true }), fetchGameHistory({ silent: true })]);
+      } catch (err) {
+        console.error('Failed to create game:', err);
+        throw new Error(toMessage(err, 'Oyun kurulurken hata oluştu'));
       }
+    },
+    [currentUser.username, currentUser.table_number, tableCode, fetchGames, fetchGameHistory]
+  );
 
-      await Promise.all([
-        fetchGames({ silent: true }),
-        checkActiveGame({ ignoreLocalActive: true }),
-        fetchGameHistory({ silent: true }),
-      ]);
-    } catch (err) {
-      if (isNotFoundError(err)) {
-        // Yarış koşulu: oyun bu sırada başka bir istemci tarafından düşmüş olabilir.
+  /**
+   * Mevcut oyuna katıl
+   */
+  const joinGame = useCallback(
+    async (gameId: number) => {
+      try {
+        await api.games.join(gameId, currentUser.username);
+
+        // Katılım sonrası güncel oyunu sunucudan al
+        const joinedGame = await api.games.get(gameId);
+        const gameType = joinedGame?.gameType || games.find((g) => g.id === gameId)?.gameType || '';
+        const hostName = joinedGame?.hostName || games.find((g) => g.id === gameId)?.hostName;
+
+        setActiveGameId(gameId);
+        setActiveGameType(gameType);
+        setOpponentName(hostName);
+        setIsBot(false);
+        setServerActiveGame(null);
+        missingActivePollCountRef.current = 0;
         setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
+
+        // Lobi listesini tazele (oyun waiting listesinden düşmeli)
+        await Promise.all([fetchGames({ silent: true }), fetchGameHistory({ silent: true })]);
+      } catch (err) {
+        console.error('Failed to join game:', err);
+        throw new Error(toMessage(err, 'Oyuna katılırken hata oluştu'));
+      }
+    },
+    [currentUser.username, games, fetchGames, fetchGameHistory]
+  );
+
+  /**
+   * Bekleyen oyunu iptal et
+   */
+  const cancelGame = useCallback(
+    async (gameId: number | string) => {
+      try {
+        await api.games.delete(gameId);
+        setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
+        if (String(activeGameId) === String(gameId)) {
+          setActiveGameId(null);
+          setActiveGameType('');
+          setOpponentName(undefined);
+          setIsBot(false);
+        }
+
         await Promise.all([
           fetchGames({ silent: true }),
           checkActiveGame({ ignoreLocalActive: true }),
           fetchGameHistory({ silent: true }),
         ]);
-        return;
+      } catch (err) {
+        if (isNotFoundError(err)) {
+          // Yarış koşulu: oyun bu sırada başka bir istemci tarafından düşmüş olabilir.
+          setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
+          await Promise.all([
+            fetchGames({ silent: true }),
+            checkActiveGame({ ignoreLocalActive: true }),
+            fetchGameHistory({ silent: true }),
+          ]);
+          return;
+        }
+        console.error('Failed to cancel game:', err);
+        throw new Error(toMessage(err, 'Oyun iptal edilirken hata oluştu'));
       }
-      console.error('Failed to cancel game:', err);
-      throw new Error(toMessage(err, 'Oyun iptal edilirken hata oluştu'));
-    }
-  }, [activeGameId, checkActiveGame, fetchGameHistory, fetchGames]);
+    },
+    [activeGameId, checkActiveGame, fetchGameHistory, fetchGames]
+  );
 
   /**
    * Oyundan ayrıl
@@ -432,7 +444,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     if (activeGameId) {
       socketService.leaveGame(String(activeGameId));
     }
-    
+
     autoJoinCooldownUntilRef.current = Date.now() + 5000;
 
     setActiveGameId(null);
@@ -448,24 +460,27 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   /**
    * Aktif oyunu manuel olarak ayarla
    */
-  const setActiveGame = useCallback((
-    gameId: string | number | null,
-    gameType: string = '',
-    opponent?: string,
-    bot: boolean = false
-  ) => {
-    if (gameId) {
-      autoJoinCooldownUntilRef.current = 0;
-    }
-    setActiveGameId(gameId);
-    setActiveGameType(gameType);
-    setOpponentName(opponent);
-    setIsBot(bot);
-    if (gameId) {
-      setServerActiveGame(null);
-      missingActivePollCountRef.current = 0;
-    }
-  }, []);
+  const setActiveGame = useCallback(
+    (
+      gameId: string | number | null,
+      gameType: string = '',
+      opponent?: string,
+      bot: boolean = false
+    ) => {
+      if (gameId) {
+        autoJoinCooldownUntilRef.current = 0;
+      }
+      setActiveGameId(gameId);
+      setActiveGameType(gameType);
+      setOpponentName(opponent);
+      setIsBot(bot);
+      if (gameId) {
+        setServerActiveGame(null);
+        missingActivePollCountRef.current = 0;
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (activeGameId || !serverActiveGame) return;
@@ -476,13 +491,12 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       return;
     }
 
-    const actor = String(currentUser.username || '').trim().toLowerCase();
+    const actor = String(currentUser.username || '')
+      .trim()
+      .toLowerCase();
     const host = String(serverActiveGame.hostName || '').trim();
     const guest = String(serverActiveGame.guestName || '').trim();
-    const resolvedOpponent =
-      host.toLowerCase() === actor
-        ? guest || undefined
-        : host || undefined;
+    const resolvedOpponent = host.toLowerCase() === actor ? guest || undefined : host || undefined;
 
     setActiveGameId(serverActiveGame.id);
     setActiveGameType(String(serverActiveGame.gameType || ''));
@@ -572,7 +586,10 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     return () => {
       socket.off('lobby_updated', handleLobbyUpdated);
     };
-  }, [checkActiveGame, fetchGameHistory, fetchGames]);
+    // resolvedTableCode is read inside handleLobbyUpdated to filter events to the
+    // user's current table — must be in deps so cafe switches don't keep the stale
+    // table code in the closure.
+  }, [checkActiveGame, fetchGameHistory, fetchGames, resolvedTableCode]);
 
   return {
     // Oyun listesi
@@ -582,19 +599,19 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     gameHistory,
     historyLoading,
     refetch,
-    
+
     // Aktif oyun
     activeGameId,
     activeGameType,
     opponentName,
     isBot,
     serverActiveGame,
-    
+
     // Oyun yönetimi
     createGame,
     joinGame,
     cancelGame,
     leaveGame,
-    setActiveGame
+    setActiveGame,
   };
 }
