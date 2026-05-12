@@ -48,19 +48,19 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
         <motion.button
           onClick={onCreateGameClick}
           disabled={isInGame}
-          className="group relative bg-riso-blue font-sans font-bold uppercase tracking-widest text-cyber-dark h-24 md:h-32 border-2 border-riso-blue flex flex-col items-center justify-center gap-2 shadow-[8px_8px_0_rgba(255,0,234,0.4)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="riso-focus riso-press group relative bg-riso-pink font-riso-display font-bold uppercase tracking-wider text-carbon h-24 md:h-32 border-2 border-carbon riso-shadow-md flex flex-col items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Gamepad2 size={32} />
+          <Gamepad2 size={32} strokeWidth={2.4} />
           <span className="text-lg md:text-xl">{isInGame ? 'OYUNDASIN' : 'Oyun Kur'}</span>
         </motion.button>
 
         <motion.button
           onClick={onQuickJoin}
           disabled={quickJoinDisabled || quickJoinBusy}
-          className="group relative bg-paper font-sans font-bold uppercase tracking-widest text-riso-pink-deep h-24 md:h-32 border-2 border-riso-pink flex flex-col items-center justify-center gap-2 shadow-[8px_8px_0_rgba(0,243,255,0.4)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="riso-focus riso-press group relative bg-riso-blue font-riso-display font-bold uppercase tracking-wider text-paper h-24 md:h-32 border-2 border-carbon riso-shadow-md flex flex-col items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="quick-join-button"
         >
-          <Swords size={32} />
+          <Swords size={32} strokeWidth={2.4} />
           <span className="text-lg md:text-xl">
             {quickJoinBusy ? 'BAĞLANILIYOR...' : 'HIZLI EŞLEŞ'}
           </span>
@@ -70,10 +70,10 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
       {/* Active Requests List */}
       <div className="flex-1 flex flex-col relative w-full pt-4">
         <div className="flex items-center gap-4 mb-8 border-b-2 border-carbon pb-2">
-          <h3 className="font-riso-display text-4xl text-ink-50 uppercase tracking-widest text-shadow-glitch">
+          <h3 className="font-riso-display text-3xl sm:text-4xl text-carbon uppercase tracking-widest">
             AKTİF LOBİ
           </h3>
-          <div className="w-4 h-4 rounded-full bg-riso-spring animate-pulse" />
+          <div className="w-3 h-3 bg-riso-spring border-2 border-carbon" />
         </div>
 
         <div
@@ -86,8 +86,8 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-16 opacity-40 border-2 border-dashed border-carbon my-8"
             >
-              <Gamepad2 size={48} className="mb-6 text-cyber-border" />
-              <span className="text-center font-riso-display text-3xl text-cyber-border tracking-widest uppercase">
+              <Gamepad2 size={48} className="mb-6 text-carbon-muted" />
+              <span className="text-center font-riso-display text-2xl sm:text-3xl text-carbon-muted tracking-widest uppercase">
                 RADAR TEMİZ.
                 <br />
                 İLK SİNYALİ GÖNDER!
@@ -104,33 +104,36 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                   initial={{ opacity: 0, scale: 0.95, y: 30 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="group relative bg-paper  p-6 border-l-4 border-riso-blue border-r border-y border-carbon transition-all hover:-translate-y-4 hover:z-20 shadow-[12px_12px_0_rgba(0,0,0,0.6)] hover:shadow-[16px_16px_0_rgba(0,243,255,0.2)] md:ml-[calc(var(--index)*1.5rem)]"
-                  style={{ '--index': index % 3 } as React.CSSProperties}
+                  className="group relative bg-paper p-5 border-2 border-carbon riso-shadow-sm transition-all hover:-translate-y-1"
                 >
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-riso-blue/5 skew-x-12 -translate-y-1/2 translate-x-1/4" />
+                  {/* decorative riso confetti corner */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-2 right-2 h-2 w-8 bg-riso-mustard rotate-[-6deg] hidden sm:block"
+                  />
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => onViewProfile(hostName)}
-                        className="w-16 h-16 bg-paper text-riso-blue font-riso-display text-3xl border-2 border-riso-blue flex items-center justify-center hover:bg-riso-blue hover:text-cyber-dark transition-colors"
+                        className="riso-focus w-12 h-12 sm:w-14 sm:h-14 bg-riso-blue text-paper font-riso-display text-xl sm:text-2xl border-2 border-carbon flex items-center justify-center hover:bg-riso-blue-deep transition-colors"
                         title="Profili Görüntüle"
                       >
                         {hostName.charAt(0).toUpperCase()}
                       </button>
                       <div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <button
                             onClick={() => onViewProfile(hostName)}
-                            className="font-riso-display text-3xl text-ink-50 uppercase tracking-widest hover:text-riso-pink-deep transition-colors"
+                            className="riso-focus font-riso-display text-xl sm:text-2xl text-carbon uppercase tracking-wide hover:text-riso-pink-deep transition-colors"
                           >
                             {hostName}
                           </button>
-                          <span className="text-xs font-sans font-bold bg-riso-pink text-cyber-dark px-2 py-1 tracking-widest">
+                          <span className="font-riso-mono text-[0.7rem] font-bold bg-riso-pink text-carbon border-2 border-carbon px-2 py-0.5 tracking-wider">
                             Masa {req.table}
                           </span>
                         </div>
-                        <div className="text-sm font-sans font-bold uppercase tracking-widest text-ink-300 mt-1 flex items-center gap-2">
+                        <div className="font-riso-body text-sm font-bold uppercase tracking-wider text-carbon-soft mt-1 flex items-center gap-2">
                           <span>{gameIcon(req.gameType)}</span>
                           <span>{req.gameType}</span>
                         </div>
@@ -141,18 +144,18 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                       <button
                         onClick={() => onJoinGame(Number(req.id))}
                         disabled={isInGame}
-                        className="w-full sm:w-auto px-8 py-4 bg-riso-blue text-cyber-dark font-sans font-bold uppercase tracking-widest text-lg hover:bg-transparent hover:text-riso-blue border-2 border-riso-blue transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="riso-focus riso-press w-full sm:w-auto px-6 py-3 bg-riso-pink text-carbon font-riso-display font-bold uppercase tracking-wider text-base border-2 border-carbon riso-shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isInGame ? 'ZATEN OYUNDASIN' : 'SAVAŞA KATIL'}
                       </button>
                     ) : (
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <span className="text-riso-pink-deep font-sans text-xs uppercase font-bold tracking-widest border border-riso-pink px-4 py-2">
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <span className="font-riso-mono text-[0.7rem] uppercase font-bold tracking-wider border-2 border-carbon bg-riso-pink/15 text-riso-pink-deep px-3 py-1.5">
                           SENİN LOBİN
                         </span>
                         <button
                           onClick={() => onCancelGame(req.id)}
-                          className="px-6 py-4 text-cyber-border font-sans font-bold uppercase tracking-widest border-2 border-carbon hover:border-riso-redox hover:text-riso-redox transition-colors"
+                          className="riso-focus px-4 py-2 font-riso-body font-bold uppercase tracking-wider text-carbon border-2 border-carbon bg-paper hover:bg-riso-redox hover:text-paper transition-colors"
                           data-testid={`cancel-game-${req.id}`}
                         >
                           İPTAL ET

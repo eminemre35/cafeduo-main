@@ -1,7 +1,24 @@
+/**
+ * CreateGameModal — Riso Kantin redesign (PR #27).
+ *
+ * "Yeni Oyun Kur" modal. Three game cards (Retro Satranç / Bilgi Yarışı /
+ * Nişancı Düellosu) with spot-coloured chips, an inked range slider for
+ * the stake, preset buttons, optional chess tempo grid, and a summary
+ * panel. All text content + data-testid attributes are preserved exactly
+ * so CreateGameModal.test.tsx passes without edits:
+ *   - "YENİ OYUN KUR" header literal
+ *   - "Mevcut Puanınız:" + max points number
+ *   - exact game descriptions for the 3 cards
+ *   - "Min" / "100" / "250" / "Max" preset labels
+ *   - "Oyun:" / "Katılım Puanı:" / "Kalan:" summary labels
+ *   - "MIN N PUAN" minPoints labels
+ *   - data-testid: create-game-modal, game-type-{chess,knowledge,aim},
+ *     game-points-input, create-game-submit
+ */
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, Check, Trophy } from 'lucide-react';
-import { RetroButton } from './RetroButton';
 import { useToast } from '../contexts/ToastContext';
+import { Button } from './ui';
 
 interface CreateGameModalProps {
   isOpen: boolean;
@@ -14,13 +31,23 @@ interface CreateGameModalProps {
   maxPoints: number;
 }
 
-const GAME_TYPES = [
+interface GameDef {
+  id: 'chess' | 'knowledge' | 'aim';
+  name: string;
+  category: string;
+  description: string;
+  minPoints: number;
+  tone: 'mustard' | 'blue' | 'pink';
+}
+
+const GAME_TYPES: GameDef[] = [
   {
     id: 'chess',
     name: 'Retro Satranç',
     category: 'Strateji',
     description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.',
     minPoints: 90,
+    tone: 'mustard',
   },
   {
     id: 'knowledge',
@@ -28,6 +55,7 @@ const GAME_TYPES = [
     category: 'Bilgi',
     description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver',
     minPoints: 120,
+    tone: 'blue',
   },
   {
     id: 'aim',
@@ -35,6 +63,7 @@ const GAME_TYPES = [
     category: 'Refleks',
     description: 'Nişangahı merkeze kilitle, tur tur isabet topla.',
     minPoints: 40,
+    tone: 'pink',
   },
 ];
 
@@ -49,6 +78,24 @@ interface ValidationError {
   gameType?: string;
   points?: string;
 }
+
+const TONE_BG: Record<GameDef['tone'], string> = {
+  mustard: 'bg-riso-mustard text-carbon',
+  blue: 'bg-riso-blue text-paper',
+  pink: 'bg-riso-pink text-carbon',
+};
+
+const TONE_ACTIVE_BG: Record<GameDef['tone'], string> = {
+  mustard: 'bg-riso-mustard',
+  blue: 'bg-riso-blue/15',
+  pink: 'bg-riso-pink',
+};
+
+const TONE_ACTIVE_TEXT: Record<GameDef['tone'], string> = {
+  mustard: 'text-carbon',
+  blue: 'text-carbon',
+  pink: 'text-carbon',
+};
 
 export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   isOpen,
@@ -66,7 +113,6 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
   const toast = useToast();
 
-  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setGameType('Nişancı Düellosu');
@@ -83,19 +129,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
   const validate = (): boolean => {
     const newErrors: ValidationError = {};
-
-    if (!gameType) {
-      newErrors.gameType = 'Oyun türü seçmelisiniz';
-    }
-
-    if (points < minPoints) {
-      newErrors.points = `${gameType} için minimum ${minPoints} puan gerekli`;
-    }
-
-    if (points > maxPoints) {
-      newErrors.points = `Maksimum ${maxPoints} puan kullanabilirsiniz`;
-    }
-
+    if (!gameType) newErrors.gameType = 'Oyun türü seçmelisiniz';
+    if (points < minPoints) newErrors.points = `${gameType} için minimum ${minPoints} puan gerekli`;
+    if (points > maxPoints) newErrors.points = `Maksimum ${maxPoints} puan kullanabilirsiniz`;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -103,17 +139,13 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   const handlePointsChange = (value: string) => {
     const numValue = parseInt(value) || 0;
     setPoints(numValue);
-
-    // Real-time validation
     if (touched.points) {
       const newErrors: ValidationError = { ...errors };
-      if (numValue < minPoints) {
+      if (numValue < minPoints)
         newErrors.points = `${gameType} için minimum ${minPoints} puan gerekli`;
-      } else if (numValue > maxPoints) {
+      else if (numValue > maxPoints)
         newErrors.points = `Maksimum ${maxPoints} puan kullanabilirsiniz`;
-      } else {
-        delete newErrors.points;
-      }
+      else delete newErrors.points;
       setErrors(newErrors);
     }
   };
@@ -122,14 +154,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     setGameType(newGameType);
     const game = GAME_TYPES.find((g) => g.name === newGameType);
     const newMinPoints = game?.minPoints || 0;
-
-    // Auto-adjust points if below minimum
     if (points < newMinPoints) {
       setPoints(newMinPoints);
       toast.warning(`${newGameType} için minimum ${newMinPoints} puan ayarlandı`);
     }
-
-    // Clear game type error
     if (errors.gameType) {
       setErrors((prev) => ({ ...prev, gameType: undefined }));
     }
@@ -137,20 +165,15 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setTouched({ gameType: true, points: true });
-
     if (!validate()) {
       toast.error('Lütfen form hatalarını düzeltin');
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       const selectedTempo =
         CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) || CHESS_TEMPO_OPTIONS[1];
-      const normalizedPoints = points;
       const options =
         gameType === 'Retro Satranç'
           ? {
@@ -161,7 +184,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               },
             }
           : undefined;
-      await Promise.resolve(onSubmit(gameType, normalizedPoints, options));
+      await Promise.resolve(onSubmit(gameType, points, options));
       toast.success(`${gameType} oyunu oluşturuldu!`);
       onClose();
     } catch (err: unknown) {
@@ -182,235 +205,254 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="cd-create-layer fixed inset-0 z-[1000] flex h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-5">
+    <div className="riso-kantin fixed inset-0 z-[1000] flex h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-5">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/90  transition-opacity" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-      {/* Modal Content */}
       <div
-        className="cd-create-modal custom-scrollbar relative my-0 w-full max-w-3xl overflow-y-auto bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-carbon border-2 border-carbon p-3 sm:p-4 shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100"
+        className="relative my-0 w-full max-w-3xl overflow-y-auto bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2.5rem)]"
         data-testid="create-game-modal"
       >
         {/* Header */}
-        <div className="sticky top-0 z-20 -mx-3 -mt-3 mb-3 flex items-center justify-between border-b border-carbon-muted bg-[#06101d]/95 px-3 py-3  sm:-mx-4 sm:-mt-4 sm:mb-4 sm:px-4">
-          <h3 className="font-riso-display text-base text-white tracking-wider sm:text-xl">
-            YENİ OYUN KUR
-          </h3>
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b-2 border-carbon bg-paper-deep px-4 py-3">
+          <h3 className="font-riso-display text-lg sm:text-xl text-carbon">YENİ OYUN KUR</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Oyun kurma penceresini kapat"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center border border-riso-redox/50 bg-riso-redox/10 text-riso-redox transition-colors hover:bg-riso-redox/20 hover:text-white"
+            className="riso-focus inline-flex h-9 w-9 items-center justify-center border-2 border-carbon bg-paper text-carbon transition-colors hover:bg-riso-redox hover:text-paper"
           >
-            <X size={22} />
+            <X size={18} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Points Info */}
-        <div className="bg-riso-blue/10 border border-riso-blue/30 rounded p-2.5 mb-4 flex items-center justify-between">
-          <span className="text-riso-blue text-sm">Mevcut Puanınız:</span>
-          <span className="text-white font-bold text-lg flex items-center gap-1">
-            <Trophy size={16} className="text-riso-mustard" />
-            {maxPoints}
-          </span>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Game Type Selection */}
-          <div>
-            <label className="block text-riso-blue font-riso-display text-[11px] mb-2 tracking-widest">
-              OYUN TÜRÜ SEÇ
-            </label>
-            <div className="cd-game-type-grid custom-scrollbar grid max-h-[34dvh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:max-h-none sm:grid-cols-3 sm:overflow-visible sm:pr-0">
-              {GAME_TYPES.map((game) => (
-                <button
-                  key={game.id}
-                  type="button"
-                  onClick={() => handleGameTypeChange(game.name)}
-                  data-testid={`game-type-${game.id}`}
-                  className={`relative group w-full p-3 border-2 rounded-xl transition-all text-left overflow-hidden ${
-                    gameType === game.name
-                      ? 'border-cyan-400 bg-cyan-900/40 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
-                      : 'border-cyan-800/40 bg-carbon/40 hover:border-riso-blue/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'
-                  }`}
-                >
-                  {/* Glow Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="relative z-10 flex flex-col h-full">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-riso-blue text-[10px] font-riso-display tracking-[0.1em] uppercase bg-paper-deep/50 px-2 py-1 rounded">
-                        {game.category}
-                      </span>
-                      {gameType === game.name && (
-                        <Check size={18} className="text-riso-blue animate-pulse" />
-                      )}
-                    </div>
-
-                    <div className="text-white font-retro text-base sm:text-lg leading-tight mb-1.5">
-                      {game.name}
-                    </div>
-
-                    <div className="text-carbon-muted text-xs leading-snug flex-1 mb-2">
-                      {game.description}
-                    </div>
-
-                    {game.minPoints > 0 && (
-                      <div className="text-riso-mustard/90 text-[11px] font-riso-display mt-auto pt-2 border-t border-cyan-800/30">
-                        MIN {game.minPoints} PUAN
-                      </div>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-            {errors.gameType && (
-              <p className="text-riso-redox text-xs mt-2 flex items-center gap-1">
-                <AlertTriangle size={12} /> {errors.gameType}
-              </p>
-            )}
+        <div className="p-4 sm:p-5 space-y-5">
+          {/* Points info */}
+          <div className="flex items-center justify-between border-2 border-carbon bg-riso-mustard px-3 py-2">
+            <span className="font-riso-body text-sm font-semibold text-carbon">
+              Mevcut Puanınız:
+            </span>
+            <span className="font-riso-display text-xl text-carbon flex items-center gap-1.5">
+              <Trophy size={16} strokeWidth={2.5} />
+              {maxPoints}
+            </span>
           </div>
 
-          {/* Points Input (Energy Bar Style) */}
-          <div>
-            <label className="flex justify-between text-riso-blue font-riso-display text-[11px] mb-2 tracking-widest">
-              <span>ENERJİ (PUAN) YATIRIMI</span>
-              <span className="text-riso-mustard">{`${points} / ${maxPoints}`}</span>
-            </label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Game type */}
+            <div>
+              <label className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2">
+                OYUN TÜRÜ SEÇ
+              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {GAME_TYPES.map((game) => {
+                  const active = gameType === game.name;
+                  return (
+                    <button
+                      key={game.id}
+                      type="button"
+                      onClick={() => handleGameTypeChange(game.name)}
+                      data-testid={`game-type-${game.id}`}
+                      className={`riso-focus relative w-full p-3 text-left border-2 transition-all ${
+                        active
+                          ? `border-carbon ${TONE_ACTIVE_BG[game.tone]} ${TONE_ACTIVE_TEXT[game.tone]} riso-shadow-sm`
+                          : 'border-carbon bg-paper text-carbon hover:bg-paper-deep'
+                      }`}
+                    >
+                      <div className="flex h-full flex-col">
+                        <div className="mb-2 flex items-start justify-between">
+                          <span
+                            className={`inline-flex border-2 border-carbon px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.12em] ${TONE_BG[game.tone]}`}
+                          >
+                            {game.category}
+                          </span>
+                          {active && <Check size={18} strokeWidth={2.6} className="text-carbon" />}
+                        </div>
 
-            <div className="relative p-3 rounded-xl border border-cyan-800/40 bg-[#040a16] shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
-              <input
-                type="range"
-                min={minPoints}
-                max={maxPoints}
-                value={points}
-                onChange={(e) => handlePointsChange(e.target.value)}
-                className="w-full h-2 bg-paper-deep/70 rounded-lg appearance-none cursor-pointer accent-cyan-400 mb-4 disabled:opacity-40 disabled:cursor-not-allowed"
-              />
+                        <div className="font-riso-display text-base sm:text-lg leading-tight mb-1.5">
+                          {game.name}
+                        </div>
 
-              <div className="flex items-center gap-3">
+                        <div className="font-riso-body text-xs leading-snug flex-1 mb-2 text-carbon-soft">
+                          {game.description}
+                        </div>
+
+                        {game.minPoints > 0 && (
+                          <div className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] mt-auto pt-2 border-t-2 border-carbon">
+                            MIN {game.minPoints} PUAN
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.gameType && (
+                <p className="mt-2 font-riso-body text-xs text-riso-redox flex items-center gap-1.5">
+                  <AlertTriangle size={12} strokeWidth={2.5} /> {errors.gameType}
+                </p>
+              )}
+            </div>
+
+            {/* Points slider */}
+            <div>
+              <label className="flex justify-between font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] mb-2">
+                <span className="text-carbon-soft">ENERJİ (PUAN) YATIRIMI</span>
+                <span className="text-riso-pink-deep">{`${points} / ${maxPoints}`}</span>
+              </label>
+
+              <div className="border-2 border-carbon bg-paper-deep p-3">
                 <input
-                  type="number"
-                  value={points}
-                  onChange={(e) => handlePointsChange(e.target.value)}
-                  onBlur={() => setTouched((prev) => ({ ...prev, points: true }))}
+                  type="range"
                   min={minPoints}
                   max={maxPoints}
-                  data-testid="game-points-input"
-                  className={`flex-1 bg-carbon/60 border-2 ${errors.points && touched.points ? 'border-riso-redox shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-riso-blue/50 shadow-[0_0_15px_rgba(34,211,238,0.15)]'} text-white p-2 rounded-lg font-riso-display text-lg text-center focus:border-cyan-300 focus:shadow-[0_0_15px_rgba(34,211,238,0.4)] outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50 disabled:cursor-not-allowed`}
+                  value={points}
+                  onChange={(e) => handlePointsChange(e.target.value)}
+                  className="w-full h-2 bg-paper-dim cursor-pointer accent-riso-pink mb-3"
                 />
-                <div className="text-carbon-muted text-sm font-riso-display pt-1">PUAN</div>
-              </div>
-            </div>
 
-            {/* Preset Buttons */}
-            <div className="flex gap-2 mt-3">
-              {presetPoints.map((preset) => (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() => handlePointsChange(preset.value.toString())}
-                  className={`flex-1 overflow-hidden relative group min-h-[36px] py-1 px-2 text-xs font-riso-display tracking-wider border rounded-md transition-all ${
-                    points === preset.value
-                      ? 'border-cyan-400 bg-cyan-900/50 text-riso-blue shadow-[0_0_10px_rgba(34,211,238,0.3)]'
-                      : 'border-cyan-800/50 hover:border-riso-blue/50 text-carbon-muted bg-carbon/40'
-                  } disabled:opacity-40 disabled:cursor-not-allowed`}
-                >
-                  <span className="relative z-10">{preset.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {errors.points && touched.points && (
-              <p className="text-riso-redox text-xs mt-2 flex items-center gap-1">
-                <AlertTriangle size={12} /> {errors.points}
-              </p>
-            )}
-          </div>
-
-          {gameType === 'Retro Satranç' && (
-            <div>
-              <label className="block text-riso-blue font-riso-display text-xs mb-3 tracking-widest">
-                SATRANÇ TEMPOSU
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {CHESS_TEMPO_OPTIONS.map((tempo) => (
-                  <button
-                    key={tempo.id}
-                    type="button"
-                    onClick={() => setChessTempoId(tempo.id)}
-                    className={`px-3 py-2 rounded border text-xs font-riso-display transition-colors ${
-                      chessTempoId === tempo.id
-                        ? 'border-cyan-400 bg-riso-blue/15 text-carbon-soft'
-                        : 'border-carbon-muted bg-black/30 text-carbon-muted hover:border-cyan-400/40'
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={points}
+                    onChange={(e) => handlePointsChange(e.target.value)}
+                    onBlur={() => setTouched((prev) => ({ ...prev, points: true }))}
+                    min={minPoints}
+                    max={maxPoints}
+                    data-testid="game-points-input"
+                    className={`riso-focus flex-1 border-2 bg-paper text-carbon p-2 font-riso-display text-lg text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      errors.points && touched.points ? 'border-riso-redox' : 'border-carbon'
                     }`}
-                  >
-                    {tempo.label}
-                  </button>
-                ))}
+                  />
+                  <div className="font-riso-mono text-xs font-bold uppercase tracking-wider text-carbon-soft">
+                    PUAN
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Summary */}
-          <div className="bg-[#F2EAD8]/80 rounded p-3 border border-carbon-muted">
-            <div className="flex justify-between text-sm">
-              <span className="text-carbon-muted">Oyun:</span>
-              <span className="text-white">{gameType}</span>
+              {/* Preset buttons */}
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {presetPoints.map((preset) => {
+                  const active = points === preset.value;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handlePointsChange(preset.value.toString())}
+                      className={`riso-focus py-2 px-2 font-riso-body text-sm font-bold border-2 border-carbon transition-colors ${
+                        active
+                          ? 'bg-riso-pink text-carbon riso-shadow-sm'
+                          : 'bg-paper text-carbon hover:bg-paper-deep'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {errors.points && touched.points && (
+                <p className="mt-2 font-riso-body text-xs text-riso-redox flex items-center gap-1.5">
+                  <AlertTriangle size={12} strokeWidth={2.5} /> {errors.points}
+                </p>
+              )}
             </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-carbon-muted">Katılım Puanı:</span>
-              <span className="text-riso-mustard">{`${points} Puan`}</span>
-            </div>
+
+            {/* Chess tempo (conditional) */}
             {gameType === 'Retro Satranç' && (
-              <div className="flex justify-between text-sm mt-1">
-                <span className="text-carbon-muted">Tempo:</span>
-                <span className="text-carbon-soft">
-                  {
-                    (
-                      CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) ||
-                      CHESS_TEMPO_OPTIONS[1]
-                    ).label
-                  }
-                </span>
+              <div>
+                <label className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2">
+                  SATRANÇ TEMPOSU
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {CHESS_TEMPO_OPTIONS.map((tempo) => {
+                    const active = chessTempoId === tempo.id;
+                    return (
+                      <button
+                        key={tempo.id}
+                        type="button"
+                        onClick={() => setChessTempoId(tempo.id)}
+                        className={`riso-focus px-3 py-2 font-riso-body text-sm font-bold border-2 border-carbon transition-colors ${
+                          active
+                            ? 'bg-riso-mustard text-carbon riso-shadow-sm'
+                            : 'bg-paper text-carbon hover:bg-paper-deep'
+                        }`}
+                      >
+                        {tempo.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
-            <div className="flex justify-between text-sm mt-1 pt-1 border-t border-carbon-muted">
-              <span className="text-carbon-muted">Kalan:</span>
-              <span
-                className={`${maxPoints - points >= 0 ? 'text-riso-spring' : 'text-riso-redox'}`}
-              >
-                {maxPoints - points} Puan
-              </span>
-            </div>
-          </div>
 
-          <div className="sticky bottom-0 z-20 -mx-3 -mb-3 grid grid-cols-1 gap-2 border-t border-carbon-muted bg-[#06101d]/95 px-3 py-3  sm:-mx-4 sm:-mb-4 sm:grid-cols-[0.38fr_1fr] sm:px-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-h-12 border border-riso-redox/45 bg-carbon/40 px-4 font-riso-display text-xs uppercase tracking-wider text-red-100 transition-colors hover:bg-riso-redox/15"
-            >
-              KAPAT
-            </button>
-            <RetroButton
-              type="submit"
-              disabled={isSubmitting}
-              data-testid="create-game-submit"
-              className="w-full shadow-blue-900/20 border-blue-400 hover:border-blue-300 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Oluşturuluyor...
+            {/* Summary */}
+            <div className="border-2 border-carbon bg-paper-deep p-3 space-y-1.5 font-riso-body text-sm">
+              <div className="flex justify-between">
+                <span className="text-carbon-soft">Oyun:</span>
+                <span className="font-semibold text-carbon">{gameType}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-carbon-soft">Katılım Puanı:</span>
+                <span className="font-riso-mono font-bold text-riso-pink-deep">
+                  {`${points} Puan`}
                 </span>
-              ) : (
-                'LOBİYE GÖNDER'
+              </div>
+              {gameType === 'Retro Satranç' && (
+                <div className="flex justify-between">
+                  <span className="text-carbon-soft">Tempo:</span>
+                  <span className="font-semibold text-carbon">
+                    {
+                      (
+                        CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) ||
+                        CHESS_TEMPO_OPTIONS[1]
+                      ).label
+                    }
+                  </span>
+                </div>
               )}
-            </RetroButton>
-          </div>
-        </form>
+              <div className="flex justify-between pt-1.5 border-t-2 border-carbon-muted">
+                <span className="text-carbon-soft">Kalan:</span>
+                <span
+                  className={`font-riso-mono font-bold ${
+                    maxPoints - points >= 0 ? 'text-riso-spring' : 'text-riso-redox'
+                  }`}
+                >
+                  {maxPoints - points} Puan
+                </span>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* Sticky footer */}
+        <div className="sticky bottom-0 z-20 grid grid-cols-1 gap-2 border-t-2 border-carbon bg-paper-deep px-4 py-3 sm:grid-cols-[0.38fr_1fr]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="riso-focus min-h-12 border-2 border-carbon bg-paper px-4 font-riso-body text-sm font-bold uppercase tracking-wider text-carbon transition-colors hover:bg-paper-dim"
+          >
+            KAPAT
+          </button>
+          <Button
+            type="submit"
+            tone="pink"
+            size="lg"
+            block
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+            data-testid="create-game-submit"
+          >
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon rounded-full" />
+                Oluşturuluyor...
+              </span>
+            ) : (
+              'LOBİYE GÖNDER'
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -188,22 +188,21 @@ export const GameSection: React.FC<GameSectionProps> = ({
         : serverActiveGame.hostName;
 
     return (
-      <div className="bg-riso-pink text-cyber-dark p-6 mb-8 border-4 border-carbon shadow-[12px_12px_0_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all">
+      <div className="bg-riso-pink text-carbon p-5 sm:p-6 mb-8 border-2 border-carbon riso-shadow-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 className="font-riso-display text-4xl uppercase tracking-widest mb-2 text-shadow-glitch">
+          <div className="min-w-0">
+            <h3 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-wider mb-2">
               DEVAM EDEN SAVAŞ!
             </h3>
-            <p className="font-sans font-bold text-lg">
-              Sistem uyarısı:{' '}
-              <span className="text-carbon font-bold underline">{opponentLabel}</span> ile olan
-              <span className="text-carbon font-bold"> {serverActiveGame.gameType}</span>{' '}
-              karşılaşması beklemede.
+            <p className="font-riso-body text-base text-carbon">
+              Sistem uyarısı: <span className="font-bold underline">{opponentLabel}</span> ile olan
+              <span className="font-bold"> {serverActiveGame.gameType}</span> karşılaşması
+              beklemede.
             </p>
           </div>
           <button
             onClick={onRejoinGame}
-            className="px-8 py-4 bg-paper text-riso-pink-deep font-riso-display text-2xl uppercase border-2 border-carbon hover:bg-transparent hover:text-cyber-dark hover:border-carbon transition-colors"
+            className="riso-focus riso-press shrink-0 px-5 py-3 bg-paper text-carbon font-riso-display text-lg sm:text-xl uppercase border-2 border-carbon riso-shadow-sm transition-all"
           >
             ARENAYA DÖN
           </button>
@@ -237,20 +236,22 @@ export const GameSection: React.FC<GameSectionProps> = ({
         )}
       </div>
 
-      {/* Oyun Geçmişi (Brutalist) */}
-      <div className="bg-paper border-[3px] border-carbon p-6 shadow-[8px_8px_0_rgba(0,243,255,0.2)]">
-        <div className="border-b-[3px] border-carbon pb-4 mb-6 flex justify-between items-end">
-          <h3 className="font-riso-display text-4xl text-riso-blue uppercase tracking-widest">
+      {/* Oyun Geçmişi */}
+      <div className="bg-paper border-2 border-carbon p-5 sm:p-6 riso-shadow-md">
+        <div className="border-b-2 border-carbon pb-4 mb-6 flex justify-between items-end">
+          <h3 className="font-riso-display text-3xl sm:text-4xl text-riso-blue uppercase tracking-wider">
             SAVAŞ ARŞİVİ
           </h3>
-          <span className="text-riso-pink-deep font-sans font-bold">// KAYITLAR</span>
+          <span className="font-riso-mono text-xs font-bold text-riso-pink-deep">// KAYITLAR</span>
         </div>
 
         <div>
           {historyLoading ? (
-            <p className="text-lg font-sans text-ink-300 animate-pulse">Veri çekiliyor...</p>
+            <p className="text-base font-riso-body text-carbon-muted animate-pulse">
+              Veri çekiliyor...
+            </p>
           ) : (gameHistory?.length ?? 0) === 0 ? (
-            <div className="border border-dashed border-carbon p-8 text-center text-ink-300 font-sans tracking-widest uppercase">
+            <div className="border-2 border-dashed border-carbon-muted bg-paper-deep p-8 text-center font-riso-body text-carbon-muted tracking-wider uppercase">
               SAVAŞ GEÇMİŞİ BULUNAMADI. <br />
               KANITLAR OLUŞTURULMALI.
             </div>
@@ -265,15 +266,15 @@ export const GameSection: React.FC<GameSectionProps> = ({
                   }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-riso-display text-2xl text-ink-50 uppercase tracking-widest truncate mb-1">
+                    <p className="font-riso-display text-2xl text-carbon uppercase tracking-widest truncate mb-1">
                       {item.gameType}
                     </p>
-                    <p className="font-sans text-sm text-ink-300 font-bold uppercase tracking-wide">
+                    <p className="font-riso-body text-sm text-carbon-soft font-bold uppercase tracking-wide">
                       Rakip: <span className="text-carbon font-semibold">{item.opponentName}</span>{' '}
                       // Masa {item.table}
                     </p>
                     {item.gameType === 'Retro Satranç' && (
-                      <p className="text-xs text-riso-blue font-sans mt-2">
+                      <p className="text-xs text-riso-blue font-riso-mono mt-2">
                         Tempo: {item.chessTempo || '-'} | Hamle: {item.moveCount ?? 0}
                       </p>
                     )}
@@ -282,15 +283,13 @@ export const GameSection: React.FC<GameSectionProps> = ({
                   <div className="flex flex-col md:items-end gap-2">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`px-4 py-1 text-xs font-bold uppercase tracking-widest border-2 ${
-                          item.didWin
-                            ? 'bg-riso-blue text-cyber-dark border-riso-blue'
-                            : 'bg-transparent text-riso-pink-deep border-riso-pink'
+                        className={`px-3 py-1 font-riso-mono text-xs font-bold uppercase tracking-wider border-2 border-carbon ${
+                          item.didWin ? 'bg-riso-blue text-paper' : 'bg-paper text-riso-pink-deep'
                         }`}
                       >
                         {item.didWin ? 'ZAFER' : 'MAĞLUBİYET'}
                       </span>
-                      <span className="text-ink-300 font-sans text-xs border border-carbon px-2 py-1">
+                      <span className="font-riso-mono text-xs text-carbon-soft border-2 border-carbon bg-paper px-2 py-1">
                         {new Date(item.createdAt).toLocaleDateString('tr-TR')}
                       </span>
                     </div>
