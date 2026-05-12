@@ -56,7 +56,10 @@ describe('useCafeSelection', () => {
   const mockGeoError = (code = 1) => {
     const geolocation = {
       getCurrentPosition: jest.fn(
-        (_onSuccess: (p: GeolocationPosition) => void, onError: (e: GeolocationPositionError) => void) => {
+        (
+          _onSuccess: (p: GeolocationPosition) => void,
+          onError: (e: GeolocationPositionError) => void
+        ) => {
           onError({ code } as GeolocationPositionError);
         }
       ),
@@ -64,6 +67,27 @@ describe('useCafeSelection', () => {
 
     Object.defineProperty(window.navigator, 'geolocation', {
       value: geolocation,
+      configurable: true,
+    });
+  };
+
+  /**
+   * Mock `navigator.permissions.query` so the hook can probe the OS/browser
+   * permission state. Passing `undefined` strips the API entirely (simulates
+   * older browsers / non-secure contexts).
+   */
+  const mockPermissionState = (state: 'granted' | 'denied' | 'prompt' | undefined) => {
+    if (state === undefined) {
+      Object.defineProperty(window.navigator, 'permissions', {
+        value: undefined,
+        configurable: true,
+      });
+      return;
+    }
+    Object.defineProperty(window.navigator, 'permissions', {
+      value: {
+        query: jest.fn().mockResolvedValue({ state }),
+      },
       configurable: true,
     });
   };
@@ -113,7 +137,9 @@ describe('useCafeSelection', () => {
 
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: jest.fn((key: string) => (memoryStorage.has(key) ? memoryStorage.get(key)! : null)),
+        getItem: jest.fn((key: string) =>
+          memoryStorage.has(key) ? memoryStorage.get(key)! : null
+        ),
         setItem: jest.fn((key: string, value: string) => {
           memoryStorage.set(key, String(value));
         }),
@@ -189,9 +215,7 @@ describe('useCafeSelection', () => {
   });
 
   it('validates missing data and table range', async () => {
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 1, name: 'Kafe A', table_count: 5 },
-    ]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Kafe A', table_count: 5 }]);
 
     const { result } = renderHook(() =>
       useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
@@ -214,9 +238,7 @@ describe('useCafeSelection', () => {
   });
 
   it('updates location status when permission is granted', async () => {
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 3, name: 'Kafe C', table_count: 15 },
-    ]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 3, name: 'Kafe C', table_count: 15 }]);
 
     const { result } = renderHook(() =>
       useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
@@ -233,9 +255,8 @@ describe('useCafeSelection', () => {
 
   it('shows permission error when geolocation is denied', async () => {
     mockGeoError(1);
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 4, name: 'Kafe D', table_count: 10 },
-    ]);
+    mockPermissionState('denied');
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 4, name: 'Kafe D', table_count: 10 }]);
 
     const { result } = renderHook(() =>
       useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
@@ -248,13 +269,59 @@ describe('useCafeSelection', () => {
 
     expect(result.current.locationStatus).toBe('denied');
     expect(result.current.error).toContain('Konum izni reddedildi');
+    // Backend supports verification code fallback — surface that to the user
+    expect(result.current.error).toContain('Masa Doğrulama Kodu');
+  });
+
+  it('explains mobile system-level location off when browser permission is granted but geo still fails', async () => {
+    // The "Allow" was granted in the browser, but iOS Settings → Privacy →
+    // Location Services is off (or the Android global toggle). Browser still
+    // returns code 1 in that case. We want a DIFFERENT message than plain
+    // "browser permission denied" so the user knows where to look.
+    mockGeoError(1);
+    mockPermissionState('granted');
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 5, name: 'Kafe E', table_count: 10 }]);
+
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('5'));
+
+    await act(async () => {
+      await result.current.requestLocationAccess();
+    });
+
+    expect(result.current.locationStatus).toBe('denied');
+    expect(result.current.error).toContain('Tarayıcı konum izni verilmiş');
+    expect(result.current.error).toContain('Konum Servisleri');
+    expect(result.current.error).toContain('Masa Doğrulama Kodu');
+  });
+
+  it('falls back to legacy denial message when Permissions API is unsupported', async () => {
+    // Older browsers / iOS Safari pre-16 expose no `navigator.permissions`.
+    // We should not crash — the legacy "permission denied" copy still ships,
+    // including the verification-code fallback hint.
+    mockGeoError(1);
+    mockPermissionState(undefined);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 6, name: 'Kafe F', table_count: 10 }]);
+
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('6'));
+
+    await act(async () => {
+      await result.current.requestLocationAccess();
+    });
+
+    expect(result.current.locationStatus).toBe('denied');
+    expect(result.current.error).toContain('Konum izni reddedildi');
+    expect(result.current.error).toContain('Masa Doğrulama Kodu');
   });
 
   it('falls back to high accuracy when coarse location times out', async () => {
     mockGeoCoarseTimeoutThenPreciseSuccess();
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 8, name: 'Kafe Z', table_count: 20 },
-    ]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 8, name: 'Kafe Z', table_count: 20 }]);
     (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({
       cafeName: 'Kafe Z',
       table: 'MASA08',
@@ -286,9 +353,7 @@ describe('useCafeSelection', () => {
   });
 
   it('maps network errors on failed check-in', async () => {
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 1, name: 'Kafe A', table_count: 10 },
-    ]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Kafe A', table_count: 10 }]);
     (api.cafes.checkIn as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch'));
 
     const { result } = renderHook(() =>
@@ -303,13 +368,13 @@ describe('useCafeSelection', () => {
       await result.current.checkIn();
     });
 
-    expect(result.current.error).toBe('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');
+    expect(result.current.error).toBe(
+      'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.'
+    );
   });
 
   it('completes successful check-in and persists last selection', async () => {
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 5, name: 'Kafe X', table_count: 10 },
-    ]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 5, name: 'Kafe X', table_count: 10 }]);
     (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({
       cafeName: 'Kafe X',
       table: 'MASA03',

@@ -38,11 +38,61 @@ interface GeoErrorLike {
   code?: number;
 }
 
-const getGeoErrorMessage = (geoError: GeoErrorLike): string => {
+type GeoPermissionState = 'granted' | 'denied' | 'prompt' | 'unsupported';
+
+/**
+ * Probe the browser-level geolocation permission state via the Permissions API.
+ * On mobile devices users frequently grant the browser permission but the
+ * underlying OS-level location service is off, in which case `getCurrentPosition`
+ * returns `code: 1` (PERMISSION_DENIED) anyway. By reading the actual permission
+ * state we can show a more accurate error message.
+ *
+ * Returns 'unsupported' on older browsers / non-secure contexts where
+ * `navigator.permissions.query` is missing or rejects.
+ */
+const probePermissionState = async (): Promise<GeoPermissionState> => {
+  if (typeof navigator === 'undefined' || !navigator.permissions?.query) {
+    return 'unsupported';
+  }
+  try {
+    const result = await navigator.permissions.query({
+      name: 'geolocation' as PermissionName,
+    });
+    return result.state as Exclude<GeoPermissionState, 'unsupported'>;
+  } catch {
+    return 'unsupported';
+  }
+};
+
+/**
+ * Produce a user-facing error message that reflects the most likely root cause
+ * given the GeolocationPositionError code AND the browser permission state.
+ *
+ * The catch in the original implementation: a `code: 1` (PERMISSION_DENIED)
+ * does not always mean the user denied the browser prompt. On iOS Safari the
+ * same code is returned when system-level Location Services are off; on
+ * Android Chrome when the global location toggle is off. Telling those users
+ * "browser permission denied" sends them to the wrong setting screen.
+ */
+const getGeoErrorMessage = (
+  geoError: GeoErrorLike,
+  permissionState: GeoPermissionState
+): string => {
+  // code 1 + permission already 'granted' => the OS or device is blocking,
+  // not the browser. Steer the user to the right setting.
+  if (geoError.code === 1 && permissionState === 'granted') {
+    return (
+      'Tarayıcı konum izni verilmiş ama cihazınız konumu paylaşmıyor. ' +
+      'iOS: Ayarlar → Gizlilik → Konum Servisleri açık olmalı. ' +
+      'Android: Hızlı ayarlardan Konum açık olmalı. ' +
+      'Alternatif: Masa Doğrulama Kodunu girip devam edebilirsin.'
+    );
+  }
+
   const map: Record<number, string> = {
-    1: 'Konum izni reddedildi. Lütfen tarayıcıdan konum erişimine izin verin.',
-    2: 'Konum bilgisi alınamadı. Lütfen GPS veya ağ konumunu kontrol edin.',
-    3: 'Konum isteği zaman aşımına uğradı. Cihaz konum servisinizin açık olduğundan emin olup tekrar deneyin.',
+    1: 'Konum izni reddedildi. Lütfen tarayıcıdan konum erişimine izin verin. Alternatif olarak Masa Doğrulama Kodunu kullanabilirsin.',
+    2: 'Konum bilgisi alınamadı. Lütfen GPS veya ağ konumunu kontrol edin. Alternatif olarak Masa Doğrulama Kodunu kullanabilirsin.',
+    3: 'Konum isteği zaman aşımına uğradı. Cihaz konum servisinizin açık olduğundan emin olup tekrar deneyin. Alternatif olarak Masa Doğrulama Kodunu kullanabilirsin.',
   };
   return map[geoError.code ?? 0] || 'Konum alınamadı.';
 };
@@ -67,7 +117,9 @@ export function useCafeSelection({
   const [selectedCafeIdState, setSelectedCafeIdState] = useState<string | null>(null);
   const [tableNumberState, setTableNumberState] = useState<string>('');
   const [tableVerificationCodeState, setTableVerificationCodeState] = useState<string>('');
-  const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'ready' | 'denied'>('idle');
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'ready' | 'denied'>(
+    'idle'
+  );
   const [locationCoords, setLocationCoords] = useState<LocationCoords | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,15 +180,21 @@ export function useCafeSelection({
     setError(null);
   }, []);
 
-  const setTableNumber = useCallback((tableNumber: string) => {
-    setTableNumberState(tableNumber);
-    if (error) setError(null);
-  }, [error]);
+  const setTableNumber = useCallback(
+    (tableNumber: string) => {
+      setTableNumberState(tableNumber);
+      if (error) setError(null);
+    },
+    [error]
+  );
 
-  const setTableVerificationCode = useCallback((code: string) => {
-    setTableVerificationCodeState(code);
-    if (error) setError(null);
-  }, [error]);
+  const setTableVerificationCode = useCallback(
+    (code: string) => {
+      setTableVerificationCodeState(code);
+      if (error) setError(null);
+    },
+    [error]
+  );
 
   const clearError = useCallback(() => {
     setError(null);
@@ -148,6 +206,11 @@ export function useCafeSelection({
     }
 
     setLocationStatus('requesting');
+
+    // Probe the actual permission state up front so we can produce accurate
+    // error messages later — see getGeoErrorMessage docstring for why code 1
+    // alone is misleading on mobile devices.
+    const permissionState = await probePermissionState();
 
     const getPosition = (options: PositionOptions) =>
       new Promise<LocationCoords>((resolve, reject) => {
@@ -169,11 +232,11 @@ export function useCafeSelection({
       setLocationStatus('ready');
       return coarseCoords;
     } catch (coarseError: unknown) {
-      const geoError = (typeof coarseError === 'object' && coarseError !== null
-        ? coarseError
-        : {}) as GeoErrorLike;
+      const geoError = (
+        typeof coarseError === 'object' && coarseError !== null ? coarseError : {}
+      ) as GeoErrorLike;
       if (geoError.code === 1) {
-        throw new Error(getGeoErrorMessage(geoError));
+        throw new Error(getGeoErrorMessage(geoError, permissionState));
       }
     }
 
@@ -182,11 +245,11 @@ export function useCafeSelection({
       timeout: 16000,
       maximumAge: 15000,
     }).catch(async (preciseError: unknown) => {
-      const geoError = (typeof preciseError === 'object' && preciseError !== null
-        ? preciseError
-        : {}) as GeoErrorLike;
+      const geoError = (
+        typeof preciseError === 'object' && preciseError !== null ? preciseError : {}
+      ) as GeoErrorLike;
       if (geoError.code === 1) {
-        throw new Error(getGeoErrorMessage(geoError));
+        throw new Error(getGeoErrorMessage(geoError, permissionState));
       }
 
       // Özellikle masaüstünde GPS hassas modu timeout verdiğinde
@@ -198,10 +261,10 @@ export function useCafeSelection({
           maximumAge: 600000,
         });
       } catch (fallbackError: unknown) {
-        const fallbackGeoError = (typeof fallbackError === 'object' && fallbackError !== null
-          ? fallbackError
-          : {}) as GeoErrorLike;
-        throw new Error(getGeoErrorMessage(fallbackGeoError));
+        const fallbackGeoError = (
+          typeof fallbackError === 'object' && fallbackError !== null ? fallbackError : {}
+        ) as GeoErrorLike;
+        throw new Error(getGeoErrorMessage(fallbackGeoError, permissionState));
       }
     });
 
@@ -227,7 +290,11 @@ export function useCafeSelection({
     }
 
     const parsedTableNumber = Number(tableNumberState);
-    if (!Number.isInteger(parsedTableNumber) || parsedTableNumber < 1 || parsedTableNumber > maxTableCount) {
+    if (
+      !Number.isInteger(parsedTableNumber) ||
+      parsedTableNumber < 1 ||
+      parsedTableNumber > maxTableCount
+    ) {
       setError(`Masa numarası 1 ile ${maxTableCount} arasında olmalıdır.`);
       return;
     }
@@ -259,10 +326,13 @@ export function useCafeSelection({
               accuracy: coords.accuracy,
             }
           : {}),
-        ...(normalizedVerificationCode ? { tableVerificationCode: normalizedVerificationCode } : {}),
+        ...(normalizedVerificationCode
+          ? { tableVerificationCode: normalizedVerificationCode }
+          : {}),
       });
 
-      const resolvedCafeName = result?.cafeName || result?.cafe?.name || selectedCafe?.name || 'Kafe';
+      const resolvedCafeName =
+        result?.cafeName || result?.cafe?.name || selectedCafe?.name || 'Kafe';
       const resolvedTable = result?.table || `MASA${String(parsedTableNumber).padStart(2, '0')}`;
 
       onCheckInSuccess(resolvedCafeName, resolvedTable, selectedCafeIdState);
