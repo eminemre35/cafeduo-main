@@ -7,6 +7,17 @@ jest.mock('../lib/gameAudio', () => ({
   playGameSfx: jest.fn(),
 }));
 
+// PixiJS overlay requires WebGL; mock as inert canvas in tests so the
+// dynamic import + app.init() don't fire in jsdom.
+jest.mock('./games/ChessBoardOverlay', () => ({
+  ChessBoardOverlay: React.forwardRef(function MockChessBoardOverlay(
+    _props: { boardRef: React.RefObject<HTMLElement | null>; className?: string },
+    _ref: React.Ref<unknown>
+  ) {
+    return <canvas data-testid="chess-board-pixi-canvas" />;
+  }),
+}));
+
 describe('RetroChess (classic)', () => {
   const mockUser: User = {
     id: 1,

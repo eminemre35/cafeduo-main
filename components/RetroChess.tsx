@@ -7,6 +7,7 @@ import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
 import { ConnectionOverlay } from './ConnectionOverlay';
+import { ChessBoardOverlay, type ChessBoardOverlayHandle } from './games/ChessBoardOverlay';
 import {
   FILES,
   RANKS,
@@ -179,9 +180,93 @@ export const RetroChess: React.FC<RetroChessProps> = ({
    * reward number when the real wallet move is different (or zero, e.g. loser had no points). */
   const serverStakeRef = useRef<number | null>(null);
 
+  // PixiJS overlay refs. boardGridRef is observed by the overlay to track
+  // square pixel coords; pixiOverlayRef is the imperative handle for
+  // capture/check/checkmate effects.
+  const boardGridRef = useRef<HTMLDivElement | null>(null);
+  const pixiOverlayRef = useRef<ChessBoardOverlayHandle | null>(null);
+  /** FEN snapshot from the last render — used to diff-detect captures across
+   *  both local and incoming-socket moves through a single state-driven path. */
+  const prevFenRef = useRef<string>(chess.fen());
+  /** Suppresses the one-shot checkmate burst from firing on every render
+   *  once the game is over. */
+  const checkmateFiredRef = useRef(false);
+
   useEffect(() => {
     chessFenRef.current = chess.fen();
   }, [chess]);
+
+  /**
+   * Find the king square for a given color. Used to position the PixiJS
+   * check pulse + checkmate burst at the king under attack.
+   */
+  const findKingSquare = useCallback((engine: Chess, color: 'w' | 'b'): string | null => {
+    const board = engine.board();
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const cell = board[r][f];
+        if (cell && cell.type === 'k' && cell.color === color) {
+          // chess.js board() returns rank 8 first (index 0). Convert to algebraic.
+          const file = 'abcdefgh'[f];
+          const rank = 8 - r;
+          return `${file}${rank}`;
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  /**
+   * Sync chess state → PixiJS overlay. Single effect drives:
+   *   - orientation flip when player color resolves
+   *   - last-move trail
+   *   - check pulse ring (or clear)
+   *   - capture burst (diffed via prevFenRef so it fires for remote moves too)
+   *   - checkmate finale (one-shot per game)
+   */
+  useEffect(() => {
+    const overlay = pixiOverlayRef.current;
+    const nextFen = chess.fen();
+    if (!overlay) {
+      prevFenRef.current = nextFen;
+      return;
+    }
+
+    overlay.setLastMove(lastMove?.from || null, lastMove?.to || null);
+
+    // Capture diff: if the previous board had a piece on lastMove.to,
+    // this move captured it. (Misses en passant — acceptable for v1.)
+    if (lastMove && prevFenRef.current !== nextFen) {
+      try {
+        const prev = loadChess(prevFenRef.current);
+        if (prev.get(lastMove.to)) {
+          overlay.playCapture(lastMove.to);
+        }
+      } catch {
+        // ignore — prev fen unparsable, no burst
+      }
+    }
+
+    // Check ring on the side-to-move king (the one in check)
+    if (chess.isCheck() && !chess.isCheckmate()) {
+      const kingSquare = findKingSquare(chess, chess.turn());
+      overlay.setCheckSquare(kingSquare);
+    } else {
+      overlay.setCheckSquare(null);
+    }
+
+    // Checkmate finale — fires once per game
+    if (chess.isCheckmate() && !checkmateFiredRef.current) {
+      const kingSquare = findKingSquare(chess, chess.turn());
+      if (kingSquare) overlay.playCheckmate(kingSquare);
+      checkmateFiredRef.current = true;
+    }
+    if (!chess.isGameOver()) {
+      checkmateFiredRef.current = false;
+    }
+
+    prevFenRef.current = nextFen;
+  }, [chess, lastMove, findKingSquare]);
 
   const playerColor = useMemo<'w' | 'b' | null>(
     () =>
@@ -197,6 +282,12 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const orientation = playerColor === 'b' ? 'b' : 'w';
   const files = orientation === 'w' ? [...FILES] : [...FILES].reverse();
   const ranks = orientation === 'w' ? [...RANKS] : [...RANKS].reverse();
+
+  // Keep the PixiJS overlay's board orientation in sync. The overlay computes
+  // square pixel coords based on this so captures/check land on the right square.
+  useEffect(() => {
+    pixiOverlayRef.current?.setOrientation(orientation);
+  }, [orientation]);
   const turn = chess.turn();
   const effectiveSelectableColor = playerColor || turn;
   const isMyTurn = Boolean(playerColor) && turn === playerColor && serverStatus !== 'finished';
@@ -840,7 +931,17 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           )}
 
           <div className="w-full max-w-[620px] mx-auto border border-cyan-300/22 p-2 sm:p-3 bg-[#06132b]/85 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
-            <div className="grid grid-cols-8 gap-1.5 sm:gap-2" data-testid="retro-chess-board">
+            <div
+              ref={boardGridRef}
+              className="relative grid grid-cols-8 gap-1.5 sm:gap-2"
+              data-testid="retro-chess-board"
+            >
+              {/* PixiJS overlay — absolutely positioned, fills the grid, captures/check effects */}
+              <ChessBoardOverlay
+                ref={pixiOverlayRef}
+                boardRef={boardGridRef}
+                className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+              />
               {ranks.map((rank, rankIndex) =>
                 files.map((file, fileIndex) => {
                   const square = toSquare(file, rank);
