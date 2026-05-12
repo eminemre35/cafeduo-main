@@ -27,9 +27,22 @@ const sendApiError = (res, logger, context, err, message, status = 500) => {
   } else {
     console.error(`${context}:`, err);
   }
+  // Optional escape hatch: when EXPOSE_API_ERRORS=true is set in the env,
+  // include the raw error message + pg code in the response so an admin
+  // can diagnose a production 500 from the browser DevTools without VPS
+  // shell access. Off by default (production must opt in explicitly).
+  const exposeDetail = String(process.env.EXPOSE_API_ERRORS || '').toLowerCase() === 'true';
+  const details = exposeDetail
+    ? {
+        context,
+        errorMessage: err?.message || String(err || ''),
+        errorCode: err?.code || null,
+      }
+    : null;
   const payload = buildApiErrorPayload(res, {
     code: err?.code || 'INTERNAL_ERROR',
     message,
+    details,
     status,
   });
   return res.status(status).json(payload);

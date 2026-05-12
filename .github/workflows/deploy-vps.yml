@@ -219,13 +219,18 @@ jobs:
 
             cd "$DEPLOY_PATH"
             echo "$DEPLOY_ENV_B64" | base64 -d > .env
-            grep -Ev '^(APP_VERSION|APP_BUILD_TIME|RESEND_API_KEY)=' .env > .env.tmp || true
+            grep -Ev '^(APP_VERSION|APP_BUILD_TIME|RESEND_API_KEY|EXPOSE_API_ERRORS)=' .env > .env.tmp || true
             printf 'APP_VERSION=%s\nAPP_BUILD_TIME=%s\n' "$APP_VERSION" "$APP_BUILD_TIME" >> .env.tmp
             # Append RESEND_API_KEY only when the secret is actually set, so
             # local/dev environments without it keep falling back to log-only.
             if [ -n "${RESEND_API_KEY:-}" ]; then
               printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> .env.tmp
             fi
+            # Temporary debug switch — exposes pg error messages on 500
+            # responses so production issues can be diagnosed from the
+            # browser DevTools without VPS shell access. Remove once the
+            # wheel 500 is resolved.
+            printf 'EXPOSE_API_ERRORS=true\n' >> .env.tmp
             mv .env.tmp .env
 
             port_in_use() {
