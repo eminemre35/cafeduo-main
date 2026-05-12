@@ -1,3 +1,9 @@
+/**
+ * Admin Select — Riso Kantin re-skin (PR #24). API preserved.
+ *
+ * Custom-rendered listbox (used by AssignCafeAdminModal). Same keyboard nav
+ * + outside-click contract, recoloured to Riso tokens.
+ */
 import React, { useEffect, useId, useRef, useState, useCallback } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,15 +24,9 @@ interface SelectProps {
   placeholder?: string;
   disabled?: boolean;
   id?: string;
-  /** Forwarded to the trigger button for tests. */
   'data-testid'?: string;
 }
 
-/**
- * Custom dropdown replacement for native <select>. Browser <option> ignored
- * most styling, so we own the render. Keyboard nav: ArrowUp / ArrowDown /
- * Enter / Space / Escape. Closes on outside click.
- */
 export const Select: React.FC<SelectProps> = ({
   label,
   helper,
@@ -101,9 +101,12 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div className="flex flex-col gap-1.5" ref={wrapRef}>
       {label && (
-        <label htmlFor={triggerId} className="text-[0.8125rem] font-medium text-[#3D332C]">
+        <label
+          htmlFor={triggerId}
+          className="font-riso-body text-xs font-semibold uppercase tracking-[0.12em] text-carbon-soft"
+        >
           {label}
-          {required && <span className="text-[#B14848] ml-0.5">*</span>}
+          {required && <span className="text-riso-redox ml-0.5">*</span>}
         </label>
       )}
       <div className="relative">
@@ -119,22 +122,20 @@ export const Select: React.FC<SelectProps> = ({
           onKeyDown={onKeyDown}
           data-testid={testId}
           className={
-            'w-full rounded-lg bg-[#FAF7F0] border px-3.5 py-2.5 text-left ' +
-            'text-[0.9375rem] ' +
+            'w-full bg-paper border-2 border-carbon px-3.5 py-2.5 text-left ' +
+            'font-riso-body text-base ' +
             'flex items-center justify-between gap-2 ' +
-            'transition-[border-color,box-shadow] duration-150 ' +
-            'focus:outline-none focus:ring-4 focus:ring-[#C2622F]/15 ' +
-            (open ? 'border-[#C2622F] ' : 'border-[#D6C5AA] hover:border-[#B5A89A] ') +
-            (disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer')
+            'riso-focus transition-colors duration-150 ' +
+            (disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-paper-deep')
           }
         >
-          <span className={selected ? 'text-[#1C1814]' : 'text-[#8B7B6E]'}>
+          <span className={selected ? 'text-carbon' : 'text-carbon-muted'}>
             {selected ? selected.label : placeholder}
           </span>
           <ChevronDown
             size={16}
             className={
-              'text-[#6B5B4D] transition-transform duration-200 ' + (open ? 'rotate-180' : '')
+              'text-carbon transition-transform duration-200 ' + (open ? 'rotate-180' : '')
             }
           />
         </button>
@@ -148,10 +149,10 @@ export const Select: React.FC<SelectProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.12, ease: 'easeOut' }}
-              className="absolute z-50 mt-2 w-full max-h-64 overflow-y-auto rounded-lg bg-[#FAF7F0] border border-[#E8DCC9] shadow-[0_24px_60px_-12px_rgba(28,24,20,0.18)] py-1"
+              className="absolute z-50 mt-2 w-full max-h-64 overflow-y-auto bg-paper border-2 border-carbon riso-shadow-sm py-1"
             >
               {options.length === 0 ? (
-                <li className="px-3 py-2 text-[0.875rem] text-[#8B7B6E]">Seçenek yok</li>
+                <li className="px-3 py-2 text-sm text-carbon-muted">Seçenek yok</li>
               ) : (
                 options.map((opt, i) => {
                   const isSelected = opt.value === value;
@@ -164,15 +165,15 @@ export const Select: React.FC<SelectProps> = ({
                       onMouseEnter={() => setActiveIndex(i)}
                       onClick={() => commit(opt)}
                       className={
-                        'mx-1 px-3 py-2 rounded-md cursor-pointer flex items-center justify-between gap-2 ' +
-                        (isActive ? 'bg-[#F2EBE0] ' : '') +
-                        (isSelected ? 'text-[#C2622F]' : 'text-[#1C1814]')
+                        'mx-1 px-3 py-2 cursor-pointer flex items-center justify-between gap-2 ' +
+                        (isActive ? 'bg-riso-pink ' : '') +
+                        (isSelected ? 'font-bold text-carbon' : 'text-carbon')
                       }
                     >
                       <div className="flex flex-col">
-                        <span className="text-[0.9375rem] font-medium">{opt.label}</span>
+                        <span className="font-riso-body text-base font-medium">{opt.label}</span>
                         {opt.description && (
-                          <span className="text-[0.8125rem] text-[#6B5B4D]">{opt.description}</span>
+                          <span className="text-sm text-carbon-muted">{opt.description}</span>
                         )}
                       </div>
                       {isSelected && <Check size={16} className="shrink-0" />}
@@ -184,7 +185,7 @@ export const Select: React.FC<SelectProps> = ({
           )}
         </AnimatePresence>
       </div>
-      {helper && !open && <p className="text-[0.8125rem] text-[#6B5B4D]">{helper}</p>}
+      {helper && !open && <p className="text-sm text-carbon-muted">{helper}</p>}
     </div>
   );
 };

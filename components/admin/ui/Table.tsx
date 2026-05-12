@@ -1,3 +1,9 @@
+/**
+ * Admin Table — Riso Kantin re-skin (PR #24). API preserved.
+ *
+ * Hard 2px ink border around the whole table, mustard-tinted header strip,
+ * crisp row separators. No rounded corners anywhere.
+ */
 import React from 'react';
 
 export const Table: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = ({
@@ -5,15 +11,15 @@ export const Table: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = ({
   children,
   ...rest
 }) => (
-  <div className="overflow-x-auto rounded-2xl border border-[#E8DCC9] bg-[#FAF7F0]">
-    <table {...rest} className={`w-full text-left ${className}`}>
+  <div className="overflow-x-auto border-2 border-carbon bg-paper">
+    <table {...rest} className={`w-full text-left font-riso-body ${className}`}>
       {children}
     </table>
   </div>
 );
 
 export const THead: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <thead className="bg-[#F2EBE0]/60 border-b border-[#E8DCC9]">
+  <thead className="bg-paper-deep border-b-2 border-carbon">
     <tr>{children}</tr>
   </thead>
 );
@@ -26,8 +32,8 @@ export const TH: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({
   <th
     {...rest}
     className={
-      'px-5 py-3.5 text-[0.6875rem] uppercase tracking-[0.1em] font-semibold ' +
-      `text-[#6B5B4D] ${className}`
+      'px-4 py-3 text-[0.6875rem] uppercase tracking-[0.12em] font-bold font-riso-body ' +
+      `text-carbon-soft ${className}`
     }
   >
     {children}
@@ -35,7 +41,7 @@ export const TH: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({
 );
 
 export const TBody: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <tbody className="[&>tr]:border-b [&>tr]:border-[#E8DCC9]/70 [&>tr:last-child]:border-0 [&>tr]:transition-colors [&>tr:hover]:bg-[#F2EBE0]/40">
+  <tbody className="[&>tr]:border-b-2 [&>tr]:border-paper-dim [&>tr:last-child]:border-0 [&>tr]:transition-colors [&>tr:hover]:bg-paper-deep">
     {children}
   </tbody>
 );
@@ -45,7 +51,7 @@ export const TD: React.FC<React.TdHTMLAttributes<HTMLTableCellElement>> = ({
   children,
   ...rest
 }) => (
-  <td {...rest} className={`px-5 py-4 text-[0.9375rem] text-[#1C1814] align-middle ${className}`}>
+  <td {...rest} className={`px-4 py-3 text-[0.9375rem] text-carbon align-middle ${className}`}>
     {children}
   </td>
 );

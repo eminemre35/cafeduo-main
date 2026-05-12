@@ -311,7 +311,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   if (activeGameId) {
     return (
-      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-paper text-carbon pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
         {showGlitchAnim && gameResult && (
           <CyberGlitchScreen
             isWinner={gameResult.winner === currentUser.username}
@@ -319,7 +319,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onComplete={() => setShowGlitchAnim(false)}
           />
         )}
-        <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
+        <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
           <div className="mb-6">
@@ -329,12 +329,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {gameResult && (
-            <div className="mb-6 rf-panel border-emerald-400/30 rounded-xl p-4">
+            <div className="mb-6 border-2 border-carbon bg-paper border-emerald-400/30 rounded-xl p-4">
               <p className="text-sm text-emerald-200">Maç Sonucu</p>
               <p className="text-lg font-bold text-white mt-1">
                 {gameResult.winner ? `${gameResult.winner} kazandı` : 'Maç berabere bitti'}
               </p>
-              <p className="text-sm text-[var(--rf-muted)] mt-1">
+              <p className="text-sm text-carbon-muted mt-1">
                 Puan etkisi:{' '}
                 {gameResult.earnedPoints > 0
                   ? `+${gameResult.earnedPoints}`
@@ -377,9 +377,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onLeave={handleLeaveGame}
             />
           ) : (
-            <div className="rf-panel border-red-400/30 rounded-xl p-8 text-center">
+            <div className="border-2 border-carbon bg-paper border-red-400/30 rounded-xl p-8 text-center">
               <p className="text-red-200 font-bold text-xl">Bilinmeyen Oyun Türü</p>
-              <p className="text-[var(--rf-muted)] mt-2">{activeGameType}</p>
+              <p className="text-carbon-muted mt-2">{activeGameType}</p>
               <RetroButton onClick={handleBackToLobby} variant="secondary" className="mt-4">
                 Lobiye Dön
               </RetroButton>
@@ -395,8 +395,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // ==========================================
 
   return (
-    <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
-      <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
+    <div className="min-h-screen bg-paper text-carbon pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Status Bar */}
         <StatusBar
@@ -407,7 +407,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         />
 
         {/* Main Navigation Tabs */}
-        <div className="relative bg-cyber-dark border-4 border-cyber-border p-2 md:p-3 shadow-[8px_8px_0_rgba(0,243,255,0.15)] flex flex-col">
+        <div className="relative bg-paper border-4 border-carbon p-2 md:p-3 riso-shadow-sm flex flex-col">
           <div className="flex items-center gap-2 md:gap-4">
             {[
               {
@@ -415,24 +415,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 label: 'OYUNLAR',
                 mobileLabel: 'OYUN',
                 icon: Gamepad2,
-                hoverColor: 'hover:border-neon-blue hover:text-neon-blue',
-                activeColor: 'border-neon-blue text-cyber-dark bg-neon-blue',
+                hoverColor: 'hover:border-riso-blue hover:text-riso-blue',
+                activeColor: 'border-riso-blue text-cyber-dark bg-riso-blue',
               },
               {
                 id: 'leaderboard',
                 label: 'SIRALAMA',
                 mobileLabel: 'SIRA',
                 icon: Trophy,
-                hoverColor: 'hover:border-neon-pink hover:text-neon-pink',
-                activeColor: 'border-neon-pink text-cyber-dark bg-neon-pink',
+                hoverColor: 'hover:border-riso-pink hover:text-riso-pink-deep',
+                activeColor: 'border-riso-pink text-cyber-dark bg-riso-pink',
               },
               {
                 id: 'achievements',
                 label: 'BAŞARI',
                 mobileLabel: 'BAŞARI',
                 icon: Gift,
-                hoverColor: 'hover:border-neon-green hover:text-neon-green',
-                activeColor: 'border-neon-green text-cyber-dark bg-neon-green',
+                hoverColor: 'hover:border-riso-spring hover:text-riso-spring',
+                activeColor: 'border-riso-spring text-cyber-dark bg-riso-spring',
               },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -444,8 +444,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
                   aria-label={tab.label}
-                  className={`relative flex-1 flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:py-4 transition-all border-2 font-display uppercase tracking-widest text-lg md:text-xl
-                    ${isActive ? tab.activeColor : `border-transparent text-ink-300 ${tab.hoverColor} bg-cyber-bg/50`}`}
+                  className={`relative flex-1 flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:py-4 transition-all border-2 font-riso-display uppercase tracking-widest text-lg md:text-xl
+                    ${isActive ? tab.activeColor : `border-transparent text-ink-300 ${tab.hoverColor} bg-paper-deep/50`}`}
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2 min-w-0">
                     <Icon size={24} className={isActive ? '' : 'opacity-70'} />
@@ -456,7 +456,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </span>
 
                   {isActive && (
-                    <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border border-cyber-dark" />
+                    <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border border-carbon" />
                   )}
                 </button>
               );

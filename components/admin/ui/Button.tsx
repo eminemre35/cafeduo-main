@@ -1,3 +1,14 @@
+/**
+ * Admin Button — Riso Kantin re-skin (PR #24).
+ *
+ * Public API (variant/size/leftIcon/rightIcon) is unchanged so AdminDashboard
+ * compiles without edits. Internally the styles come from the Riso Kantin
+ * tokens defined in index.css + tailwind.config.js.
+ *   - primary   → riso-pink (main CTA)
+ *   - secondary → paper + ink border
+ *   - ghost     → transparent, ink hover
+ *   - danger    → riso-redox
+ */
 import React from 'react';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -5,18 +16,11 @@ type Size = 'sm' | 'md' | 'lg';
 
 const variantClass: Record<Variant, string> = {
   primary:
-    'bg-[#C2622F] text-white hover:bg-[#A04E22] active:bg-[#843D17] ' +
-    'focus-visible:ring-[#C2622F]/40 disabled:bg-[#D6C5AA] disabled:text-[#8B7B6E]',
-  secondary:
-    'bg-[#FAF7F0] text-[#1C1814] border border-[#D6C5AA] hover:bg-[#F2EBE0] ' +
-    'active:bg-[#E8DCC9] focus-visible:ring-[#C2622F]/30 disabled:opacity-50',
-  ghost:
-    'bg-transparent text-[#3D332C] hover:bg-[#F2EBE0] active:bg-[#E8DCC9] ' +
-    'focus-visible:ring-[#C2622F]/30 disabled:opacity-50',
+    'bg-riso-pink text-carbon border-carbon hover:bg-riso-pink-deep hover:text-paper riso-shadow-sm',
+  secondary: 'bg-paper text-carbon border-carbon hover:bg-paper-deep riso-shadow-sm',
+  ghost: 'bg-transparent text-carbon border-transparent hover:bg-paper-deep',
   danger:
-    'bg-[#FAF7F0] text-[#B14848] border border-[#F8E1E1] hover:bg-[#F8E1E1] ' +
-    'hover:border-[#B14848]/40 active:bg-[#B14848] active:text-white ' +
-    'focus-visible:ring-[#B14848]/40 disabled:opacity-50',
+    'bg-paper text-riso-redox border-riso-redox hover:bg-riso-redox hover:text-paper riso-shadow-sm',
 };
 
 const sizeClass: Record<Size, string> = {
@@ -44,15 +48,14 @@ export const Button: React.FC<ButtonProps> = ({
   <button
     {...rest}
     className={
-      'inline-flex items-center justify-center font-medium ' +
-      'rounded-lg transition-all duration-150 ' +
-      'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
-      'focus-visible:ring-offset-[#FAF7F0] disabled:cursor-not-allowed ' +
+      'inline-flex items-center justify-center font-riso-body font-semibold border-2 ' +
+      'transition-[box-shadow,transform,background-color] duration-150 ' +
+      'riso-focus riso-press disabled:cursor-not-allowed disabled:opacity-50 ' +
       `${variantClass[variant]} ${sizeClass[size]} ${className}`
     }
   >
-    {leftIcon && <span className="shrink-0">{leftIcon}</span>}
+    {leftIcon && <span className="shrink-0 flex items-center">{leftIcon}</span>}
     {children != null && <span>{children}</span>}
-    {rightIcon && <span className="shrink-0">{rightIcon}</span>}
+    {rightIcon && <span className="shrink-0 flex items-center">{rightIcon}</span>}
   </button>
 );

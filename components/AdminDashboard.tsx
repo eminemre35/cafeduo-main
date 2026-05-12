@@ -494,20 +494,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     user.isAdmin ? 'Admin' : user.role === 'cafe_admin' ? 'Cafe Admin' : 'User';
 
   return (
-    <div className="cafe-concierge min-h-screen pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4">
+    <div className="riso-kantin min-h-screen pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4">
       <div className="max-w-[1280px] mx-auto">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
-            <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-[#C2622F] font-semibold mb-2 flex items-center gap-2">
+            <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-riso-pink-deep font-semibold mb-2 flex items-center gap-2">
               <ShieldCheck size={14} />
               <span>CafeDuo · Yönetim</span>
             </p>
-            <h1 className="cc-display text-[2.25rem] sm:text-[2.5rem] font-semibold text-[#1C1814] tracking-[-0.02em] leading-none">
+            <h1 className="font-riso-display text-[2.25rem] sm:text-[2.5rem] font-semibold text-carbon tracking-[-0.02em] leading-none">
               Concierge
             </h1>
-            <p className="text-[0.9375rem] text-[#6B5B4D] mt-2">
-              <span className="font-medium text-[#3D332C]">{currentUser.username}</span> —
+            <p className="text-[0.9375rem] text-carbon-muted mt-2">
+              <span className="font-medium text-carbon-soft">{currentUser.username}</span> —
               kullanıcı, oyun ve kafe operasyonlarını yönet.
             </p>
           </div>
@@ -520,7 +520,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         <TabBar tabs={TABS} value={activeTab} onChange={(next) => setActiveTab(next)} />
 
         {loading ? (
-          <p className="mt-10 text-center text-[#6B5B4D]">Yükleniyor…</p>
+          <p className="mt-10 text-center text-carbon-muted">Yükleniyor…</p>
         ) : (
           <main className="mt-8">
             {/* USERS TAB */}
@@ -529,7 +529,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="relative w-full sm:max-w-sm">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B7B6E] pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none"
                       size={16}
                     />
                     <Input
@@ -562,11 +562,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     {filteredUsers.map((user) => (
                       <tr key={user.id}>
                         <TD className="font-medium">{user.username}</TD>
-                        <TD className="text-[#3D332C]">{user.email}</TD>
-                        <TD className="text-[#6B5B4D]">{user.department || '—'}</TD>
+                        <TD className="text-carbon-soft">{user.email}</TD>
+                        <TD className="text-carbon-muted">{user.department || '—'}</TD>
                         <TD className="text-center">
                           <div className="flex flex-col items-center gap-2">
-                            <span className="cc-mono text-[0.9375rem] text-[#843D17] font-semibold">
+                            <span className="cc-mono text-[0.9375rem] text-riso-pink-deep font-semibold">
                               {user.points}
                             </span>
                             {!user.isAdmin && (
@@ -579,7 +579,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                     userPointDrafts[String(user.id)] ?? String(user.points ?? 0)
                                   }
                                   onChange={(e) => handlePointDraftChange(user.id, e.target.value)}
-                                  className="w-16 px-2 py-1 rounded-md bg-[#FAF7F0] border border-[#D6C5AA] text-center text-[0.8125rem] cc-mono focus:outline-none focus:ring-4 focus:ring-[#C2622F]/15 focus:border-[#C2622F]"
+                                  className="w-16 px-2 py-1 rounded-md bg-paper border border-carbon-muted text-center text-[0.8125rem] cc-mono focus:outline-none focus:ring-4 focus:ring-riso-pink/30 focus:border-riso-pink"
                                 />
                                 <Button
                                   size="sm"
@@ -597,7 +597,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         <TD className="text-center">
                           <Badge tone={roleTone(user)}>{roleLabel(user)}</Badge>
                         </TD>
-                        <TD className="text-[#6B5B4D]">{user.cafe_name || '—'}</TD>
+                        <TD className="text-carbon-muted">{user.cafe_name || '—'}</TD>
                         <TD className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             {!user.isAdmin && (
@@ -632,8 +632,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             {activeTab === 'games' && (
               <section className="flex flex-col gap-3">
                 {games.length === 0 ? (
-                  <Card className="p-8 text-center text-[#6B5B4D]">
-                    <Gamepad2 size={32} className="mx-auto mb-3 text-[#B5A89A]" />
+                  <Card className="p-8 text-center text-carbon-muted">
+                    <Gamepad2 size={32} className="mx-auto mb-3 text-carbon-muted" />
                     <p>Henüz oyun kaydı yok.</p>
                   </Card>
                 ) : (
@@ -641,7 +641,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     <Card key={game.id} className="px-5 py-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-4 min-w-0">
-                          <div className="shrink-0 w-10 h-10 rounded-lg bg-[#F2EBE0] border border-[#E8DCC9] flex items-center justify-center text-[1.125rem]">
+                          <div className="shrink-0 w-10 h-10 rounded-lg bg-paper-deep border border-carbon flex items-center justify-center text-[1.125rem]">
                             {game.game_type === 'tictactoe'
                               ? '◯'
                               : game.game_type === 'Bilgi Yarışı'
@@ -651,11 +651,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                   : '◉'}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-[#1C1814] truncate">
-                              {game.host_name} <span className="text-[#8B7B6E] mx-1">×</span>{' '}
+                            <p className="font-medium text-carbon truncate">
+                              {game.host_name} <span className="text-carbon-muted mx-1">×</span>{' '}
                               {game.guest_name || 'Bekleniyor'}
                             </p>
-                            <p className="text-[0.8125rem] text-[#6B5B4D]">
+                            <p className="text-[0.8125rem] text-carbon-muted">
                               {formatGameDate(game.created_at)} · {game.cafe_name || 'Bilinmiyor'} ·
                               Masa {game.table_code}
                             </p>
@@ -686,11 +686,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
               <section className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
                 {/* Cafe list */}
                 <Card className="p-6 h-fit">
-                  <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-[#6B5B4D] mb-4">
+                  <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-4">
                     Kafeler
                   </p>
                   {cafes.length === 0 ? (
-                    <p className="text-[0.875rem] text-[#8B7B6E] mb-4">Henüz kafe yok.</p>
+                    <p className="text-[0.875rem] text-carbon-muted mb-4">Henüz kafe yok.</p>
                   ) : (
                     <div className="flex flex-col gap-1">
                       {cafes.map((c) => {
@@ -703,8 +703,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             className={
                               'text-left px-3 py-2.5 rounded-lg transition-colors ' +
                               (active
-                                ? 'bg-[#FBE8DA] text-[#843D17] font-semibold'
-                                : 'hover:bg-[#F2EBE0] text-[#1C1814]')
+                                ? 'bg-riso-mustard/20 text-riso-pink-deep font-semibold'
+                                : 'hover:bg-paper-deep text-carbon')
                             }
                           >
                             {c.name}
@@ -713,7 +713,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       })}
                     </div>
                   )}
-                  <div className="mt-5 pt-5 border-t border-[#E8DCC9]">
+                  <div className="mt-5 pt-5 border-t border-carbon">
                     <Button
                       leftIcon={<Plus size={16} />}
                       variant="secondary"
@@ -730,10 +730,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                   <Card className="p-8">
                     <header className="flex items-start justify-between gap-4 mb-6">
                       <div>
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-[#C2622F] font-semibold mb-1">
+                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-riso-pink-deep font-semibold mb-1">
                           Konum Detayları
                         </p>
-                        <h2 className="cc-display text-[1.5rem] text-[#1C1814] font-semibold tracking-[-0.01em]">
+                        <h2 className="font-riso-display text-[1.5rem] text-carbon font-semibold tracking-[-0.01em]">
                           {selectedCafe.name}
                         </h2>
                       </div>
@@ -749,7 +749,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           Kafeyi Sil
                         </Button>
                         {cafes.length <= 1 && (
-                          <p className="text-[0.75rem] text-[#8B7B6E] max-w-[180px] text-right">
+                          <p className="text-[0.75rem] text-carbon-muted max-w-[180px] text-right">
                             Güvenlik kuralı: Son kafe silinemez.
                           </p>
                         )}
@@ -779,7 +779,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       />
 
                       <Card variant="muted" className="p-5">
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-[#C2622F] mb-3">
+                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">
                           Birincil Konum
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -826,7 +826,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </Card>
 
                       <Card variant="muted" className="p-5">
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-[#6B5B4D] mb-3">
+                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-3">
                           İkincil Konum · Opsiyonel
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -882,8 +882,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     </div>
                   </Card>
                 ) : (
-                  <Card className="p-12 flex flex-col items-center justify-center text-center text-[#6B5B4D]">
-                    <Coffee size={36} className="mb-3 text-[#B5A89A]" />
+                  <Card className="p-12 flex flex-col items-center justify-center text-center text-carbon-muted">
+                    <Coffee size={36} className="mb-3 text-carbon-muted" />
                     <p>Düzenlemek için soldan bir kafe seç ya da yeni bir kafe oluştur.</p>
                   </Card>
                 )}

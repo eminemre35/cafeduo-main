@@ -859,7 +859,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     <>
       <ConnectionOverlay gameId={gameId} />
       <div
-        className="max-w-4xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
+        className="max-w-4xl mx-auto border-2 border-carbon bg-paper riso-shadow-sm  p-4 sm:p-6 text-white relative overflow-hidden"
         data-testid="retro-chess"
         style={{
           backgroundImage: `linear-gradient(165deg, rgba(3, 16, 40, 0.94), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.strategyChess}')`,
@@ -870,9 +870,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
 
         <div className="relative z-10">
-          <div className="rf-terminal-strip mb-2">Sistem TR-X // Satranç Çekirdeği</div>
+          <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
+            Sistem TR-X // Satranç Çekirdeği
+          </div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            <h2 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
               Retro Satranç (Klasik)
             </h2>
             <button
@@ -884,53 +886,51 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center">
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Durum</div>
-              <div className="font-bold text-cyan-100">{statusLabel}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Durum</div>
+              <div className="font-bold text-carbon">{statusLabel}</div>
             </div>
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Sıra</div>
-              <div className="font-bold text-cyan-100">{turnLabel}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Sıra</div>
+              <div className="font-bold text-carbon">{turnLabel}</div>
             </div>
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Tempo</div>
-              <div className="font-bold text-cyan-100">{clockState.label}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Tempo</div>
+              <div className="font-bold text-carbon">{clockState.label}</div>
             </div>
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
-              <div className="font-bold truncate text-cyan-100">{opponentLabel}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Rakip</div>
+              <div className="font-bold truncate text-carbon">{opponentLabel}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-center">
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Beyaz Süre</div>
-              <div className="font-bold text-cyan-100">{formatClock(displayClock.white)}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Beyaz Süre</div>
+              <div className="font-bold text-carbon">{formatClock(displayClock.white)}</div>
             </div>
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Hamle</div>
-              <div className="font-bold text-cyan-100">{moveCount}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Hamle</div>
+              <div className="font-bold text-carbon">{moveCount}</div>
             </div>
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)]">Siyah Süre</div>
-              <div className="font-bold text-cyan-100">{formatClock(displayClock.black)}</div>
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted">Siyah Süre</div>
+              <div className="font-bold text-carbon">{formatClock(displayClock.black)}</div>
             </div>
           </div>
 
-          <p className="text-sm text-[var(--rf-muted)] mb-1 pl-3 border-l-2 border-cyan-400/55">
-            {message}
-          </p>
-          {liveResultLabel && <p className="text-xs text-cyan-200 mb-3">{liveResultLabel}</p>}
+          <p className="text-sm text-carbon-muted mb-1 pl-3 border-l-2 border-carbon">{message}</p>
+          {liveResultLabel && <p className="text-xs text-carbon-soft mb-3">{liveResultLabel}</p>}
           {serverWinner && <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>}
           {pendingDrawOffer && (
-            <p className="text-xs text-cyan-200 mb-3">
+            <p className="text-xs text-carbon-soft mb-3">
               {isPendingOfferByActor
                 ? 'Gönderdiğin beraberlik teklifi için rakip yanıtı bekleniyor.'
                 : `${pendingDrawOffer.offeredBy} beraberlik teklifi gönderdi.`}
             </p>
           )}
 
-          <div className="w-full max-w-[620px] mx-auto border border-cyan-300/22 p-2 sm:p-3 bg-[#06132b]/85 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
+          <div className="w-full max-w-[620px] mx-auto border border-carbon p-2 sm:p-3 bg-[#06132b]/85 riso-shadow-sm">
             <div
               ref={boardGridRef}
               className="relative grid grid-cols-8 gap-1.5 sm:gap-2"
@@ -964,8 +964,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                     : 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_70%_70%,rgba(0,0,0,0.15),transparent_50%)] before:pointer-events-none';
 
                   const selectedClass = isSelected
-                    ? 'border-cyan-100 ring-2 ring-cyan-200/85 z-10 scale-[1.08] shadow-[0_8px_24px_rgba(34,211,238,0.4)]'
-                    : 'border-cyan-500/30';
+                    ? 'border-carbon ring-2 ring-cyan-200/85 z-10 scale-[1.08] shadow-[0_8px_24px_rgba(34,211,238,0.4)]'
+                    : 'border-carbon-muted';
                   const legalClass = isLegal
                     ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)] before:z-10'
                     : '';
@@ -1069,10 +1069,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </RetroButton>
           </div>
 
-          <div className="mt-5 rf-screen-card-muted p-3 max-h-56 overflow-y-auto custom-scrollbar">
+          <div className="mt-5 border-2 border-carbon bg-paper-deep p-3 max-h-56 overflow-y-auto custom-scrollbar">
             <h3 className="font-pixel text-sm text-white mb-2 tracking-wide">HAMLE GEÇMİŞİ</h3>
             {moveLog.length === 0 ? (
-              <p className="text-xs text-[var(--rf-muted)]">Henüz hamle yapılmadı.</p>
+              <p className="text-xs text-carbon-muted">Henüz hamle yapılmadı.</p>
             ) : (
               <ol className="space-y-1 text-xs">
                 {moveLog.map((entry, index) => (
@@ -1080,10 +1080,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                     key={`${entry.ts}-${index}`}
                     className="flex items-center justify-between gap-2 border-b border-cyan-400/10 pb-1"
                   >
-                    <span className="text-cyan-200">
+                    <span className="text-carbon-soft">
                       {index + 1}. {entry.san} ({entry.from}→{entry.to})
                     </span>
-                    <span className="text-[var(--rf-muted)]">
+                    <span className="text-carbon-muted">
                       {Number.isFinite(Number(entry.spentMs))
                         ? `${Math.round(Number(entry.spentMs) / 1000)} sn`
                         : ''}

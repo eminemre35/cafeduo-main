@@ -48,17 +48,19 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="rf-screen-card p-6 text-center max-w-sm mx-4 border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+      <div className="border-2 border-carbon bg-paper riso-shadow-sm p-6 text-center max-w-sm mx-4 border border-carbon-muted shadow-[0_0_40px_rgba(34,211,238,0.2)]">
         <div className="text-4xl mb-3 animate-pulse">📡</div>
-        <h3 className="font-display text-lg text-cyan-100 mb-2 uppercase tracking-wider">
+        <h3 className="font-riso-display text-lg text-carbon mb-2 uppercase tracking-wider">
           Bağlantı Kesildi
         </h3>
-        <p className="text-sm text-[var(--rf-muted)] mb-4">
+        <p className="text-sm text-carbon-muted mb-4">
           Sunucuyla bağlantı yeniden kuruluyor. Lütfen bekleyin...
         </p>
         <div className="w-full h-1.5 bg-[#0a1f3a] rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-cyan-400 to-cyan-300 animate-[loading-bar_1.5s_ease-in-out_infinite]" 
-               style={{ width: '60%', animation: 'loading-bar 1.5s ease-in-out infinite' }} />
+          <div
+            className="h-full bg-riso-blue animate-[loading-bar_1.5s_ease-in-out_infinite]"
+            style={{ width: '60%', animation: 'loading-bar 1.5s ease-in-out infinite' }}
+          />
         </div>
       </div>
     </div>

@@ -34,10 +34,11 @@ export const AssignCafeAdminModal: React.FC<AssignCafeAdminModalProps> = ({
         </div>
       }
     >
-      <p className="text-[0.9375rem] text-[#3D332C] mb-5 leading-relaxed">
-        <span className="font-semibold text-[#1C1814]">{selectedUser.username}</span> kullanıcısı,
+      <p className="text-[0.9375rem] text-carbon-soft mb-5 leading-relaxed">
+        <span className="font-semibold text-carbon">{selectedUser.username}</span> kullanıcısı,
         seçeceğin kafenin operasyon yetkisini alacak. Bu işlem rolünü{' '}
-        <span className="cc-mono text-[0.875rem] text-[#843D17]">cafe_admin</span> olarak günceller.
+        <span className="cc-mono text-[0.875rem] text-riso-pink-deep">cafe_admin</span> olarak
+        günceller.
       </p>
       <Select
         label="Kafe"

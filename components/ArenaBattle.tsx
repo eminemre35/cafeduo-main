@@ -267,7 +267,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         <div className="mb-5 flex items-start justify-between gap-4 border-b border-[rgba(16,231,255,0.2)] pb-4">
           <div>
             <p className="cd-system-label text-[#10E7FF]">LIVE TARGET LOCK</p>
-            <h2 className="font-display text-2xl text-white sm:text-4xl">{AIM_GAME_TYPE}</h2>
+            <h2 className="font-riso-display text-2xl text-white sm:text-4xl">{AIM_GAME_TYPE}</h2>
             <p className="mt-2 text-xs text-[#A5ADB8] sm:text-sm">{participants}</p>
           </div>
           <button onClick={onLeave} className="cd-icon-button text-[#A5ADB8] hover:text-white">

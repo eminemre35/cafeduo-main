@@ -58,7 +58,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       />
 
       <Card variant="muted" className="p-5">
-        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-[#C2622F] mb-3">
+        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">
           Birincil Konum
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -101,7 +101,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       </Card>
 
       <Card variant="muted" className="p-5">
-        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-[#6B5B4D] mb-3">
+        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-3">
           İkincil Konum · Opsiyonel
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

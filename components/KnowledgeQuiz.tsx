@@ -185,7 +185,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     <>
       <ConnectionOverlay gameId={gameId} />
       <div
-        className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
+        className="max-w-2xl mx-auto border-2 border-carbon bg-paper riso-shadow-sm  p-4 sm:p-6 text-white relative overflow-hidden"
         data-testid="knowledge-quiz"
         style={{
           backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.knowledgeQuiz}')`,
@@ -195,9 +195,11 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       >
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
         <div className="relative z-10">
-          <div className="rf-terminal-strip mb-2">Sistem TR-X // Bilgi Tarayıcı</div>
+          <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
+            Sistem TR-X // Bilgi Tarayıcı
+          </div>
           <div className="flex items-start justify-between gap-3 mb-4">
-            <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            <h2 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
               {QUIZ_GAME_TYPE}
             </h2>
             <button
@@ -209,38 +211,38 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           </div>
 
           <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
-            <div className="rf-screen-card-muted p-3">
-              <div className="text-xs text-[var(--rf-muted)] mb-1">Tur</div>
-              <div className="font-bold text-cyan-100">
+            <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="text-xs text-carbon-muted mb-1">Tur</div>
+              <div className="font-bold text-carbon">
                 {Math.min(roundIndex + 1, maxRounds)} / {maxRounds}
               </div>
               <div className="mt-2 h-1.5 bg-[#0a1f3a] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-400 to-cyan-300 transition-all duration-500 ease-out"
+                  className="h-full bg-riso-blue transition-all duration-500 ease-out"
                   style={{ width: `${((roundIndex + 1) / maxRounds) * 100}%` }}
                 />
               </div>
             </div>
             <div
-              className={`rf-screen-card-muted p-3 transition-all duration-300 ${scoreAnimation === 'player' ? 'animate-score-pop' : ''}`}
+              className={`border-2 border-carbon bg-paper-deep p-3 transition-all duration-300 ${scoreAnimation === 'player' ? 'animate-score-pop' : ''}`}
             >
-              <div className="text-xs text-[var(--rf-muted)]">Sen</div>
-              <div className="font-bold text-cyan-100">{live.playerScore}</div>
+              <div className="text-xs text-carbon-muted">Sen</div>
+              <div className="font-bold text-carbon">{live.playerScore}</div>
             </div>
             <div
-              className={`rf-screen-card-muted p-3 transition-all duration-300 ${scoreAnimation === 'opponent' ? 'animate-score-pop' : ''}`}
+              className={`border-2 border-carbon bg-paper-deep p-3 transition-all duration-300 ${scoreAnimation === 'opponent' ? 'animate-score-pop' : ''}`}
             >
-              <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
-              <div className="font-bold text-cyan-100">{live.opponentScore}</div>
+              <div className="text-xs text-carbon-muted">Rakip</div>
+              <div className="font-bold text-carbon">{live.opponentScore}</div>
             </div>
           </div>
 
-          <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">
+          <p className="text-sm text-carbon-muted mb-4 pl-3 border-l-2 border-carbon min-h-[2rem] flex items-center">
             {message}
           </p>
 
           <div
-            className={`rf-screen-card-muted p-4 transition-all duration-300 relative overflow-hidden ${feedbackAnimation === 'correct' ? 'animate-flash-green animate-glow-pulse' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
+            className={`border-2 border-carbon bg-paper-deep p-4 transition-all duration-300 relative overflow-hidden ${feedbackAnimation === 'correct' ? 'animate-flash-green animate-glow-pulse' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
           >
             {/* PixiJS overlay — sits above floatingScore (z-30 vs z-20) so confetti
                 renders ON TOP of the "+1" / "✕" text. CSS feedback (border/shadow
@@ -270,7 +272,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                 const isCorrect = idx === currentQuestion.answerIndex;
                 const stateClass =
                   selectedOption === null
-                    ? 'border-cyan-400/25 hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70 hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(34,211,238,0.15)]'
+                    ? 'border-carbon-muted hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70 hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(34,211,238,0.15)]'
                     : isPicked && isCorrect
                       ? 'border-emerald-400/60 bg-emerald-500/25 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-[1.02]'
                       : isPicked
@@ -301,14 +303,14 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
                       ${
                         selectedOption === null
-                          ? 'bg-cyan-400/20 text-cyan-300'
+                          ? 'bg-cyan-400/20 text-riso-blue'
                           : isPicked && isCorrect
                             ? 'bg-emerald-400 text-white'
                             : isPicked
                               ? 'bg-rose-400 text-white'
                               : isCorrect
                                 ? 'bg-emerald-400/30 text-emerald-300'
-                                : 'bg-cyan-400/10 text-cyan-300/50'
+                                : 'bg-cyan-400/10 text-riso-blue/50'
                       }`}
                       >
                         {String.fromCharCode(65 + idx)}

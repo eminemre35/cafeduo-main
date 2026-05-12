@@ -1,13 +1,22 @@
 /**
  * RewardSection Component
- * 
+ *
  * @description Mağaza ve envanter yönetimi
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Reward, RedeemedReward, User } from '../../types';
-import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Ticket, Package, Gift } from 'lucide-react';
+import {
+  Coffee,
+  Percent,
+  Cookie,
+  Gamepad2,
+  ShoppingBag,
+  Ticket,
+  Package,
+  Gift,
+} from 'lucide-react';
 import { RetroButton } from '../RetroButton';
 import { SkeletonGrid, SkeletonCard } from '../Skeleton';
 import { EmptyState } from '../EmptyState';
@@ -15,32 +24,37 @@ import { EmptyState } from '../EmptyState';
 interface RewardSectionProps {
   // Kullanıcı
   currentUser: User;
-  
+
   // Mağaza
   rewards: Reward[];
   rewardsLoading: boolean;
-  
+
   // Envanter
   inventory: RedeemedReward[];
   inventoryLoading: boolean;
-  
+
   // Tab state
   activeTab: 'shop' | 'inventory';
   onTabChange: (tab: 'shop' | 'inventory') => void;
-  
+
   // İşlemler
   onBuyReward: (reward: Reward) => Promise<void>;
 }
 
 // Ödül ikonları
 const getRewardIcon = (icon: string) => {
-  const iconClass = "w-6 h-6";
+  const iconClass = 'w-6 h-6';
   switch (icon) {
-    case 'coffee': return <Coffee className={iconClass} />;
-    case 'discount': return <Percent className={iconClass} />;
-    case 'dessert': return <Cookie className={iconClass} />;
-    case 'game': return <Gamepad2 className={iconClass} />;
-    default: return <Coffee className={iconClass} />;
+    case 'coffee':
+      return <Coffee className={iconClass} />;
+    case 'discount':
+      return <Percent className={iconClass} />;
+    case 'dessert':
+      return <Cookie className={iconClass} />;
+    case 'game':
+      return <Gamepad2 className={iconClass} />;
+    default:
+      return <Coffee className={iconClass} />;
   }
 };
 
@@ -52,22 +66,22 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   inventoryLoading,
   activeTab,
   onTabChange,
-  onBuyReward
+  onBuyReward,
 }) => {
   const canAfford = (cost: number) => (currentUser?.points ?? 0) >= cost;
 
   return (
-    <div className="rf-panel rf-elevated border-cyan-400/20 rounded-xl p-4 sm:p-6">
+    <div className="border-2 border-carbon bg-paper riso-shadow-md border-cyan-400/20 rounded-xl p-4 sm:p-6">
       {/* Tab Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2 bg-[#08152f] p-1 rounded-lg border border-cyan-400/20 self-start">
           <button
             onClick={() => onTabChange('shop')}
             data-testid="shop-tab"
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all rf-control ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all transition-colors ${
               activeTab === 'shop'
                 ? 'bg-[#0e355f] text-cyan-50 border border-cyan-300/35'
-                : 'text-[var(--rf-muted)] hover:text-white'
+                : 'text-carbon-muted hover:text-white'
             }`}
           >
             Mağaza
@@ -75,20 +89,20 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           <button
             onClick={() => onTabChange('inventory')}
             data-testid="inventory-tab"
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all rf-control ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all transition-colors ${
               activeTab === 'inventory'
                 ? 'bg-[#0e355f] text-cyan-50 border border-cyan-300/35'
-                : 'text-[var(--rf-muted)] hover:text-white'
+                : 'text-carbon-muted hover:text-white'
             }`}
           >
             Envanter ({inventory?.length ?? 0})
           </button>
         </div>
-        
+
         <div className="text-left sm:text-right">
-          <span className="text-[var(--rf-muted)] text-sm">Bakiye:</span>
+          <span className="text-carbon-muted text-sm">Bakiye:</span>
           <span className="text-amber-300 font-bold text-xl ml-2">
-            {(currentUser?.points ?? 0)} puan
+            {currentUser?.points ?? 0} puan
           </span>
         </div>
       </div>
@@ -102,40 +116,48 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-4">
               {rewards.map((reward) => {
                 const affordable = canAfford(reward.cost);
-                
+
                 return (
                   <motion.div
                     key={reward.id}
                     className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[205px] cursor-pointer ${
-                      affordable
-                        ? 'border-cyan-300/30'
-                        : 'border-cyan-900/45 opacity-60'
+                      affordable ? 'border-cyan-300/30' : 'border-cyan-900/45 opacity-60'
                     }`}
-                    whileHover={affordable ? { 
-                      y: -6, 
-                      boxShadow: '0 16px 34px rgba(0, 0, 0, 0.35)',
-                      borderColor: 'rgba(10, 215, 255, 0.4)'
-                    } : {}}
+                    whileHover={
+                      affordable
+                        ? {
+                            y: -6,
+                            boxShadow: '0 16px 34px rgba(0, 0, 0, 0.35)',
+                            borderColor: 'rgba(10, 215, 255, 0.4)',
+                          }
+                        : {}
+                    }
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
-                        <div className={`p-2 rounded-lg ${
-                          affordable ? 'bg-cyan-400/18 text-cyan-300' : 'bg-cyan-950/45 text-[var(--rf-muted)]'
-                        }`}>
+                        <div
+                          className={`p-2 rounded-lg ${
+                            affordable
+                              ? 'bg-cyan-400/18 text-riso-blue'
+                              : 'bg-cyan-950/45 text-carbon-muted'
+                          }`}
+                        >
                           {getRewardIcon(reward.icon)}
                         </div>
-                        <span className={`font-bold text-xl ${
-                          affordable ? 'text-white' : 'text-[var(--rf-muted)]'
-                        }`}>
+                        <span
+                          className={`font-bold text-xl ${
+                            affordable ? 'text-white' : 'text-carbon-muted'
+                          }`}
+                        >
                           {reward.cost}
                         </span>
                       </div>
-                      
+
                       <h4 className="text-base sm:text-lg font-bold text-white mb-1 break-words">
                         {reward.title}
                       </h4>
-                      <p className="text-xs text-[var(--rf-muted)] mb-4 break-words">
+                      <p className="text-xs text-carbon-muted mb-4 break-words">
                         {reward.description}
                       </p>
                     </div>
@@ -152,7 +174,9 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         className="w-full text-sm"
                       >
                         {affordable ? (
-                          <><ShoppingBag size={16} /> Satın Al</>
+                          <>
+                            <ShoppingBag size={16} /> Satın Al
+                          </>
                         ) : (
                           'Yetersiz Puan'
                         )}
@@ -193,10 +217,14 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                     className={`relative overflow-hidden font-mono shadow-lg ${
                       isUsed || isExpired ? 'grayscale opacity-70' : ''
                     }`}
-                    whileHover={!isUsed && !isExpired ? {
-                      rotate: [0, -1, 1, 0],
-                      transition: { duration: 0.3 }
-                    } : {}}
+                    whileHover={
+                      !isUsed && !isExpired
+                        ? {
+                            rotate: [0, -1, 1, 0],
+                            transition: { duration: 0.3 },
+                          }
+                        : {}
+                    }
                     whileTap={!isUsed && !isExpired ? { scale: 0.98 } : {}}
                   >
                     <div className="bg-[#fff8dc] text-black p-4 rounded h-full flex flex-col justify-between">
@@ -214,7 +242,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         )}
                         {isExpired && !isUsed && (
                           <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <div className="bg-cyan-950 text-cyan-100 font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-cyan-400/30 shadow-xl">
+                            <div className="bg-cyan-950 text-carbon font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-carbon-muted shadow-xl">
                               SÜRESİ DOLDU
                             </div>
                           </div>
@@ -254,8 +282,8 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
               title="Envanterin Boş"
               description="Henüz hiç kuponun yok. Mağazadan puanlarınla ödül satın alabilirsin!"
               action={{
-                label: "Mağazaya Git",
-                onClick: () => onTabChange('shop')
+                label: 'Mağazaya Git',
+                onClick: () => onTabChange('shop'),
               }}
               variant="compact"
             />

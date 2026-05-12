@@ -1,3 +1,6 @@
+/**
+ * Admin Input — Riso Kantin re-skin (PR #24). API preserved.
+ */
 import React, { forwardRef, useId } from 'react';
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -17,10 +20,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-[0.8125rem] font-medium text-[#3D332C] tracking-[0.01em]"
+            className="font-riso-body text-xs font-semibold uppercase tracking-[0.12em] text-carbon-soft"
           >
             {label}
-            {required && <span className="text-[#B14848] ml-0.5">*</span>}
+            {required && <span className="text-riso-redox ml-0.5">*</span>}
           </label>
         )}
         <input
@@ -30,23 +33,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           className={
-            'w-full rounded-lg bg-[#FAF7F0] border px-3.5 py-2.5 ' +
-            'text-[0.9375rem] text-[#1C1814] placeholder:text-[#8B7B6E] ' +
-            'transition-[border-color,box-shadow] duration-150 ' +
-            'focus:outline-none focus:ring-4 focus:ring-[#C2622F]/15 ' +
-            (error
-              ? 'border-[#B14848] focus:border-[#B14848] '
-              : 'border-[#D6C5AA] focus:border-[#C2622F] ') +
+            'w-full bg-paper border-2 px-3.5 py-2.5 font-riso-body ' +
+            'text-base text-carbon placeholder:text-carbon-muted ' +
+            'riso-focus ' +
+            (error ? 'border-riso-redox ' : 'border-carbon ') +
             className
           }
           {...rest}
         />
         {error ? (
-          <p id={`${inputId}-error`} className="text-[0.8125rem] text-[#B14848]">
+          <p id={`${inputId}-error`} className="text-sm font-medium text-riso-redox">
             {error}
           </p>
         ) : helper ? (
-          <p id={`${inputId}-helper`} className="text-[0.8125rem] text-[#6B5B4D]">
+          <p id={`${inputId}-helper`} className="text-sm text-carbon-muted">
             {helper}
           </p>
         ) : null}
