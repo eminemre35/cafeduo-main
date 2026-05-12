@@ -51,7 +51,7 @@ describe('CookieConsent', () => {
     expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'accepted');
   });
 
-  it('stores rejected consent after user clicks Reddet but keeps banner visible', async () => {
+  it('stores rejected consent after user clicks Reddet and dismisses the banner', async () => {
     (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
 
     render(<CookieConsent />);
@@ -61,9 +61,19 @@ describe('CookieConsent', () => {
 
     expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'rejected');
 
-    // Banner stays — rejected users must come back and accept to use the app
+    // Banner is dismissed so the user can browse the landing page. Enforcement
+    // happens at auth time (AuthModal blocks login/register when consent isn't
+    // accepted and re-opens this banner by clearing the rejected value).
     await waitFor(() => {
-      expect(screen.getByText('Çerez Kullanımı')).toBeInTheDocument();
+      expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
     });
+  });
+
+  it('does not show banner when consent is already rejected', () => {
+    (window.localStorage.getItem as jest.Mock).mockReturnValue('rejected');
+
+    render(<CookieConsent />);
+
+    expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
   });
 });

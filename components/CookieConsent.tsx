@@ -1,23 +1,21 @@
 /**
- * CookieConsent — Riso Kantin paper modal that gates the app behind explicit
- * consent. The banner now offers BOTH accept and reject:
+ * CookieConsent — non-blocking corner banner with explicit accept/reject.
  *
- *   - "Kabul Et" → stores 'true', dismisses, app continues normally.
- *   - "Reddet"   → stores 'false', the modal stays as a full-screen blocker
- *                  and the app cannot be used (login/register suppressed
- *                  via consentState read from localStorage elsewhere).
+ * The previous version was a full-screen modal that gated the homepage
+ * itself, which annoyed users who just wanted to browse the landing page.
+ * Now the banner is a dismissible card pinned to the bottom-right (mobile:
+ * bottom inset) — the rest of the app stays interactive behind it.
  *
- * Stored values:
- *   localStorage.cookie_consent = 'true' | 'false'
+ * Stored values (localStorage.cookie_consent):
+ *   - 'accepted' — dismissed, banner gone, auth flows allowed.
+ *   - 'rejected' — dismissed, banner gone, AuthModal.handleSubmit will block
+ *                  login/register and re-open this banner in pending state.
+ *   - missing    — first visit; banner shown.
+ *   - legacy 'true' is treated as 'accepted' for back-compat.
  *
- * Other parts of the app (AuthModal submit handler) read `cookie_consent`
- * before allowing auth; if it's 'false' or missing, the user is told they
- * must accept cookies to continue.
- *
- * The legacy `.cd-cookie-banner` class is intentionally NOT applied — that
- * class had legacy cyber-dark !important CSS in index.css (cyan border, dark
- * bg) that overrode the Riso paper styling. The legacy block is being kept
- * around for other transitional pages; we just opt out by not using it.
+ * The enforcement is intentionally *only* on auth (login/register). Browsing
+ * the landing pages doesn't require consent — we only set cookies after the
+ * user actually logs in.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -59,11 +57,6 @@ export const CookieConsent: React.FC = () => {
   const handleAccept = () => {
     localStorage.setItem(CONSENT_KEY, 'accepted');
     setState('accepted');
-    // No dispatch here — our own setState already reflects the new value,
-    // and dispatching would round-trip via the event listener which re-
-    // reads localStorage (in tests that's a mock that may not echo the
-    // setItem call). External callers that change consent should dispatch
-    // 'cookie-consent-changed' themselves to notify this component.
   };
 
   const handleReject = () => {
@@ -73,69 +66,59 @@ export const CookieConsent: React.FC = () => {
 
   if (!hydrated || !portalRoot) return null;
 
-  // Accepted → don't render anything. (Pending or rejected → show the
-  // modal so the user is asked again to make a choice / can re-accept.)
-  if (state === 'accepted') return null;
-
-  const isRejected = state === 'rejected';
+  // Only 'pending' shows the banner. 'accepted' obviously hides it; 'rejected'
+  // also hides it so the user can browse — auth flows will re-open the banner
+  // when they actually try to sign in.
+  if (state !== 'pending') return null;
 
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
+      role="region"
       aria-label="Çerez bildirimi"
-      className="riso-kantin fixed inset-0 z-[130] flex items-end justify-center p-4 sm:items-center"
+      className="riso-kantin pointer-events-none fixed bottom-4 left-4 right-4 z-[130] sm:left-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
     >
-      {/* Backdrop — full-screen ink wash blocks all interaction underneath
-       *  until a choice is made. Accepting unmounts the whole component. */}
-      <div className="absolute inset-0 bg-carbon/70 backdrop-blur-sm" aria-hidden="true" />
-
-      <div className="relative w-full max-w-md border-2 border-carbon bg-paper p-5 sm:p-6 riso-shadow-md">
-        {/* Riso confetti accents */}
+      <div className="pointer-events-auto relative border-2 border-carbon bg-paper p-4 riso-shadow-md">
+        {/* Sticker accent */}
         <div
           aria-hidden="true"
-          className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] pointer-events-none hidden sm:block"
+          className="absolute -top-2 right-6 h-2 w-12 bg-riso-mustard rotate-[-4deg] pointer-events-none hidden sm:block"
         />
+        <button
+          type="button"
+          onClick={handleReject}
+          aria-label="Reddet ve kapat"
+          className="riso-focus absolute top-2 right-2 w-7 h-7 border-2 border-carbon bg-paper text-carbon hover:bg-paper-deep flex items-center justify-center"
+        >
+          <X size={14} />
+        </button>
         <div className="flex items-start gap-3">
-          <div className="shrink-0 border-2 border-carbon bg-riso-mustard p-2.5 text-carbon flex">
-            <Cookie size={22} />
+          <div className="shrink-0 border-2 border-carbon bg-riso-mustard p-2 text-carbon flex">
+            <Cookie size={18} />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted font-riso-mono">
+          <div className="min-w-0 flex-1 pr-6">
+            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted font-riso-mono">
               Sistem bilgisi
             </p>
-            <h3 className="mb-1.5 text-lg font-bold uppercase tracking-[0.06em] text-carbon font-riso-display">
+            <h3 className="mb-1 text-sm font-bold uppercase tracking-[0.06em] text-carbon font-riso-display">
               Çerez Kullanımı
             </h3>
-            <p className="mb-1 break-words text-sm leading-6 text-carbon font-riso-body">
-              CafeDuo deneyimini iyileştirmek ve kafe konum doğrulamasını çalıştırmak için zorunlu
-              çerezleri kullanır.
-            </p>
-            <p className="mb-4 text-xs leading-5 text-carbon-soft font-riso-body">
-              Devam etmek için çerezleri kabul etmen gerekir. Reddedersen giriş yapamazsın.
+            <p className="mb-3 break-words text-xs leading-5 text-carbon-soft font-riso-body">
+              Giriş yapmak için çerezleri kabul etmen gerekir. Sadece anasayfayı gezeceksen
+              reddedebilirsin.
             </p>
 
-            {isRejected && (
-              <div className="mb-3 border-2 border-carbon border-l-[6px] border-l-riso-redox bg-riso-redox/15 p-3 text-xs text-carbon font-riso-body flex items-start gap-2">
-                <X size={14} className="shrink-0 mt-0.5 text-riso-redox" />
-                <span>
-                  Çerezleri reddettin. CafeDuo'yu kullanmak için aşağıdaki tuşla onay vermelisin.
-                </span>
-              </div>
-            )}
-
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleReject}
-                className="riso-focus flex-1 border-2 border-carbon bg-paper-deep text-carbon py-2.5 text-sm font-bold uppercase tracking-[0.08em] font-riso-display transition-all hover:bg-paper-dim"
+                className="riso-focus flex-1 border-2 border-carbon bg-paper-deep text-carbon py-2 text-xs font-bold uppercase tracking-[0.08em] font-riso-display transition-all hover:bg-paper-dim"
               >
                 Reddet
               </button>
               <button
                 type="button"
                 onClick={handleAccept}
-                className="riso-focus riso-press flex-1 border-2 border-carbon bg-riso-pink text-carbon py-2.5 text-sm font-bold uppercase tracking-[0.1em] font-riso-display transition-all riso-shadow-sm hover:-translate-y-[1px]"
+                className="riso-focus riso-press flex-1 border-2 border-carbon bg-riso-pink text-carbon py-2 text-xs font-bold uppercase tracking-[0.1em] font-riso-display transition-all riso-shadow-sm hover:-translate-y-[1px]"
               >
                 Kabul Et
               </button>
