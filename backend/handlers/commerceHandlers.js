@@ -535,28 +535,20 @@ const createCommerceHandlers = ({
     });
   };
 
-  return {
-    createReward,
-    getRewards,
-    deleteReward,
-    buyShopItem,
-    getUserItems,
-    useCoupon,
-    getShopInventory,
-    getDailyWheel,
-    spinDailyWheel,
-    setCafeWheel,
-  };
-
   /**
    * Per-cafe daily reward wheel. Each cafe owns a JSONB array of
    * `{points, weight}` slices; users spin once per Turkish calendar day
    * per cafe. Unique constraint on (user_id, cafe_id, DATE(spun_at TZ))
    * is the race-condition primitive — a second concurrent INSERT throws
    * 23505 which we surface as "zaten çevirdin".
+   *
+   * Declared BEFORE the return statement (originally these were function
+   * declarations after the return, which hoisted but surfaced a runtime
+   * 500 after deploy — bundler/runtime hoisting subtlety). Linear order
+   * now: declare, then return.
    */
 
-  function getDailyWheel(req, res) {
+  const getDailyWheel = async (req, res) => {
     const userId = Number(req.user?.id);
     const cafeId = Number(req.params?.cafeId ?? req.user?.cafe_id ?? 0);
     if (!cafeId) {
@@ -596,14 +588,23 @@ const createCommerceHandlers = ({
             lastSpin: spinRes.rows[0] || null,
           });
         } catch (err) {
+          // Extra detail in the log so the user-facing 500 has context
+          // when we tail the API container later.
+          logger.error('Get wheel SQL failure', {
+            userId,
+            cafeId,
+            message: err?.message,
+            code: err?.code,
+            stack: err?.stack,
+          });
           return sendApiError(res, logger, 'Get wheel error', err, 'Çark yüklenemedi.');
         }
       },
       memory: async () => res.json({ cafeId, wheel: [], alreadySpunToday: false, lastSpin: null }),
     });
-  }
+  };
 
-  async function spinDailyWheel(req, res) {
+  const spinDailyWheel = async (req, res) => {
     const userId = Number(req.user?.id);
     const cafeId = Number(req.params?.cafeId ?? req.user?.cafe_id ?? 0);
     if (!cafeId) {
@@ -704,10 +705,10 @@ const createCommerceHandlers = ({
     } finally {
       client.release();
     }
-  }
+  };
 
   /** Cafe admin endpoint — overwrite this cafe's wheel slices. */
-  async function setCafeWheel(req, res) {
+  const setCafeWheel = async (req, res) => {
     const adminCafeId = Number(req.user?.cafe_id ?? 0);
     const isSuper = String(req.user?.role || '') === 'admin';
     const targetCafeId = Number(req.params?.cafeId ?? adminCafeId);
@@ -766,7 +767,20 @@ const createCommerceHandlers = ({
     } catch (err) {
       return sendApiError(res, logger, 'Set wheel error', err, 'Çark güncellenemedi.');
     }
-  }
+  };
+
+  return {
+    createReward,
+    getRewards,
+    deleteReward,
+    buyShopItem,
+    getUserItems,
+    useCoupon,
+    getShopInventory,
+    getDailyWheel,
+    spinDailyWheel,
+    setCafeWheel,
+  };
 };
 
 module.exports = {

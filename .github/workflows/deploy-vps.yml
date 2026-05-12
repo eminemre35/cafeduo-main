@@ -182,13 +182,18 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          # PR #36 — Resend API key for password reset emails. Optional —
+          # if unset, the email service falls back to nodemailer SMTP and
+          # then to log-only mode. Stored as its own secret so rotating it
+          # doesn't require re-encoding the whole DEPLOY_ENV_B64 blob.
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           APP_VERSION="${GITHUB_SHA}"
           APP_BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' APP_VERSION='${APP_VERSION}' APP_BUILD_TIME='${APP_BUILD_TIME}' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' RESEND_API_KEY='${RESEND_API_KEY}' APP_VERSION='${APP_VERSION}' APP_BUILD_TIME='${APP_BUILD_TIME}' bash -s" <<'REMOTE'
             set -euo pipefail
 
             if ! command -v docker >/dev/null 2>&1; then
@@ -214,8 +219,13 @@ jobs:
 
             cd "$DEPLOY_PATH"
             echo "$DEPLOY_ENV_B64" | base64 -d > .env
-            grep -Ev '^(APP_VERSION|APP_BUILD_TIME)=' .env > .env.tmp || true
+            grep -Ev '^(APP_VERSION|APP_BUILD_TIME|RESEND_API_KEY)=' .env > .env.tmp || true
             printf 'APP_VERSION=%s\nAPP_BUILD_TIME=%s\n' "$APP_VERSION" "$APP_BUILD_TIME" >> .env.tmp
+            # Append RESEND_API_KEY only when the secret is actually set, so
+            # local/dev environments without it keep falling back to log-only.
+            if [ -n "${RESEND_API_KEY:-}" ]; then
+              printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> .env.tmp
+            fi
             mv .env.tmp .env
 
             port_in_use() {
