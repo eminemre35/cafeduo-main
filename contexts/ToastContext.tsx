@@ -38,9 +38,9 @@ const ToastIcon = ({ type }: { type: ToastType }) => {
     case 'success':
       return <CheckCircle className="w-5 h-5 text-green-500" />;
     case 'error':
-      return <XCircle className="w-5 h-5 text-red-500" />;
+      return <XCircle className="w-5 h-5 text-riso-redox" />;
     case 'warning':
-      return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+      return <AlertCircle className="w-5 h-5 text-riso-mustard-deep" />;
     case 'loading':
       return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
     default:
@@ -51,7 +51,7 @@ const ToastIcon = ({ type }: { type: ToastType }) => {
 // Toast renkleri
 const ToastStyles = {
   success: 'border-l-4 border-green-500 bg-gray-900',
-  error: 'border-l-4 border-red-500 bg-gray-900',
+  error: 'border-l-4 border-riso-redox bg-gray-900',
   warning: 'border-l-4 border-yellow-500 bg-gray-900',
   loading: 'border-l-4 border-blue-500 bg-gray-900',
 };
@@ -106,14 +106,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               animate={{ x: 0, opacity: 1, scale: 1 }}
               exit={{ x: 100, opacity: 0, scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className={`${ToastStyles[t.type]} rounded-lg shadow-lg p-4 flex items-center gap-3 pointer-events-auto backdrop-blur-sm w-full sm:w-[360px]`}
+              className={`${ToastStyles[t.type]} rounded-lg shadow-lg p-4 flex items-center gap-3 pointer-events-auto  w-full sm:w-[360px]`}
             >
               <ToastIcon type={t.type} />
               <p className="text-white text-sm flex-1">{t.message}</p>
               <motion.button
                 data-testid="toast-close"
                 onClick={() => dismissToast(t.id)}
-                className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-paper-deep"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >

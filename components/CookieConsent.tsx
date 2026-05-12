@@ -30,15 +30,19 @@ export const CookieConsent: React.FC = () => {
       aria-label="Çerez bildirimi"
       className="cd-cookie-banner pointer-events-none fixed md:left-auto md:right-6 md:w-[26rem]"
     >
-      <div className="pointer-events-auto rounded-md border border-white/10 bg-[#0a1018]/95 p-3 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-3.5">
+      <div className="pointer-events-auto rounded-md border border-carbon-muted bg-[#F2EAD8]/95 p-3 shadow-2xl shadow-black/30 -xl sm:p-3.5">
         <div className="flex items-start gap-3">
-          <div className="hidden shrink-0 rounded-md border border-white/10 bg-white/[0.04] p-2.5 text-slate-200 sm:flex">
+          <div className="hidden shrink-0 rounded-md border border-carbon-muted bg-paper p-2.5 text-carbon-soft sm:flex">
             <Cookie size={22} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Sistem bilgisi</p>
-            <h3 className="mb-1.5 text-sm font-bold uppercase tracking-[0.08em] text-white sm:text-base">Çerez Kullanımı</h3>
-            <p className="mb-2.5 break-words text-xs leading-5 text-slate-400 sm:text-[13px]">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted">
+              Sistem bilgisi
+            </p>
+            <h3 className="mb-1.5 text-sm font-bold uppercase tracking-[0.08em] text-white sm:text-base">
+              Çerez Kullanımı
+            </h3>
+            <p className="mb-2.5 break-words text-xs leading-5 text-carbon-muted sm:text-[13px]">
               Deneyim ve konum doğrulaması için gerekli çerezleri kullanıyoruz.
             </p>
             <button

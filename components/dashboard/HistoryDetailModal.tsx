@@ -40,7 +40,7 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
   if (!isOpen || !history) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper/95 ">
       <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden border-[3px] border-riso-blue bg-paper-deep shadow-[16px_16px_0_rgba(0,243,255,0.2)]">
         <div className="px-6 py-4 border-b-[3px] border-riso-blue bg-riso-blue/10 flex items-center justify-between">
           <div>

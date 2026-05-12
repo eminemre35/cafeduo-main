@@ -54,25 +54,27 @@ export const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <section className="rf-section rf-page-shell noise-bg min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md rf-screen-card p-6 md:p-8 rf-elevated">
-        <p className="rf-terminal-strip">CafeDuo Güvenlik</p>
-        <h1 className="font-display-tr text-4xl leading-[1.05] text-white mt-3 mb-3 tracking-[0.08em]">
+    <section className="rf-section bg-paper  min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md border-2 border-carbon bg-paper riso-shadow-sm p-6 md:p-8 riso-shadow-md">
+        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
+          CafeDuo Güvenlik
+        </p>
+        <h1 className="font-riso-display text-4xl leading-[1.05] text-white mt-3 mb-3 tracking-[0.08em]">
           Şifreyi Yenile
         </h1>
-        <p className="text-[var(--rf-muted)] text-sm mb-5">
+        <p className="text-carbon-muted text-sm mb-5">
           Yeni bir şifre belirleyerek hesabınıza güvenli şekilde tekrar giriş yapabilirsiniz.
         </p>
 
         {error && (
-          <div className="mb-4 border border-red-400/45 bg-red-500/12 text-red-100 px-3 py-2.5 text-sm flex items-center gap-2">
+          <div className="mb-4 border border-riso-redox/45 bg-riso-redox/12 text-red-100 px-3 py-2.5 text-sm flex items-center gap-2">
             <AlertTriangle size={16} className="shrink-0" />
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-4 border border-emerald-400/45 bg-emerald-500/12 text-emerald-100 px-3 py-2.5 text-sm flex items-center gap-2">
+          <div className="mb-4 border border-riso-spring/45 bg-emerald-500/12 text-emerald-100 px-3 py-2.5 text-sm flex items-center gap-2">
             <CheckCircle2 size={16} className="shrink-0" />
             {successMessage}
           </div>
@@ -80,14 +82,19 @@ export const ResetPasswordPage: React.FC = () => {
 
         <form className="space-y-3.5" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.16em] text-[var(--rf-muted)] mb-2 block">Yeni Şifre</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-carbon-muted mb-2 block">
+              Yeni Şifre
+            </span>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" size={17} />
+              <Lock
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
+                size={17}
+              />
               <input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="rf-input pl-10 pr-3"
+                className="border-2 border-carbon bg-paper pl-10 pr-3"
                 placeholder="Yeni şifre"
                 autoComplete="new-password"
               />
@@ -95,14 +102,19 @@ export const ResetPasswordPage: React.FC = () => {
           </label>
 
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.16em] text-[var(--rf-muted)] mb-2 block">Şifre Tekrar</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-carbon-muted mb-2 block">
+              Şifre Tekrar
+            </span>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" size={17} />
+              <Lock
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
+                size={17}
+              />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                className="rf-input pl-10 pr-3"
+                className="border-2 border-carbon bg-paper pl-10 pr-3"
                 placeholder="Yeni şifre tekrar"
                 autoComplete="new-password"
               />
@@ -130,7 +142,7 @@ export const ResetPasswordPage: React.FC = () => {
 
         <Link
           to="/"
-          className="mt-4 inline-flex items-center text-sm text-cyan-300 hover:text-cyan-200 transition-colors"
+          className="mt-4 inline-flex items-center text-sm text-riso-blue hover:text-carbon-soft transition-colors"
         >
           Ana sayfaya dön ve giriş yap
         </Link>

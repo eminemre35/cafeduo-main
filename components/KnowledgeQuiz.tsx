@@ -204,7 +204,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
             </h2>
             <button
               onClick={onLeave}
-              className="shrink-0 px-3 py-2 border border-rose-400/45 bg-rose-500/12 text-rose-200 hover:bg-rose-500/24 transition-colors text-xs uppercase tracking-[0.16em]"
+              className="shrink-0 px-3 py-2 border border-riso-pink/45 bg-riso-pink/15 text-riso-pink-deep hover:bg-riso-pink/24 transition-colors text-xs uppercase tracking-[0.16em]"
             >
               Oyundan Çık
             </button>
@@ -254,7 +254,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
             {floatingScore && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                 <span
-                  className={`text-6xl font-bold animate-float-up ${floatingScore === '+1' ? 'text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.6)]' : 'text-rose-400 drop-shadow-[0_0_20px_rgba(244,63,94,0.6)]'}`}
+                  className={`text-6xl font-bold animate-float-up ${floatingScore === '+1' ? 'text-riso-spring drop-shadow-[0_0_20px_rgba(52,211,153,0.6)]' : 'text-riso-pink-deep drop-shadow-[0_0_20px_rgba(244,63,94,0.6)]'}`}
                 >
                   {floatingScore}
                 </span>
@@ -272,14 +272,14 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                 const isCorrect = idx === currentQuestion.answerIndex;
                 const stateClass =
                   selectedOption === null
-                    ? 'border-carbon-muted hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70 hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(34,211,238,0.15)]'
+                    ? 'border-carbon-muted hover:border-carbon-muted bg-[#F2EAD8]/70 hover:bg-[#15305f]/70 hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(34,211,238,0.15)]'
                     : isPicked && isCorrect
-                      ? 'border-emerald-400/60 bg-emerald-500/25 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-[1.02]'
+                      ? 'border-riso-spring/60 bg-riso-spring/25 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-[1.02]'
                       : isPicked
-                        ? 'border-rose-400/60 bg-rose-500/25 shadow-[0_0_20px_rgba(244,63,94,0.3)] scale-[1.02]'
+                        ? 'border-riso-pink/60 bg-riso-pink/25 shadow-[0_0_20px_rgba(244,63,94,0.3)] scale-[1.02]'
                         : isCorrect
-                          ? 'border-emerald-400/40 bg-emerald-500/15'
-                          : 'border-cyan-400/20 bg-[#0d1f40]/55 opacity-60';
+                          ? 'border-riso-spring/40 bg-riso-spring/15'
+                          : 'border-carbon-muted bg-[#F2EAD8]/55 opacity-60';
                 const leftBorderClass =
                   selectedOption === null
                     ? 'hover:border-l-4'
@@ -303,14 +303,14 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
                       ${
                         selectedOption === null
-                          ? 'bg-cyan-400/20 text-riso-blue'
+                          ? 'bg-riso-blue/20 text-riso-blue'
                           : isPicked && isCorrect
                             ? 'bg-emerald-400 text-white'
                             : isPicked
                               ? 'bg-rose-400 text-white'
                               : isCorrect
-                                ? 'bg-emerald-400/30 text-emerald-300'
-                                : 'bg-cyan-400/10 text-riso-blue/50'
+                                ? 'bg-emerald-400/30 text-riso-spring'
+                                : 'bg-riso-blue/10 text-riso-blue/50'
                       }`}
                       >
                         {String.fromCharCode(65 + idx)}

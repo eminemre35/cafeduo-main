@@ -22,7 +22,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onOpenProfile,
 }) => {
   return (
-    <div className="border-2 border-carbon bg-paper border-cyan-400/20 rounded-xl p-4 md:p-5 mb-6">
+    <div className="border-2 border-carbon bg-paper border-carbon-muted rounded-xl p-4 md:p-5 mb-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
@@ -43,8 +43,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <div
             className={`inline-flex items-center gap-2 self-start sm:self-auto rounded-full px-3 py-1.5 border ${
               isMatched
-                ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-300'
-                : 'border-cyan-500/28 bg-cyan-950/25 text-carbon-muted'
+                ? 'border-riso-spring/35 bg-emerald-500/10 text-riso-spring'
+                : 'border-riso-blue/28 bg-paper-deep/25 text-carbon-muted'
             }`}
             data-testid="table-status"
           >
@@ -57,7 +57,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
           <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-points">
-            <div className="flex items-center gap-1.5 text-amber-300 mb-1">
+            <div className="flex items-center gap-1.5 text-riso-mustard mb-1">
               <Star size={15} />
               <span className="text-[10px] uppercase tracking-[0.1em]">Puan</span>
             </div>

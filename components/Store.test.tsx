@@ -97,24 +97,18 @@ describe('Store', () => {
   });
 
   const renderStore = (user: User | null = mockUser) =>
-    render(
-      <Store
-        user={user}
-        updateUser={updateUser}
-        onShowToast={toast}
-      />
-    );
+    render(<Store user={user} updateUser={updateUser} onShowToast={toast} />);
 
   it('shows loading state before store data resolves', () => {
     renderStore();
 
-    expect(screen.getByText('MARKET_AĞI_TARANIYOR...')).toBeInTheDocument();
+    expect(screen.getByText(/Pazar yükleniyor/i)).toBeInTheDocument();
   });
 
   it('loads items and inventory for signed-in users', async () => {
     renderStore();
 
-    expect(await screen.findByText('Siber Pazar')).toBeInTheDocument();
+    expect(await screen.findByText('Mağaza')).toBeInTheDocument();
     expect(screen.getByText('Altin Cerceve')).toBeInTheDocument();
     expect(screen.getByText('Efsane Unvan')).toBeInTheDocument();
     expect(screen.getByText(/300/i)).toBeInTheDocument();
@@ -125,10 +119,10 @@ describe('Store', () => {
   it('skips inventory fetch for guests and blocks purchasing', async () => {
     renderStore(null);
 
-    expect(await screen.findByText('Siber Pazar')).toBeInTheDocument();
+    expect(await screen.findByText('Mağaza')).toBeInTheDocument();
     expect(api.store.inventory).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'GİRİŞ YAP' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Giriş Yap' })[0]);
 
     expect(toast.error).toHaveBeenCalledWith('Satın alım için giriş yapmalısınız.');
   });
@@ -136,11 +130,11 @@ describe('Store', () => {
   it('warns when the user does not have enough points', async () => {
     renderStore({ ...mockUser, points: 100 });
 
-    expect(await screen.findByText('Siber Pazar')).toBeInTheDocument();
+    expect(await screen.findByText('Mağaza')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'YETERSİZ BAKİYE' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Yetersiz Bakiye' })[0]);
 
-    expect(toast.warning).toHaveBeenCalledWith('Yetersiz Cyber-Creds (Puan)');
+    expect(toast.warning).toHaveBeenCalledWith('Yetersiz puan');
     expect(api.store.buy).not.toHaveBeenCalled();
   });
 
@@ -149,7 +143,7 @@ describe('Store', () => {
 
     expect(await screen.findByText('Altin Cerceve')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'SATIN AL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Satın Al' }));
 
     await waitFor(() => {
       expect(api.store.buy).toHaveBeenCalledWith(1);
@@ -158,7 +152,7 @@ describe('Store', () => {
     expect(toast.success).toHaveBeenCalledWith('Altin Cerceve başarıyla satın alındı!');
     expect(updateUser).toHaveBeenCalledWith({ points: 150 });
     await waitFor(() => {
-      expect(screen.getByText(/SATIN ALINDI/i, { selector: 'span' })).toBeInTheDocument();
+      expect(screen.getByText(/Satın Alındı/i, { selector: 'span' })).toBeInTheDocument();
     });
   });
 
@@ -172,7 +166,7 @@ describe('Store', () => {
 
     expect(await screen.findByText('Altin Cerceve')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'SATIN AL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Satın Al' }));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Bu urune zaten sahipsiniz');

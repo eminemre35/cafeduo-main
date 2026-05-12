@@ -14,7 +14,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { RetroButton } from './RetroButton';
-import { CyberMascot, MascotMood } from './CyberMascot';
 import { User as UserType } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
@@ -242,20 +241,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'w-full min-h-12 bg-black/40 border-2 text-cyan-50 font-body text-base leading-6 group-[.is-error]:text-red-100 outline-none transition-colors duration-200 placeholder:text-cyan-800/60 pl-11 pr-12 cursor-text';
+    'w-full min-h-12 bg-carbon/40 border-2 text-cyan-50 font-riso-body text-base leading-6 group-[.is-error]:text-red-100 outline-none transition-colors duration-200 placeholder:text-carbon-muted/60 pl-11 pr-12 cursor-text';
   const inputBorderClass =
-    'border-cyan-900/40 focus:border-riso-pink focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
+    'border-carbon-muted/40 focus:border-riso-pink focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
   const inputErrorClass =
     'border-riso-redox/50 focus:border-riso-redox focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)]';
   const iconBaseClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-cyan-700 pointer-events-none transition-colors group-focus-within:text-riso-pink-deep group-[.is-error]:text-riso-redox z-10';
-
-  const mascotMood: MascotMood =
-    (error || Object.keys(fieldErrors).length > 0) && hasSubmitted
-      ? 'angry'
-      : username.length > 0 || email.length > 0 || password.length > 0
-        ? 'typing'
-        : 'neutral';
+    'absolute left-4 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none transition-colors group-focus-within:text-riso-pink-deep group-[.is-error]:text-riso-redox z-10';
 
   if (!isOpen) return null;
 
@@ -277,15 +269,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         />
 
         {/* Modal Container Wrapper for absolute positioning */}
-        <div className="cd-auth-shell relative w-full max-w-[520px] max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
-          {/* Mascot */}
-          <CyberMascot
-            mood={mascotMood}
-            className="hidden sm:block absolute -top-[70px] right-[40px] z-10"
-          />
-
+        <div className="riso-kantin relative w-full max-w-[520px] max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
           <motion.div
-            className="cd-auth-panel relative w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-[#050608] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.88),12px_12px_0_rgba(16,231,255,0.16)] sm:rounded-none overflow-hidden flex flex-col"
+            className="relative w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col"
             initial={{ y: 24, opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0.5 }}
@@ -297,12 +283,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
 
             {/* Header Bar */}
-            <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b-2 border-cyan-900/50 flex-shrink-0 bg-black/40 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-cyan-400 to-transparent opacity-50"></div>
+            <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b-2 border-carbon-muted/50 flex-shrink-0 bg-carbon/40 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-[1px] from-cyan-400 to-transparent opacity-50"></div>
               <div>
-                <p className="font-body text-riso-pink-deep tracking-widest text-xs uppercase font-bold relative inline-block">
+                <p className="font-riso-body text-riso-pink-deep tracking-widest text-xs uppercase font-bold relative inline-block">
                   Güvenli Erişim
-                  <span className="absolute -top-1 -right-2 w-1.5 h-1.5 bg-pink-500 animate-pulse"></span>
+                  <span className="absolute -top-1 -right-2 w-1.5 h-1.5 bg-riso-pink animate-pulse"></span>
                 </p>
                 <h2
                   className="font-riso-display text-carbon text-3xl md:text-3xl uppercase mt-1 tracking-wider glitch-text-safe"
@@ -313,7 +299,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <motion.button
                 onClick={onClose}
-                className="w-10 h-10 border-2 border-cyan-900/50 text-riso-pink-deep bg-black/50 hover:border-pink-500 hover:text-pink-500 flex items-center justify-center transition-colors group"
+                className="w-10 h-10 border-2 border-carbon-muted/50 text-riso-pink-deep bg-black/50 hover:border-riso-pink hover:text-riso-pink-deep flex items-center justify-center transition-colors group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -329,8 +315,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClick={() => switchMode('login')}
                   className={`flex-1 h-12 font-riso-display text-lg uppercase tracking-wider transition-colors border-b-2 ${
                     mode === 'login'
-                      ? 'text-riso-pink-deep border-riso-pink bg-cyan-950/30'
-                      : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-carbon-soft hover:bg-cyan-950/25'
+                      ? 'text-riso-pink-deep border-riso-pink bg-paper-deep/30'
+                      : 'text-carbon-muted border-carbon-muted/45 hover:text-carbon-soft hover:bg-paper-deep/25'
                   }`}
                 >
                   <span className="block">GİRİŞ YAP</span>
@@ -340,8 +326,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClick={() => switchMode('register')}
                   className={`flex-1 h-12 font-riso-display text-lg uppercase tracking-wider transition-colors border-b-2 ${
                     mode === 'register'
-                      ? 'text-pink-400 border-pink-500 bg-pink-950/20'
-                      : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-carbon-soft hover:bg-cyan-950/25'
+                      ? 'text-riso-pink-deep border-pink-500 bg-pink-950/20'
+                      : 'text-carbon-muted border-carbon-muted/45 hover:text-carbon-soft hover:bg-paper-deep/25'
                   }`}
                 >
                   <span className="block">KAYIT OL</span>
@@ -349,13 +335,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border-l-4 border-riso-redox text-riso-redox px-4 py-3 font-body text-sm flex items-center gap-3 animate-pulse">
-                  <AlertTriangle size={18} className="shrink-0 text-red-500" />
+                <div className="bg-riso-redox/10 border-l-4 border-riso-redox text-riso-redox px-4 py-3 font-riso-body text-sm flex items-center gap-3 animate-pulse">
+                  <AlertTriangle size={18} className="shrink-0 text-riso-redox" />
                   {error}
                 </div>
               )}
               {forgotMessage && (
-                <div className="bg-cyan-500/10 border-l-4 border-riso-pink text-carbon-soft px-4 py-3 font-body text-sm">
+                <div className="bg-riso-blue/10 border-l-4 border-riso-pink text-carbon-soft px-4 py-3 font-riso-body text-sm">
                   {forgotMessage}
                 </div>
               )}
@@ -387,7 +373,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       )}
                     </div>
                     {fieldErrors.username && touched.username && (
-                      <p className="text-riso-redox text-xs flex items-center gap-1 font-body">
+                      <p className="text-riso-redox text-xs flex items-center gap-1 font-riso-body">
                         <AlertTriangle size={12} /> {fieldErrors.username}
                       </p>
                     )}
@@ -397,16 +383,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <select
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
-                        className={`${inputBaseClass} ${inputBorderClass} rf-input-icon-double appearance-none cursor-pointer`}
+                        className={`${inputBaseClass} ${inputBorderClass} border-2 border-carbon bg-paper-icon-double appearance-none cursor-pointer`}
                       >
-                        <option value="" className="bg-black text-[var(--rf-muted)]">
+                        <option value="" className="bg-carbon text-carbon-muted">
                           Bölüm seçiniz (isteğe bağlı)
                         </option>
                         {PAU_DEPARTMENTS.map((dept) => (
                           <option
                             key={dept}
                             value={dept}
-                            className="bg-black border-2 border-cyan-900/50 text-carbon font-body px-2"
+                            className="bg-carbon border-2 border-carbon-muted/50 text-carbon font-riso-body px-2"
                           >
                             {dept}
                           </option>
@@ -414,7 +400,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       </select>
                       <ChevronDown
                         size={16}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-cyan-600/70"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-carbon-muted/70"
                       />
                     </div>
                   </>
@@ -443,7 +429,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   )}
                 </div>
                 {fieldErrors.email && touched.email && (
-                  <p className="text-riso-redox text-xs flex items-center gap-1 font-body">
+                  <p className="text-riso-redox text-xs flex items-center gap-1 font-riso-body">
                     <AlertTriangle size={12} /> {fieldErrors.email}
                   </p>
                 )}
@@ -470,14 +456,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-riso-pink-deep transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-carbon-muted hover:text-riso-pink-deep transition-colors"
                         aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
                     {fieldErrors.password && touched.password && (
-                      <p className="text-riso-redox text-xs flex items-center gap-1 font-body">
+                      <p className="text-riso-redox text-xs flex items-center gap-1 font-riso-body">
                         <AlertTriangle size={12} /> {fieldErrors.password}
                       </p>
                     )}
@@ -492,7 +478,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setError('');
                       setForgotMessage('');
                     }}
-                    className="text-sm font-body text-riso-pink-deep/80 hover:text-riso-pink-deep hover:underline transition-colors block text-right w-full"
+                    className="text-sm font-riso-body text-riso-pink-deep/80 hover:text-riso-pink-deep hover:underline transition-colors block text-right w-full"
                   >
                     Şifremi unuttum
                   </button>
@@ -528,7 +514,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-2">
                 {mode === 'login' && !isForgotPasswordMode && (
-                  <p className="text-center text-[var(--rf-muted)] text-sm">
+                  <p className="text-center text-carbon-muted text-sm">
                     Hesabınız yok mu?{' '}
                     <button
                       type="button"
@@ -540,7 +526,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </p>
                 )}
                 {mode === 'login' && isForgotPasswordMode && (
-                  <p className="text-center text-[var(--rf-muted)] text-sm">
+                  <p className="text-center text-carbon-muted text-sm">
                     Şifrenizi hatırladınız mı?{' '}
                     <button
                       type="button"
@@ -554,7 +540,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </button>
                   </p>
                 )}
-                <p className="text-center text-[11px] text-[var(--rf-muted)]">
+                <p className="text-center text-[11px] text-carbon-muted">
                   Giriş sonrası hesabınızın rolüne göre otomatik olarak uygun panele
                   yönlendirilirsiniz.
                 </p>

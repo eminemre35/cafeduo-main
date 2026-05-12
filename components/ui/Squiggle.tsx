@@ -6,12 +6,10 @@
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
 
 interface SquiggleProps {
   /** Stroke colour token. */
   tone?: 'pink' | 'blue' | 'mustard';
-  /** Width in pixels — should match the underlying headline. Pass via CSS for fluid widths. */
   className?: string;
 }
 
@@ -21,6 +19,11 @@ const TONE_HEX: Record<NonNullable<SquiggleProps['tone']>, string> = {
   mustard: '#F1B41E',
 };
 
+/**
+ * Hand-drawn-looking SVG underline. Pure SVG (no framer-motion) so it stays
+ * test-mock-friendly; the optional draw-in entrance is done with a CSS
+ * `@keyframes` definition on `.riso-squiggle-draw` (see index.css).
+ */
 export const Squiggle: React.FC<SquiggleProps> = ({ tone = 'pink', className = '' }) => (
   <svg
     aria-hidden="true"
@@ -28,15 +31,12 @@ export const Squiggle: React.FC<SquiggleProps> = ({ tone = 'pink', className = '
     preserveAspectRatio="none"
     className={['block h-2 w-full', className].join(' ')}
   >
-    <motion.path
+    <path
       d="M0 4 Q 10 0, 20 4 T 40 4 T 60 4 T 80 4 T 100 4 T 120 4"
       stroke={TONE_HEX[tone]}
       strokeWidth={2.5}
       strokeLinecap="round"
       fill="none"
-      initial={{ pathLength: 0 }}
-      animate={{ pathLength: 1 }}
-      transition={{ duration: 0.8, ease: 'easeOut' }}
     />
   </svg>
 );

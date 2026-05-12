@@ -82,14 +82,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[115] flex items-center justify-center px-4">
-      <div
-        className="absolute inset-0 bg-[#02050f]/85 backdrop-blur-sm noise-bg"
-        onClick={onClose}
-      ></div>
+      <div className="absolute inset-0 bg-[#FBF7EE]/85  " onClick={onClose}></div>
 
-      <div className="relative w-full max-w-md bg-[#050a19] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.8)] sm:rounded-none overflow-hidden flex flex-col noise-bg">
+      <div className="relative w-full max-w-md bg-[#050a19] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.8)] sm:rounded-none overflow-hidden flex flex-col ">
         {/* Cyber ID Card Header */}
-        <div className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 p-[2px]">
+        <div className="from-cyan-500 via-purple-500 to-pink-500 p-[2px]">
           <div className="bg-[#050a19] p-5 flex justify-between items-start relative overflow-hidden">
             {/* Background Lines */}
             <div
@@ -101,19 +98,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             ></div>
 
             <div className="flex gap-4 relative z-10 w-full">
-              <div className="w-20 h-20 bg-black border-2 border-cyan-400 skew-x-[-5deg] overflow-hidden flex items-center justify-center shadow-[4px_4px_0_rgba(255,0,234,0.3)] shrink-0">
-                <span className="font-display text-4xl text-cyan-400 skew-x-[5deg]">
+              <div className="w-20 h-20 bg-carbon border-2 border-cyan-400  overflow-hidden flex items-center justify-center shadow-[4px_4px_0_rgba(255,0,234,0.3)] shrink-0">
+                <span className="font-riso-display text-4xl text-riso-pink-deep ">
                   {(user.username || '?').substring(0, 2).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <h2
-                  className="font-display text-2xl text-white tracking-widest truncate uppercase glitch-text"
+                  className="font-riso-display text-2xl text-white tracking-widest truncate uppercase glitch-text"
                   data-text={user.username}
                 >
                   {user.username}
                 </h2>
-                <span className="text-xs font-body text-pink-500 block mt-1 tracking-widest">
+                <span className="text-xs font-riso-body text-riso-pink-deep block mt-1 tracking-widest">
                   ID: #{user.id.toString().padStart(6, '0')}
                 </span>
 
@@ -124,7 +121,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       <select
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
-                        className="bg-black border border-cyan-900/50 text-cyan-50 font-body text-xs px-2 py-1 outline-none w-48"
+                        className="bg-carbon border border-carbon-muted/50 text-cyan-50 font-riso-body text-xs px-2 py-1 outline-none w-48"
                       >
                         <option value="">Bölüm Seçiniz</option>
                         {PAU_DEPARTMENTS.map((dept) => (
@@ -136,7 +133,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                        className="text-riso-spring hover:text-riso-spring transition-colors"
                       >
                         <Save size={16} />
                       </button>
@@ -150,14 +147,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         setIsEditing(true);
                       }}
                     >
-                      <Briefcase size={12} className="text-cyan-600" />
-                      <span className="text-cyan-300 text-xs font-body tracking-wider">
+                      <Briefcase size={12} className="text-carbon-muted" />
+                      <span className="text-riso-blue text-xs font-riso-body tracking-wider">
                         {user.department || 'Bölüm Girilmedi'}
                       </span>
                       {isEditable && (
                         <Edit2
                           size={10}
-                          className="text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
                         />
                       )}
                     </div>
@@ -167,58 +164,58 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="relative z-10 w-8 h-8 flex items-center justify-center border border-cyan-500/30 text-cyan-400 hover:text-pink-500 hover:bg-white/5 shrink-0 ml-2 transition-colors skew-x-[-10deg] group"
+              className="relative z-10 w-8 h-8 flex items-center justify-center border border-riso-blue/30 text-riso-pink-deep hover:text-riso-pink-deep hover:bg-paper shrink-0 ml-2 transition-colors  group"
             >
-              <X size={18} className="skew-x-[10deg] group-hover:skew-x-0" />
+              <X size={18} className=" group-hover:skew-x-0" />
             </button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-px bg-cyan-900/30 border-b-2 border-cyan-900/50">
-          <div className="bg-[#050a19] p-4 text-center hover:bg-white/5 transition-colors group">
+        <div className="grid grid-cols-3 gap-px bg-cyan-900/30 border-b-2 border-carbon-muted/50">
+          <div className="bg-[#050a19] p-4 text-center hover:bg-paper transition-colors group">
             <Trophy
-              className="mx-auto text-yellow-500 mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)] group-hover:scale-110 transition-transform"
+              className="mx-auto text-riso-mustard-deep mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)] group-hover:scale-110 transition-transform"
               size={20}
             />
-            <span className="block text-3xl font-display text-white">{user.wins}</span>
-            <span className="text-[10px] font-body text-cyan-600/80 uppercase tracking-widest">
+            <span className="block text-3xl font-riso-display text-white">{user.wins}</span>
+            <span className="text-[10px] font-riso-body text-carbon-muted/80 uppercase tracking-widest">
               Galibiyet
             </span>
           </div>
-          <div className="bg-[#050a19] p-4 text-center hover:bg-white/5 transition-colors group">
+          <div className="bg-[#050a19] p-4 text-center hover:bg-paper transition-colors group">
             <Gamepad2
-              className="mx-auto text-cyan-400 mb-2 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] group-hover:scale-110 transition-transform"
+              className="mx-auto text-riso-pink-deep mb-2 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] group-hover:scale-110 transition-transform"
               size={20}
             />
-            <span className="block text-3xl font-display text-white">{user.gamesPlayed}</span>
-            <span className="text-[10px] font-body text-cyan-600/80 uppercase tracking-widest">
+            <span className="block text-3xl font-riso-display text-white">{user.gamesPlayed}</span>
+            <span className="text-[10px] font-riso-body text-carbon-muted/80 uppercase tracking-widest">
               Oyun
             </span>
           </div>
-          <div className="bg-[#050a19] p-4 text-center hover:bg-white/5 transition-colors group">
+          <div className="bg-[#050a19] p-4 text-center hover:bg-paper transition-colors group">
             <Star
-              className="mx-auto text-pink-500 mb-2 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)] group-hover:scale-110 transition-transform"
+              className="mx-auto text-riso-pink-deep mb-2 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)] group-hover:scale-110 transition-transform"
               size={20}
             />
-            <span className="block text-3xl font-display text-white">
+            <span className="block text-3xl font-riso-display text-white">
               {user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%
             </span>
-            <span className="text-[10px] font-body text-cyan-600/80 uppercase tracking-widest">
+            <span className="text-[10px] font-riso-body text-carbon-muted/80 uppercase tracking-widest">
               Oran
             </span>
           </div>
         </div>
 
         {/* Level Progress */}
-        <div className="p-5 border-b-2 border-cyan-900/50 bg-[#050a19] relative overflow-hidden">
-          <div className="flex justify-between text-xs font-display tracking-widest text-cyan-400 mb-2">
+        <div className="p-5 border-b-2 border-carbon-muted/50 bg-[#050a19] relative overflow-hidden">
+          <div className="flex justify-between text-xs font-riso-display tracking-widest text-riso-pink-deep mb-2">
             <span>LEVEL {level}</span>
-            <span className="text-pink-500">LEVEL {level + 1}</span>
+            <span className="text-riso-pink-deep">LEVEL {level + 1}</span>
           </div>
-          <div className="h-4 bg-black border-2 border-cyan-900/50 skew-x-[-10deg] overflow-hidden relative">
+          <div className="h-4 bg-carbon border-2 border-carbon-muted/50  overflow-hidden relative">
             <div
-              className="h-full bg-gradient-to-r from-cyan-500 to-pink-500 transition-all duration-1000 relative"
+              className="h-full from-cyan-500 to-pink-500 transition-all duration-1000 relative"
               style={{ width: `${nextLevelProgress}%` }}
             >
               <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:1rem_1rem] animate-[stripes_1s_linear_infinite]"></div>
@@ -228,16 +225,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
         {/* Inventory / Equipment */}
         {inventory.length > 0 && (
-          <div className="p-5 border-b-2 border-cyan-900/50 bg-[#050a19]">
-            <h3 className="font-body text-[10px] tracking-widest text-emerald-400 mb-3 flex items-center gap-2 uppercase">
-              <Star size={12} className="text-emerald-400" />
+          <div className="p-5 border-b-2 border-carbon-muted/50 bg-[#050a19]">
+            <h3 className="font-riso-body text-[10px] tracking-widest text-riso-spring mb-3 flex items-center gap-2 uppercase">
+              <Star size={12} className="text-riso-spring" />
               LİSANSLI EKİPMANLAR // ENVANTER
             </h3>
             <div className="flex flex-wrap gap-2 relative z-10">
               {inventory.map((item) => (
                 <div
                   key={item.id}
-                  className="px-2 py-1 bg-cyan-950/40 border border-cyan-500/30 text-[10px] font-display text-cyan-300 uppercase tracking-widest flex items-center gap-1"
+                  className="px-2 py-1 bg-paper-deep/40 border border-riso-blue/30 text-[10px] font-riso-display text-riso-blue uppercase tracking-widest flex items-center gap-1"
                 >
                   <span className="w-1.5 h-1.5 bg-emerald-400 animate-pulse"></span>
                   {item.item_title}
@@ -248,33 +245,33 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         )}
 
         {/* Recent Activity */}
-        <div className="p-5 bg-black/40">
-          <h3 className="font-body text-[10px] tracking-widest text-cyan-600/80 mb-3 flex items-center gap-2 uppercase">
-            <Clock size={12} className="text-pink-500" />
+        <div className="p-5 bg-carbon/40">
+          <h3 className="font-riso-body text-[10px] tracking-widest text-carbon-muted/80 mb-3 flex items-center gap-2 uppercase">
+            <Clock size={12} className="text-riso-pink-deep" />
             Son Aktiviteler // Sistem Logu
           </h3>
           <div className="space-y-2 relative z-10">
             {recentHistory.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2.5 bg-[#050a19] border-l-2 border border-cyan-900/30 text-sm hover:border-cyan-400 transition-colors group"
+                className="flex items-center justify-between p-2.5 bg-[#050a19] border-l-2 border border-carbon-muted/30 text-sm hover:border-cyan-400 transition-colors group"
                 style={{ borderLeftColor: item.result === 'WIN' ? '#00f3ff' : '#ff00ea' }}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-1.5 h-1.5 animate-pulse ${item.result === 'WIN' ? 'bg-cyan-400 shadow-[0_0_5px_#00f3ff]' : 'bg-pink-500 shadow-[0_0_5px_#ff00ea]'}`}
+                    className={`w-1.5 h-1.5 animate-pulse ${item.result === 'WIN' ? 'bg-riso-blue shadow-[0_0_5px_#00f3ff]' : 'bg-riso-pink shadow-[0_0_5px_#ff00ea]'}`}
                   ></div>
-                  <span className="text-cyan-100 font-body text-xs tracking-wider">
+                  <span className="text-carbon font-riso-body text-xs tracking-wider">
                     {item.game}
                   </span>
                 </div>
                 <div className="text-right">
                   <span
-                    className={`block font-display tracking-widest ${item.result === 'WIN' ? 'text-cyan-400' : 'text-pink-500'}`}
+                    className={`block font-riso-display tracking-widest ${item.result === 'WIN' ? 'text-riso-pink-deep' : 'text-riso-pink-deep'}`}
                   >
                     {item.points}
                   </span>
-                  <span className="text-[9px] text-cyan-600/60 font-body uppercase">
+                  <span className="text-[9px] text-carbon-muted/60 font-riso-body uppercase">
                     {item.time}
                   </span>
                 </div>
@@ -284,8 +281,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
 
         {/* Footer Bar */}
-        <div className="p-3 bg-cyan-400 text-center">
-          <span className="text-[10px] text-black font-body font-bold tracking-[0.2em] uppercase">
+        <div className="p-3 bg-riso-blue text-center">
+          <span className="text-[10px] text-black font-riso-body font-bold tracking-[0.2em] uppercase">
             CAFE DUO LİSANS İZİNLERİ // GÜNCEL
           </span>
         </div>

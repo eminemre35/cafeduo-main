@@ -12,15 +12,22 @@ interface SkeletonProps {
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => (
-  <div className={`relative overflow-hidden bg-[#07142b]/75 border border-cyan-900/45 ${className}`}>
+  <div
+    className={`relative overflow-hidden bg-[#07142b]/75 border border-carbon-muted/45 ${className}`}
+  >
     <div
       className="absolute inset-0 -translate-x-full animate-shimmer"
-      style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }}
+      style={{
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
+      }}
     />
   </div>
 );
 
-export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({ lines = 1, className = '' }) => (
+export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
+  lines = 1,
+  className = '',
+}) => (
   <div className={`space-y-2 ${className}`}>
     {Array.from({ length: lines }).map((_, i) => (
       <Skeleton key={i} className={`h-4 ${i === lines - 1 ? 'w-3/4' : 'w-full'}`} />
@@ -29,7 +36,7 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 );
 
 export const SkeletonCard: React.FC = () => (
-  <div className="rf-screen-card-muted border-gray-800 p-6 space-y-4">
+  <div className="border-2 border-carbon bg-paper-deep border-gray-800 p-6 space-y-4">
     <div className="flex items-center gap-4">
       <Skeleton className="w-12 h-12" />
       <div className="flex-1 space-y-2">
@@ -42,12 +49,17 @@ export const SkeletonCard: React.FC = () => (
   </div>
 );
 
-export const SkeletonGrid: React.FC<{ count?: number; columns?: number }> = ({ count = 6, columns = 3 }) => (
+export const SkeletonGrid: React.FC<{ count?: number; columns?: number }> = ({
+  count = 6,
+  columns = 3,
+}) => (
   <div
     className={`grid gap-4 ${
-      columns === 1 ? 'grid-cols-1' :
-      columns === 2 ? 'grid-cols-1 md:grid-cols-2' :
-      'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+      columns === 1
+        ? 'grid-cols-1'
+        : columns === 2
+          ? 'grid-cols-1 md:grid-cols-2'
+          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
     }`}
   >
     {Array.from({ length: count }).map((_, i) => (
@@ -63,7 +75,10 @@ export const SkeletonStats: React.FC = () => (
     <Skeleton className="w-12 h-12" />
     <div className="flex gap-4">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="bg-[#07142b]/75 border border-cyan-900/35 px-4 py-2 min-w-[80px]">
+        <div
+          key={i}
+          className="bg-[#07142b]/75 border border-carbon-muted/35 px-4 py-2 min-w-[80px]"
+        >
           <Skeleton className="h-6 w-12 mb-1" />
           <Skeleton className="h-3 w-16" />
         </div>
@@ -85,11 +100,17 @@ interface LoadingSpinnerProps {
 const spinnerSizes = { sm: 'w-6 h-6 border-2', md: 'w-10 h-10 border-3', lg: 'w-16 h-16 border-4' };
 const textSizes = { sm: 'text-xs', md: 'text-sm', lg: 'text-base' };
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md', text, className = '' }) => (
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = 'md',
+  text,
+  className = '',
+}) => (
   <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
-    <div className={`${spinnerSizes[size]} border-cyan-900/60 border-t-blue-500 rounded-full animate-spin`} />
+    <div
+      className={`${spinnerSizes[size]} border-carbon-muted/60 border-t-blue-500 rounded-full animate-spin`}
+    />
     {text && (
-      <p className={`${textSizes[size]} text-[var(--rf-muted)] uppercase tracking-wider animate-pulse`}>
+      <p className={`${textSizes[size]} text-carbon-muted uppercase tracking-wider animate-pulse`}>
         {text}
       </p>
     )}
@@ -102,11 +123,15 @@ interface LoadingOverlayProps {
   children: React.ReactNode;
 }
 
-export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading, text = 'Yükleniyor...', children }) => (
+export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
+  isLoading,
+  text = 'Yükleniyor...',
+  children,
+}) => (
   <div className="relative">
     {children}
     {isLoading && (
-      <div className="absolute inset-0 bg-[#071020]/85 backdrop-blur-sm flex items-center justify-center z-10 animate-fade-in">
+      <div className="absolute inset-0 bg-[#071020]/85  flex items-center justify-center z-10 animate-fade-in">
         <LoadingSpinner size="lg" text={text} />
       </div>
     )}

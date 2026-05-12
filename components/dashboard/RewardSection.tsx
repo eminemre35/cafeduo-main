@@ -71,10 +71,10 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   const canAfford = (cost: number) => (currentUser?.points ?? 0) >= cost;
 
   return (
-    <div className="border-2 border-carbon bg-paper riso-shadow-md border-cyan-400/20 rounded-xl p-4 sm:p-6">
+    <div className="border-2 border-carbon bg-paper riso-shadow-md border-carbon-muted rounded-xl p-4 sm:p-6">
       {/* Tab Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div className="flex items-center gap-2 bg-[#08152f] p-1 rounded-lg border border-cyan-400/20 self-start">
+        <div className="flex items-center gap-2 bg-[#08152f] p-1 rounded-lg border border-carbon-muted self-start">
           <button
             onClick={() => onTabChange('shop')}
             data-testid="shop-tab"
@@ -101,7 +101,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
 
         <div className="text-left sm:text-right">
           <span className="text-carbon-muted text-sm">Bakiye:</span>
-          <span className="text-amber-300 font-bold text-xl ml-2">
+          <span className="text-riso-mustard font-bold text-xl ml-2">
             {currentUser?.points ?? 0} puan
           </span>
         </div>
@@ -121,7 +121,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                   <motion.div
                     key={reward.id}
                     className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[205px] cursor-pointer ${
-                      affordable ? 'border-cyan-300/30' : 'border-cyan-900/45 opacity-60'
+                      affordable ? 'border-carbon-muted' : 'border-carbon-muted/45 opacity-60'
                     }`}
                     whileHover={
                       affordable
@@ -139,8 +139,8 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         <div
                           className={`p-2 rounded-lg ${
                             affordable
-                              ? 'bg-cyan-400/18 text-riso-blue'
-                              : 'bg-cyan-950/45 text-carbon-muted'
+                              ? 'bg-riso-blue/18 text-riso-blue'
+                              : 'bg-paper-deep/45 text-carbon-muted'
                           }`}
                         >
                           {getRewardIcon(reward.icon)}
@@ -242,7 +242,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         )}
                         {isExpired && !isUsed && (
                           <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <div className="bg-cyan-950 text-carbon font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-carbon-muted shadow-xl">
+                            <div className="bg-paper-deep text-carbon font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-carbon-muted shadow-xl">
                               SÜRESİ DOLDU
                             </div>
                           </div>
@@ -254,7 +254,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         </div>
 
                         <div className="flex justify-between items-center mb-2">
-                          <div className="w-16 h-16 bg-black text-white flex items-center justify-center text-[8px] p-1 text-center">
+                          <div className="w-16 h-16 bg-carbon text-white flex items-center justify-center text-[8px] p-1 text-center">
                             QR KOD
                           </div>
                           <div className="text-right">
@@ -267,7 +267,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                           </div>
                         </div>
 
-                        <div className="bg-black text-white text-center py-1 text-xs font-bold uppercase">
+                        <div className="bg-carbon text-white text-center py-1 text-xs font-bold uppercase">
                           KASADA GÖSTERİN
                         </div>
                       </div>

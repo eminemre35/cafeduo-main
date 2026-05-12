@@ -7,7 +7,9 @@ interface LeafletBundle {
   TileLayer: React.ComponentType<any>;
   Marker: React.ComponentType<any>;
   Circle: React.ComponentType<any>;
-  useMapEvents: (handlers: { click?: (event: { latlng?: { lat?: number; lng?: number } }) => void }) => unknown;
+  useMapEvents: (handlers: {
+    click?: (event: { latlng?: { lat?: number; lng?: number } }) => void;
+  }) => unknown;
 }
 
 const MapClickHandler: React.FC<{
@@ -81,14 +83,15 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
 
   const secondaryCoords = useMemo<[number, number] | null>(() => {
     if (!Number.isFinite(secondaryLat) || !Number.isFinite(secondaryLng)) return null;
-    if (secondaryLat < -90 || secondaryLat > 90 || secondaryLng < -180 || secondaryLng > 180) return null;
+    if (secondaryLat < -90 || secondaryLat > 90 || secondaryLng < -180 || secondaryLng > 180)
+      return null;
     return [secondaryLat, secondaryLng];
   }, [secondaryLat, secondaryLng]);
 
   const mapCenter = useMemo<[number, number]>(() => {
     if (primaryCoords) return primaryCoords;
     if (secondaryCoords) return secondaryCoords;
-    return [37.741000, 29.101000];
+    return [37.741, 29.101];
   }, [primaryCoords, secondaryCoords]);
 
   useEffect(() => {
@@ -159,34 +162,40 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="rf-screen-card p-8 shadow-xl">
-        <p className="rf-terminal-strip mb-2">Geo Matrix</p>
+      <div className="border-2 border-carbon bg-paper riso-shadow-sm p-8 shadow-xl">
+        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
+          Geo Matrix
+        </p>
         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-          <MapPin className="text-green-400" />
+          <MapPin className="text-riso-spring" />
           Konum Doğrulama Ayarları
         </h2>
 
-        <div className="mb-5 rf-screen-card-muted p-3 space-y-3">
+        <div className="mb-5 border-2 border-carbon bg-paper-deep p-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-cyan-200 uppercase tracking-[0.12em]">Haritadan Nokta Seç</p>
-            <div className="inline-flex border border-cyan-400/30 bg-black/30">
+            <p className="text-xs text-carbon-soft uppercase tracking-[0.12em]">
+              Haritadan Nokta Seç
+            </p>
+            <div className="inline-flex border border-carbon-muted bg-black/30">
               <button
                 type="button"
                 onClick={() => setMapTarget('primary')}
-                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] ${mapTarget === 'primary'
-                    ? 'bg-cyan-500 text-[#041226] font-semibold'
-                    : 'text-cyan-200 hover:bg-cyan-500/15'
-                  }`}
+                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] ${
+                  mapTarget === 'primary'
+                    ? 'bg-riso-blue text-[#041226] font-semibold'
+                    : 'text-carbon-soft hover:bg-riso-blue/15'
+                }`}
               >
                 Ana Konum
               </button>
               <button
                 type="button"
                 onClick={() => setMapTarget('secondary')}
-                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] ${mapTarget === 'secondary'
-                    ? 'bg-cyan-500 text-[#041226] font-semibold'
-                    : 'text-cyan-200 hover:bg-cyan-500/15'
-                  }`}
+                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] ${
+                  mapTarget === 'secondary'
+                    ? 'bg-riso-blue text-[#041226] font-semibold'
+                    : 'text-carbon-soft hover:bg-riso-blue/15'
+                }`}
               >
                 İkinci Konum
               </button>
@@ -194,7 +203,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           </div>
 
           {leafletMap ? (
-            <div className="h-[260px] sm:h-[300px] overflow-hidden border border-cyan-400/25">
+            <div className="h-[260px] sm:h-[300px] overflow-hidden border border-carbon-muted">
               <leafletMap.MapContainer
                 key={`${mapCenter[0].toFixed(4)}-${mapCenter[1].toFixed(4)}`}
                 center={mapCenter}
@@ -203,7 +212,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 className="h-full w-full"
               >
                 <leafletMap.TileLayer
-                  attribution='&copy; OpenStreetMap'
+                  attribution="&copy; OpenStreetMap"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <MapClickHandler onPick={handleMapPick} useMapEvents={leafletMap.useMapEvents} />
@@ -230,23 +239,30 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
               </leafletMap.MapContainer>
             </div>
           ) : (
-            <div className="h-[130px] border border-cyan-500/25 bg-cyan-950/20 flex items-center justify-center text-sm text-cyan-200/80 px-4 text-center">
+            <div className="h-[130px] border border-riso-blue/25 bg-paper-deep/20 flex items-center justify-center text-sm text-carbon-soft/80 px-4 text-center">
               {mapLoadError || 'Harita yükleniyor...'}
             </div>
           )}
 
-          <p className="text-xs text-[var(--rf-muted)]">
-            Haritada tıkladığınız nokta, seçili hedefe ({mapTarget === 'primary' ? 'ana konum' : 'ikinci konum'}) otomatik yazılır.
+          <p className="text-xs text-carbon-muted">
+            Haritada tıkladığınız nokta, seçili hedefe (
+            {mapTarget === 'primary' ? 'ana konum' : 'ikinci konum'}) otomatik yazılır.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
           <div>
-            <label htmlFor="cafe-lat-input" className="block text-sm font-medium text-[var(--rf-muted)] mb-2 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="cafe-lat-input"
+              className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+            >
               Enlem (Latitude)
             </label>
             <div className="relative">
-              <Navigation size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" />
+              <Navigation
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
+              />
               <input
                 id="cafe-lat-input"
                 type="number"
@@ -254,17 +270,23 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={latitude}
                 onChange={(event) => onLatitudeChange(event.target.value)}
                 placeholder="37.741000"
-                className="rf-input w-full pl-10 pr-4 py-3 text-white placeholder:text-[var(--rf-muted)] outline-none font-mono"
+                className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="cafe-lng-input" className="block text-sm font-medium text-[var(--rf-muted)] mb-2 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="cafe-lng-input"
+              className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+            >
               Boylam (Longitude)
             </label>
             <div className="relative">
-              <Navigation size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] rotate-90" />
+              <Navigation
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted rotate-90"
+              />
               <input
                 id="cafe-lng-input"
                 type="number"
@@ -272,17 +294,23 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={longitude}
                 onChange={(event) => onLongitudeChange(event.target.value)}
                 placeholder="29.101000"
-                className="rf-input w-full pl-10 pr-4 py-3 text-white placeholder:text-[var(--rf-muted)] outline-none font-mono"
+                className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="cafe-radius-input" className="block text-sm font-medium text-[var(--rf-muted)] mb-2 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="cafe-radius-input"
+              className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+            >
               Doğrulama Yarıçapı (metre)
             </label>
             <div className="relative">
-              <Ruler size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" />
+              <Ruler
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
+              />
               <input
                 id="cafe-radius-input"
                 type="number"
@@ -291,19 +319,25 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={radius}
                 onChange={(event) => onRadiusChange(event.target.value)}
                 placeholder="150"
-                className="rf-input w-full pl-10 pr-4 py-3 text-white placeholder:text-[var(--rf-muted)] outline-none font-mono"
+                className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
               />
             </div>
           </div>
 
-          <div className="pt-2 border-t border-cyan-500/20 space-y-4">
-            <p className="text-sm font-semibold text-cyan-200">İkinci Konum (Opsiyonel)</p>
+          <div className="pt-2 border-t border-riso-blue/20 space-y-4">
+            <p className="text-sm font-semibold text-carbon-soft">İkinci Konum (Opsiyonel)</p>
             <div>
-              <label htmlFor="cafe-secondary-lat-input" className="block text-sm font-medium text-[var(--rf-muted)] mb-2 uppercase tracking-[0.08em]">
+              <label
+                htmlFor="cafe-secondary-lat-input"
+                className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+              >
                 Ek Enlem (Latitude)
               </label>
               <div className="relative">
-                <Navigation size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" />
+                <Navigation
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
+                />
                 <input
                   id="cafe-secondary-lat-input"
                   type="number"
@@ -311,17 +345,23 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryLatitude}
                   onChange={(event) => onSecondaryLatitudeChange(event.target.value)}
                   placeholder="37.742000"
-                  className="rf-input w-full pl-10 pr-4 py-3 text-white placeholder:text-[var(--rf-muted)] outline-none font-mono"
+                  className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="cafe-secondary-lng-input" className="block text-sm font-medium text-[var(--rf-muted)] mb-2 uppercase tracking-[0.08em]">
+              <label
+                htmlFor="cafe-secondary-lng-input"
+                className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+              >
                 Ek Boylam (Longitude)
               </label>
               <div className="relative">
-                <Navigation size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] rotate-90" />
+                <Navigation
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted rotate-90"
+                />
                 <input
                   id="cafe-secondary-lng-input"
                   type="number"
@@ -329,17 +369,23 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryLongitude}
                   onChange={(event) => onSecondaryLongitudeChange(event.target.value)}
                   placeholder="29.102000"
-                  className="rf-input w-full pl-10 pr-4 py-3 text-white placeholder:text-[var(--rf-muted)] outline-none font-mono"
+                  className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="cafe-secondary-radius-input" className="block text-sm font-medium text-[var(--rf-muted)] mb-2 uppercase tracking-[0.08em]">
+              <label
+                htmlFor="cafe-secondary-radius-input"
+                className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+              >
                 Ek Konum Yarıçapı (metre)
               </label>
               <div className="relative">
-                <Ruler size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" />
+                <Ruler
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
+                />
                 <input
                   id="cafe-secondary-radius-input"
                   type="number"
@@ -348,7 +394,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryRadius}
                   onChange={(event) => onSecondaryRadiusChange(event.target.value)}
                   placeholder="150"
-                  className="rf-input w-full pl-10 pr-4 py-3 text-white placeholder:text-[var(--rf-muted)] outline-none font-mono"
+                  className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
                 />
               </div>
             </div>
@@ -358,7 +404,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <button
               type="button"
               onClick={() => void onPickCurrentLocation()}
-              className="py-3 border-2 border-cyan-500/35 bg-cyan-900/20 text-cyan-100 hover:bg-cyan-900/35 font-semibold flex items-center justify-center gap-2"
+              className="py-3 border-2 border-riso-blue/35 bg-paper-deep text-carbon hover:bg-cyan-900/35 font-semibold flex items-center justify-center gap-2"
             >
               <LocateFixed size={16} />
               Cihazdan Konumu Al
@@ -368,7 +414,9 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
               type="submit"
               disabled={loading}
               className={`py-3 border-2 font-bold text-white flex items-center justify-center gap-2 transition-all ${
-                loading ? 'bg-cyan-950/55 text-[var(--rf-muted)] cursor-not-allowed border-cyan-900/45' : 'bg-green-600 hover:bg-green-500 border-green-300/40'
+                loading
+                  ? 'bg-paper-deep/55 text-carbon-muted cursor-not-allowed border-carbon-muted/45'
+                  : 'bg-green-600 hover:bg-green-500 border-green-300/40'
               }`}
             >
               {loading ? (
@@ -390,8 +438,8 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           <div
             className={`mt-6 p-4 border flex items-center gap-3 ${
               status === 'success'
-                ? 'bg-green-900/20 border-green-900/50 text-green-400'
-                : 'bg-red-900/20 border-red-900/50 text-red-400'
+                ? 'bg-green-900/20 border-green-900/50 text-riso-spring'
+                : 'bg-riso-redox/15 border-red-900/50 text-riso-redox'
             }`}
             role="status"
             aria-live="polite"
@@ -406,7 +454,9 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           <ul className="list-disc list-inside space-y-1 text-blue-400/80">
             <li>Check-in yalnızca bu konum yarıçapı içinde yapılabilir.</li>
             <li>Yarıçapı kampüs/kat sınırlarına göre güncelleyin.</li>
-            <li>Konum güncellendiğinde kullanıcılar bir sonraki girişte yeni kurala göre doğrulanır.</li>
+            <li>
+              Konum güncellendiğinde kullanıcılar bir sonraki girişte yeni kurala göre doğrulanır.
+            </li>
           </ul>
         </div>
       </div>

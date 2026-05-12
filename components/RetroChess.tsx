@@ -879,7 +879,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </h2>
             <button
               onClick={handleLeave}
-              className="text-rose-200 hover:text-rose-100 text-xs px-3 py-2 border border-rose-400/45 bg-rose-500/12 hover:bg-rose-500/24 transition-colors uppercase tracking-[0.16em]"
+              className="text-riso-pink-deep hover:text-rose-100 text-xs px-3 py-2 border border-riso-pink/45 bg-riso-pink/15 hover:bg-riso-pink/24 transition-colors uppercase tracking-[0.16em]"
             >
               Oyundan Çık
             </button>
@@ -921,7 +921,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
           <p className="text-sm text-carbon-muted mb-1 pl-3 border-l-2 border-carbon">{message}</p>
           {liveResultLabel && <p className="text-xs text-carbon-soft mb-3">{liveResultLabel}</p>}
-          {serverWinner && <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>}
+          {serverWinner && <p className="text-xs text-riso-spring mb-3">Kazanan: {serverWinner}</p>}
           {pendingDrawOffer && (
             <p className="text-xs text-carbon-soft mb-3">
               {isPendingOfferByActor
@@ -930,7 +930,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </p>
           )}
 
-          <div className="w-full max-w-[620px] mx-auto border border-carbon p-2 sm:p-3 bg-[#06132b]/85 riso-shadow-sm">
+          <div className="w-full max-w-[620px] mx-auto border border-carbon p-2 sm:p-3 bg-[#FBF7EE]/85 riso-shadow-sm">
             <div
               ref={boardGridRef}
               className="relative grid grid-cols-8 gap-1.5 sm:gap-2"
@@ -971,7 +971,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                     : '';
                   const lastMoveClass =
                     isLastMoveFrom || isLastMoveTo
-                      ? 'border-amber-400/80 shadow-[inset_0_0_20px_rgba(251,191,36,0.35),0_0_12px_rgba(251,191,36,0.25)]'
+                      ? 'border-riso-mustard/80 shadow-[inset_0_0_20px_rgba(251,191,36,0.35),0_0_12px_rgba(251,191,36,0.25)]'
                       : '';
                   const checkClass = isInCheck
                     ? 'animate-check-pulse bg-[rgba(239,68,68,0.45)] shadow-[inset_0_0_30px_rgba(239,68,68,0.4)]'
@@ -1070,7 +1070,9 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           </div>
 
           <div className="mt-5 border-2 border-carbon bg-paper-deep p-3 max-h-56 overflow-y-auto custom-scrollbar">
-            <h3 className="font-pixel text-sm text-white mb-2 tracking-wide">HAMLE GEÇMİŞİ</h3>
+            <h3 className="font-riso-display text-sm text-white mb-2 tracking-wide">
+              HAMLE GEÇMİŞİ
+            </h3>
             {moveLog.length === 0 ? (
               <p className="text-xs text-carbon-muted">Henüz hamle yapılmadı.</p>
             ) : (

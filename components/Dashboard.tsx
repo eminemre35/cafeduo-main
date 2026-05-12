@@ -14,7 +14,6 @@ import { RetroChess } from './RetroChess';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
-import { CyberGlitchScreen } from './CyberGlitchScreen';
 
 // Hooks
 import { useGames } from '../hooks/useGames';
@@ -312,13 +311,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   if (activeGameId) {
     return (
       <div className="min-h-screen bg-paper text-carbon pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
-        {showGlitchAnim && gameResult && (
-          <CyberGlitchScreen
-            isWinner={gameResult.winner === currentUser.username}
-            earnedPoints={gameResult.earnedPoints}
-            onComplete={() => setShowGlitchAnim(false)}
-          />
-        )}
+        {/* Cyber glitch animation retired in PR #25 — game-end toast covers it */}
         <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
@@ -329,8 +322,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {gameResult && (
-            <div className="mb-6 border-2 border-carbon bg-paper border-emerald-400/30 rounded-xl p-4">
-              <p className="text-sm text-emerald-200">Maç Sonucu</p>
+            <div className="mb-6 border-2 border-carbon bg-paper border-riso-spring/30 rounded-xl p-4">
+              <p className="text-sm text-riso-spring">Maç Sonucu</p>
               <p className="text-lg font-bold text-white mt-1">
                 {gameResult.winner ? `${gameResult.winner} kazandı` : 'Maç berabere bitti'}
               </p>
@@ -377,8 +370,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onLeave={handleLeaveGame}
             />
           ) : (
-            <div className="border-2 border-carbon bg-paper border-red-400/30 rounded-xl p-8 text-center">
-              <p className="text-red-200 font-bold text-xl">Bilinmeyen Oyun Türü</p>
+            <div className="border-2 border-carbon bg-paper border-riso-redox/30 rounded-xl p-8 text-center">
+              <p className="text-riso-redox font-bold text-xl">Bilinmeyen Oyun Türü</p>
               <p className="text-carbon-muted mt-2">{activeGameType}</p>
               <RetroButton onClick={handleBackToLobby} variant="secondary" className="mt-4">
                 Lobiye Dön

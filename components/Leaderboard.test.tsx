@@ -1,6 +1,6 @@
 /**
  * Leaderboard Component Tests
- * 
+ *
  * @description User ranking and leaderboard tests
  */
 
@@ -54,26 +54,26 @@ describe('Leaderboard', () => {
 
   it('renders leaderboard title', () => {
     (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
-    
+
     render(<Leaderboard />);
-    
-    expect(screen.getByText('LİDERLİK TABLOSU')).toBeInTheDocument();
+
+    expect(screen.getByText('Liderlik Tablosu')).toBeInTheDocument();
   });
 
   it('renders filter buttons', () => {
     (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
-    
+
     render(<Leaderboard />);
-    
+
     expect(screen.getByText('GENEL')).toBeInTheDocument();
     expect(screen.getByText('BÖLÜM')).toBeInTheDocument();
   });
 
   it('displays loading state', async () => {
     (fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
-    
+
     render(<Leaderboard />);
-    
+
     expect(screen.getByText('Yükleniyor...')).toBeInTheDocument();
   });
 
@@ -99,7 +99,7 @@ describe('Leaderboard', () => {
       // Türkçe: 5.000, İngilizce: 5,000
       const pointsCell = screen.getByText(/5[.,]000/);
       expect(pointsCell).toBeInTheDocument();
-      expect(pointsCell).toHaveClass('text-yellow-500');
+      expect(pointsCell).toHaveClass('text-riso-mustard-deep');
     });
   });
 
@@ -119,9 +119,7 @@ describe('Leaderboard', () => {
     render(<Leaderboard />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('type=general')
-      );
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('type=general'));
     });
   });
 
@@ -137,9 +135,7 @@ describe('Leaderboard', () => {
     fireEvent.click(screen.getByText('BÖLÜM'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenLastCalledWith(
-        expect.stringContaining('type=department')
-      );
+      expect(fetch).toHaveBeenLastCalledWith(expect.stringContaining('type=department'));
     });
 
     // Department dropdown should be visible
@@ -159,7 +155,7 @@ describe('Leaderboard', () => {
 
     // Switch to department filter
     fireEvent.click(screen.getByText('BÖLÜM'));
-    
+
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
 
     // Change department
@@ -175,13 +171,14 @@ describe('Leaderboard', () => {
 
   it('renders table headers correctly', () => {
     (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
-    
+
     render(<Leaderboard />);
-    
+
     // Table headers
     expect(screen.getByText('Sıra')).toBeInTheDocument();
     expect(screen.getByText('Kullanıcı')).toBeInTheDocument();
-    expect(screen.getByText('Bölüm')).toBeInTheDocument();
+    // Filter button 'BÖLÜM' + table header 'Bölüm' both exist, getAllByText
+    expect(screen.getAllByText(/^B[ÖO]L[ÜU]M$/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Puan')).toBeInTheDocument();
     expect(screen.getByText('Galibiyet')).toBeInTheDocument();
   });

@@ -259,50 +259,55 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   return (
     <div
-      className="cd-game-stage cd-pixel-panel mx-auto max-w-3xl p-4 sm:p-6 text-white"
+      className="border-2 border-carbon bg-paper p-4 sm:p-6 border-2 border-carbon bg-paper mx-auto max-w-3xl p-4 sm:p-6 text-white"
       data-testid="arena-battle"
     >
       <ConnectionOverlay gameId={gameId} />
       <div className="relative z-10">
         <div className="mb-5 flex items-start justify-between gap-4 border-b border-[rgba(16,231,255,0.2)] pb-4">
           <div>
-            <p className="cd-system-label text-[#10E7FF]">LIVE TARGET LOCK</p>
+            <p className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-[#1E3FB5]">
+              LIVE TARGET LOCK
+            </p>
             <h2 className="font-riso-display text-2xl text-white sm:text-4xl">{AIM_GAME_TYPE}</h2>
             <p className="mt-2 text-xs text-[#A5ADB8] sm:text-sm">{participants}</p>
           </div>
-          <button onClick={onLeave} className="cd-icon-button text-[#A5ADB8] hover:text-white">
+          <button
+            onClick={onLeave}
+            className="border-2 border-carbon bg-paper px-3 py-1.5 font-riso-body text-sm font-semibold text-[#A5ADB8] hover:text-white"
+          >
             Oyundan Çık
           </button>
         </div>
 
         <div className="mb-5 grid grid-cols-3 gap-3 text-center">
-          <div className="cd-stat-tile">
+          <div className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-2">
             <Target size={18} />
             <span>Tur</span>
             <strong>
               {Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}
             </strong>
           </div>
-          <div className="cd-stat-tile border-[#10E7FF]/45">
+          <div className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-2 border-[#1E3FB5]/45">
             <Trophy size={18} />
             <span>Sen</span>
             <strong>{live.playerScore}</strong>
           </div>
-          <div className="cd-stat-tile border-[#FF3045]/45">
+          <div className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-2 border-[#FF3E94]/45">
             <RadioTower size={18} />
             <span>Rakip</span>
             <strong>{live.opponentScore}</strong>
           </div>
         </div>
 
-        <div className="cd-reticle-stage relative mb-5 overflow-hidden">
+        <div className="relative aspect-[2/1] border-2 border-carbon bg-paper relative mb-5 overflow-hidden">
           {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
           <AimBattleStageCanvas ref={pixiStageRef} className="absolute inset-0 h-full w-full" />
           {/* CSS reticle kept as a11y/test fallback and for environments without WebGL */}
-          <div className="cd-reticle-grid pointer-events-none" />
-          <div className="cd-reticle-center pointer-events-none" />
+          <div className="absolute inset-0 opacity-20 pointer-events-none" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-12 w-12 border-2 border-riso-pink pointer-events-none" />
           <div
-            className="cd-reticle-sight pointer-events-none opacity-0"
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-riso-pink pointer-events-none opacity-0"
             style={{ left: `${gauge}%` }}
             data-testid="arena-reticle"
             aria-hidden="true"
@@ -316,27 +321,32 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
           </div>
         </div>
 
-        <div className="mb-5 cd-pixel-panel-muted p-4">
+        <div className="mb-5 border-2 border-carbon bg-paper-deep p-4">
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="cd-system-label text-[#10E7FF]">Nişan Kilidi</span>
-            <span className="text-[#FFD338]">
+            <span className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-[#1E3FB5]">
+              Nişan Kilidi
+            </span>
+            <span className="text-[#F1B41E]">
               {Math.round(gauge)}% / isabet {Math.round(accuracy)}%
             </span>
           </div>
-          <div className="cd-progress-track">
-            <div className="cd-progress-fill" style={{ width: `${accuracy}%` }} />
+          <div className="h-2 border-2 border-carbon bg-paper-deep overflow-hidden">
+            <div
+              className="h-full bg-riso-blue transition-[width]"
+              style={{ width: `${accuracy}%` }}
+            />
           </div>
           <p className="mt-3 text-sm text-[#A5ADB8]">{message}</p>
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-3 text-xs">
-          <div className="cd-pixel-panel-muted p-3">
+          <div className="border-2 border-carbon bg-paper-deep p-3">
             <div className="text-[#A5ADB8]">Son Atışın</div>
             <div className="mt-1 font-bold text-white">
               {playerShot === null ? '-' : `${Math.round(playerShot)}% - ${shotLabel(playerShot)}`}
             </div>
           </div>
-          <div className="cd-pixel-panel-muted p-3">
+          <div className="border-2 border-carbon bg-paper-deep p-3">
             <div className="text-[#A5ADB8]">Rakip Atışı</div>
             <div className="mt-1 font-bold text-white">
               {opponentShot === null

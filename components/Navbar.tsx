@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
         role="navigation"
         aria-label="Ana navigasyon"
       >
-        <div className="flex items-center justify-between gap-4 border-2 border-carbon bg-paper/95 backdrop-blur-md px-4 py-2.5 md:px-5 md:py-3 riso-shadow-sm">
+        <div className="flex items-center justify-between gap-4 border-2 border-carbon bg-paper/95  px-4 py-2.5 md:px-5 md:py-3 riso-shadow-sm">
           <div
             className="flex cursor-pointer items-center gap-2.5 transition-opacity hover:opacity-85"
             onClick={() => {

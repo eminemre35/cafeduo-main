@@ -27,7 +27,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   };
 
   const baseStyles = `
-    font-pixel tracking-[0.12em] transition-all relative group rounded-none
+    font-riso-display tracking-[0.12em] transition-all relative group rounded-none
     select-none touch-manipulation
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#050a19]
     uppercase
@@ -57,7 +57,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
       focus:ring-pink-300/55
     `,
     ghost: `
-      bg-black/20 text-[#9eb4d3] border-cyan-500/35
+      bg-black/20 text-[#9eb4d3] border-riso-blue/35
       hover:text-carbon hover:border-cyan-300/62 hover:bg-cyan-900/18
       hover:translate-x-[-1px] hover:translate-y-[-1px]
       hover:shadow-[6px_6px_0_rgba(0,243,255,0.2)]
@@ -102,8 +102,8 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
       }}
     >
       {/* Shine effect overlay */}
-      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-      <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-100/70 to-transparent pointer-events-none" />
+      <span className="absolute inset-0 from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <span className="absolute inset-x-0 top-0 h-[1px] from-transparent via-cyan-100/70 to-transparent pointer-events-none" />
 
       {/* Content */}
       <span className="relative flex items-center justify-center gap-2">

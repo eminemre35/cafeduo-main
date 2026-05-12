@@ -35,15 +35,20 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="rf-screen-card p-6 h-fit">
-        <p className="rf-terminal-strip mb-2">Ödül Entegrasyon</p>
+      <div className="border-2 border-carbon bg-paper riso-shadow-sm p-6 h-fit">
+        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
+          Ödül Entegrasyon
+        </p>
         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
           <Plus className="text-orange-400" />
           Yeni Ödül Ekle
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="reward-title-input" className="block text-sm text-[var(--rf-muted)] mb-1 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="reward-title-input"
+              className="block text-sm text-carbon-muted mb-1 uppercase tracking-[0.08em]"
+            >
               Ödül Başlığı
             </label>
             <input
@@ -56,12 +61,15 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   title: event.target.value,
                 })
               }
-              className="rf-input w-full p-3 text-white outline-none"
+              className="border-2 border-carbon bg-paper w-full p-3 text-white outline-none"
               required
             />
           </div>
           <div>
-            <label htmlFor="reward-cost-input" className="block text-sm text-[var(--rf-muted)] mb-1 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="reward-cost-input"
+              className="block text-sm text-carbon-muted mb-1 uppercase tracking-[0.08em]"
+            >
               Puan Bedeli
             </label>
             <input
@@ -74,12 +82,15 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   cost: Math.max(0, Number(event.target.value || 0)),
                 })
               }
-              className="rf-input w-full p-3 text-white outline-none"
+              className="border-2 border-carbon bg-paper w-full p-3 text-white outline-none"
               required
             />
           </div>
           <div>
-            <label htmlFor="reward-description-input" className="block text-sm text-[var(--rf-muted)] mb-1 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="reward-description-input"
+              className="block text-sm text-carbon-muted mb-1 uppercase tracking-[0.08em]"
+            >
               Açıklama
             </label>
             <textarea
@@ -91,12 +102,15 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   description: event.target.value,
                 })
               }
-              className="rf-input w-full p-3 text-white outline-none h-24 resize-none"
+              className="border-2 border-carbon bg-paper w-full p-3 text-white outline-none h-24 resize-none"
               required
             />
           </div>
           <div>
-            <label htmlFor="reward-icon-input" className="block text-sm text-[var(--rf-muted)] mb-1 uppercase tracking-[0.08em]">
+            <label
+              htmlFor="reward-icon-input"
+              className="block text-sm text-carbon-muted mb-1 uppercase tracking-[0.08em]"
+            >
               İkon Tipi
             </label>
             <select
@@ -108,7 +122,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   icon: event.target.value as RewardFormData['icon'],
                 })
               }
-              className="rf-input w-full p-3 text-white outline-none"
+              className="border-2 border-carbon bg-paper w-full p-3 text-white outline-none"
             >
               <option value="coffee">Kahve</option>
               <option value="dessert">Tatlı</option>
@@ -128,10 +142,12 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
       <div className="lg:col-span-2 space-y-4" aria-busy={rewardsLoading} aria-live="polite">
         <h2 className="text-xl font-bold text-white mb-4">Aktif Ödüller</h2>
         {rewardsError && (
-          <div className="p-4 border border-red-600/40 text-red-300 bg-red-950/20">{rewardsError}</div>
+          <div className="p-4 border border-red-600/40 text-riso-redox bg-red-950/20">
+            {rewardsError}
+          </div>
         )}
         {!rewardsError && rewards.length === 0 && !rewardsLoading ? (
-          <div className="text-center py-12 text-[var(--rf-muted)] rf-screen-card-muted">
+          <div className="text-center py-12 text-carbon-muted border-2 border-carbon bg-paper-deep">
             <Gift size={48} className="mx-auto mb-4 opacity-20" />
             <p>Henüz ödül eklenmemiş.</p>
           </div>
@@ -140,10 +156,10 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
             {rewards.map((reward) => (
               <div
                 key={reward.id}
-                className="rf-screen-card-muted p-4 flex justify-between items-start group hover:border-orange-500/50 transition-colors"
+                className="border-2 border-carbon bg-paper-deep p-4 flex justify-between items-start group hover:border-orange-500/50 transition-colors"
               >
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-[#07142b] border border-cyan-800/40 flex items-center justify-center text-[var(--rf-muted)]">
+                  <div className="w-12 h-12 bg-[#07142b] border border-cyan-800/40 flex items-center justify-center text-carbon-muted">
                     {reward.icon === 'coffee' && <Coffee size={24} />}
                     {reward.icon === 'dessert' && <Gift size={24} />}
                     {reward.icon === 'discount' && <span className="text-xl font-bold">%</span>}
@@ -151,7 +167,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   </div>
                   <div>
                     <h3 className="font-bold text-white">{reward.title}</h3>
-                    <p className="text-sm text-[var(--rf-muted)]">{reward.description}</p>
+                    <p className="text-sm text-carbon-muted">{reward.description}</p>
                     <div className="mt-2 inline-block bg-orange-900/30 text-orange-400 text-xs px-2 py-1 border border-orange-900/50">
                       {reward.cost} Puan
                     </div>
@@ -160,7 +176,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => void handleDelete(reward.id)}
-                  className="text-[var(--rf-muted)] hover:text-red-500 p-2 hover:bg-red-900/20 transition-colors border border-transparent hover:border-red-500/30"
+                  className="text-carbon-muted hover:text-riso-redox p-2 hover:bg-riso-redox/15 transition-colors border border-transparent hover:border-riso-redox/30"
                   aria-label={`${reward.title} ödülünü sil`}
                   title="Ödülü sil"
                 >

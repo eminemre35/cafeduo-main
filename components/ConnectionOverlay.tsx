@@ -47,7 +47,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
   if (isConnected || !showReconnecting) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/70 ">
       <div className="border-2 border-carbon bg-paper riso-shadow-sm p-6 text-center max-w-sm mx-4 border border-carbon-muted shadow-[0_0_40px_rgba(34,211,238,0.2)]">
         <div className="text-4xl mb-3 animate-pulse">📡</div>
         <h3 className="font-riso-display text-lg text-carbon mb-2 uppercase tracking-wider">

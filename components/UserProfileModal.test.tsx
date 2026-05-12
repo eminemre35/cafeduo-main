@@ -73,7 +73,7 @@ describe('UserProfileModal', () => {
     fireEvent.change(select, { target: { value: 'Bilgisayar Mühendisliği' } });
 
     const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-emerald-400')
+      btn.className.includes('text-riso-spring')
     );
     expect(saveButton).toBeTruthy();
     fireEvent.click(saveButton as HTMLButtonElement);
@@ -87,7 +87,7 @@ describe('UserProfileModal', () => {
   it('shows alert when save fails', async () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockRejectedValueOnce(new Error('db down'));
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => { });
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
 
     const { container } = render(
       <UserProfileModal
@@ -103,7 +103,7 @@ describe('UserProfileModal', () => {
       target: { value: 'İşletme' },
     });
     const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-emerald-400')
+      btn.className.includes('text-riso-spring')
     );
     expect(saveButton).toBeTruthy();
     fireEvent.click(saveButton as HTMLButtonElement);
@@ -117,9 +117,7 @@ describe('UserProfileModal', () => {
   it('calls onClose from close button and backdrop', () => {
     const user = createUser();
     const onClose = jest.fn();
-    const { container } = render(
-      <UserProfileModal isOpen={true} onClose={onClose} user={user} />
-    );
+    const { container } = render(<UserProfileModal isOpen={true} onClose={onClose} user={user} />);
 
     fireEvent.click(screen.getAllByRole('button')[0]);
     expect(onClose).toHaveBeenCalledTimes(1);

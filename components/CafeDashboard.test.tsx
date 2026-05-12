@@ -39,7 +39,9 @@ describe('CafeDashboard', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 7, latitude: 37.741, longitude: 29.101, radius: 150 }]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([
+      { id: 7, latitude: 37.741, longitude: 29.101, radius: 150 },
+    ]);
     (api.rewards.list as jest.Mock).mockResolvedValue([
       { id: 1, title: 'Americano', description: 'Hot', cost: 120, icon: 'coffee' },
     ]);
@@ -116,7 +118,7 @@ describe('CafeDashboard', () => {
     });
 
     const deleteButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('hover:text-red-500')
+      btn.className.includes('hover:text-riso-redox')
     );
     expect(deleteButton).toBeTruthy();
     fireEvent.click(deleteButton as HTMLButtonElement);
