@@ -22,6 +22,10 @@ interface KnowledgeQuizProps {
 const QUIZ_ROUND_COUNT = 10;
 const QUIZ_GAME_TYPE = 'Bilgi Yarışı';
 const FINALIZATION_FALLBACK_MS = 10_000;
+/** Per-question time limit (seconds). When 0 is reached the question is
+ *  auto-submitted as wrong and the next round starts. Pure client-side in V1
+ *  — multiplayer doesn't yet enforce this server-side. */
+const QUESTION_TIME_SECONDS = 15;
 
 export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   currentUser,
@@ -50,9 +54,15 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const [feedbackAnimation, setFeedbackAnimation] = useState<'correct' | 'incorrect' | null>(null);
   const [scoreAnimation, setScoreAnimation] = useState<'player' | 'opponent' | null>(null);
   const [floatingScore, setFloatingScore] = useState<string | null>(null);
+  /** Per-question countdown — resets to QUESTION_TIME_SECONDS at every new
+   *  round, ticks down to 0, then auto-submits a wrong answer. */
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_SECONDS);
 
   const advanceTimerRef = useRef<number | null>(null);
   const quizStageRef = useRef<QuizStageHandle | null>(null);
+  /** Stable ref to handleAnswer so the countdown effect can call the latest
+   *  version without rerunning every time handleAnswer's closure changes. */
+  const handleAnswerRef = useRef<(idx: number) => void>(() => {});
 
   const fallbackQuestion = useMemo(
     () => ({
@@ -127,12 +137,18 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const handleAnswer = (optionIndex: number) => {
     if (live.done || live.resolvingMatch || selectedOption !== null || !currentQuestion) return;
 
-    const isCorrect = optionIndex === currentQuestion.answerIndex;
+    // optionIndex === -1 means "time ran out". We treat it as a wrong answer
+    // (timer-driven), highlight the correct option, and proceed normally.
+    const isTimeout = optionIndex === -1;
+    const isCorrect = !isTimeout && optionIndex === currentQuestion.answerIndex;
     const rivalCorrect = isBot ? Math.random() < 0.55 : false;
     const nextPlayerScore = live.playerScore + (isCorrect ? 1 : 0);
     const nextOpponentScore = live.opponentScore + (rivalCorrect ? 1 : 0);
 
-    setSelectedOption(optionIndex);
+    // For timeout, store a sentinel so the option grid renders all options
+    // as "neither picked correct nor picked wrong" while still showing the
+    // correct answer highlight via isCorrectAnswer fallback in the JSX.
+    setSelectedOption(isTimeout ? -1 : optionIndex);
 
     setFeedbackAnimation(isCorrect ? 'correct' : 'incorrect');
     window.setTimeout(() => setFeedbackAnimation(null), 600);
@@ -148,18 +164,21 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       setFloatingScore('+1');
       window.setTimeout(() => setFloatingScore(null), 800);
     } else {
-      setFloatingScore('✕');
-      window.setTimeout(() => setFloatingScore(null), 600);
+      setFloatingScore(isTimeout ? '⏱' : '✕');
+      window.setTimeout(() => setFloatingScore(null), 700);
     }
 
     live.setPlayerScore(nextPlayerScore);
     live.setOpponentScore(nextOpponentScore);
+    const correctText = currentQuestion.options[currentQuestion.answerIndex];
     setMessage(
       isCorrect
         ? 'Doğru cevap, puanı aldın.'
-        : isBot
-          ? 'Yanlış cevap, tur rakibe kaydı.'
-          : 'Yanlış cevap. Rakip sonucu bekleniyor.'
+        : isTimeout
+          ? `Süre doldu! Doğru cevap: ${correctText}`
+          : isBot
+            ? 'Yanlış cevap, tur rakibe kaydı.'
+            : 'Yanlış cevap. Rakip sonucu bekleniyor.'
     );
     playGameSfx(isCorrect ? 'success' : 'fail', isCorrect ? 0.3 : 0.22);
 
@@ -189,6 +208,35 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       playGameSfx('select', 0.18);
     }, 700);
   };
+
+  // Keep the ref pointing at the freshest handleAnswer closure so the
+  // countdown effect below can invoke it without listing handleAnswer as a
+  // dependency (which would cause the timer to restart on every render).
+  handleAnswerRef.current = handleAnswer;
+
+  // Per-question countdown. Resets when:
+  //   - roundIndex changes (next question)
+  //   - selectedOption transitions from set → null (advance after answer)
+  // Stops when:
+  //   - User picks (selectedOption !== null)
+  //   - Match is done or resolving (no point ticking)
+  useEffect(() => {
+    if (selectedOption !== null || live.done || live.resolvingMatch) return;
+    setTimeLeft(QUESTION_TIME_SECONDS);
+    const tick = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          window.clearInterval(tick);
+          // Fire the timeout via the ref so we always call the latest
+          // handleAnswer with the right closure (currentQuestion etc.).
+          handleAnswerRef.current?.(-1);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(tick);
+  }, [roundIndex, selectedOption, live.done, live.resolvingMatch]);
 
   return (
     <>
@@ -221,6 +269,39 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
               Oyundan Çık
             </button>
           </div>
+
+          {/* Per-question countdown bar — pure visual, no layout shift. Bar
+              widens left→right as time runs out (filled portion = elapsed),
+              flips to riso-redox + pulse in the last 5 seconds. */}
+          {(() => {
+            const elapsedFraction = 1 - timeLeft / QUESTION_TIME_SECONDS;
+            const warning = timeLeft <= 5 && selectedOption === null && !live.done;
+            return (
+              <div
+                className="mb-4 border-2 border-carbon bg-paper-deep px-3 py-2 flex items-center gap-3"
+                data-testid="quiz-countdown"
+              >
+                <span className="font-riso-mono text-[10px] uppercase tracking-[0.16em] text-carbon-muted font-bold shrink-0">
+                  Süre
+                </span>
+                <div className="flex-1 h-2 bg-paper-dim border-2 border-carbon overflow-hidden">
+                  <div
+                    className={`h-full transition-[width] duration-1000 ease-linear ${
+                      warning ? 'bg-riso-redox animate-pulse' : 'bg-riso-blue'
+                    }`}
+                    style={{ width: `${Math.max(0, Math.min(100, elapsedFraction * 100))}%` }}
+                  />
+                </div>
+                <span
+                  className={`font-riso-mono text-sm font-bold tracking-wider shrink-0 ${
+                    warning ? 'text-riso-redox' : 'text-carbon'
+                  }`}
+                >
+                  {timeLeft}s
+                </span>
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
             <div className="border-2 border-carbon bg-paper-deep p-3">

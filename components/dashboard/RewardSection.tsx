@@ -8,13 +8,24 @@
  * from the legacy `bg-[#0e355f]` — test file follows the same rename).
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Package, Gift } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import {
+  Coffee,
+  Percent,
+  Cookie,
+  Gamepad2,
+  ShoppingBag,
+  Package,
+  Gift,
+  ArrowRight,
+} from 'lucide-react';
 import { Reward, RedeemedReward, User } from '../../types';
 import { Button } from '../ui';
 import { SkeletonGrid } from '../Skeleton';
 import { EmptyState } from '../EmptyState';
+import { CouponDetailModal } from './CouponDetailModal';
 
 interface RewardSectionProps {
   currentUser: User;
@@ -43,6 +54,13 @@ const getRewardIcon = (icon: string): React.ReactNode => {
   }
 };
 
+const ICON_LABELS: Record<string, string> = {
+  coffee: 'Kahve',
+  discount: 'İndirim',
+  dessert: 'Tatlı',
+  game: 'Oyun',
+};
+
 export const RewardSection: React.FC<RewardSectionProps> = ({
   currentUser,
   rewards,
@@ -54,6 +72,10 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   onBuyReward,
 }) => {
   const canAfford = (cost: number): boolean => (currentUser?.points ?? 0) >= cost;
+
+  // Track which coupon is currently being "shown to the cashier" via the
+  // CouponDetailModal — null when no modal is open.
+  const [selectedCoupon, setSelectedCoupon] = useState<RedeemedReward | null>(null);
 
   return (
     <div className="border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6">
@@ -184,9 +206,9 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
       {activeTab === 'inventory' && (
         <div>
           {inventoryLoading ? (
-            <SkeletonGrid count={4} columns={1} />
+            <SkeletonGrid count={4} columns={2} />
           ) : (inventory?.length ?? 0) > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {inventory.map((item) => {
                 const expirationDate = new Date(
                   new Date(item.redeemedAt).getTime() + 5 * 24 * 60 * 60 * 1000
@@ -194,6 +216,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 const isExpired = new Date() > expirationDate;
                 const isUsed = item.isUsed;
                 const dead = isUsed || isExpired;
+                const typeLabel = ICON_LABELS[item.icon] || 'Kupon';
 
                 return (
                   <motion.div
@@ -201,62 +224,87 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25 }}
-                    className={`relative overflow-hidden ${dead ? 'opacity-65' : ''}`}
+                    className={`relative ${dead ? 'opacity-60 grayscale-[40%]' : ''}`}
+                    data-testid={`inventory-coupon-${item.redeemId}`}
                   >
-                    {/* Ticket — paper tone, ink border, perforated edges via small carbon dots */}
-                    <div className="relative bg-riso-mustard/20 border-2 border-carbon p-4 riso-shadow-sm">
-                      {/* Perforation dots — top-bottom punch holes */}
-                      <span
-                        aria-hidden="true"
-                        className="absolute -left-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
-                      />
-                      <span
-                        aria-hidden="true"
-                        className="absolute -right-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
-                      />
-
-                      {/* Used / Expired stamp overlay */}
+                    {/* Ticket — vertical hierarchy: header → meta → perforation → QR → code → action */}
+                    <div className="relative bg-riso-mustard/20 border-2 border-carbon riso-shadow-sm flex flex-col">
+                      {/* Stamp overlay (used wins over expired) */}
                       {isUsed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="rotate-[-12deg] border-4 border-riso-redox bg-paper px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-riso-redox shadow-md">
+                          <div className="rotate-[-12deg] border-4 border-riso-redox bg-paper px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-riso-redox">
                             KULLANILDI
                           </div>
                         </div>
                       )}
                       {isExpired && !isUsed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="rotate-[-12deg] border-4 border-carbon bg-paper-deep px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-carbon shadow-md">
+                          <div className="rotate-[-12deg] border-4 border-carbon bg-paper-deep px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-carbon">
                             SÜRESİ DOLDU
                           </div>
                         </div>
                       )}
 
-                      <div className="border-b-2 border-dashed border-carbon pb-2 mb-3 text-center">
-                        <h4 className="font-riso-display text-lg text-carbon uppercase">
+                      {/* Header — title + type chip + expiry date */}
+                      <div className="px-4 pt-4 pb-3">
+                        <h4 className="font-riso-display text-base sm:text-lg text-carbon uppercase tracking-[0.04em] leading-tight mb-2 break-words">
                           {item.title}
                         </h4>
-                        <span className="font-riso-mono text-[0.65rem] uppercase tracking-[0.2em] text-carbon-soft">
-                          CafeDuo Kuponu
-                        </span>
-                      </div>
-
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="flex h-14 w-14 items-center justify-center border-2 border-carbon bg-carbon text-paper text-[8px] font-bold uppercase">
-                          QR
-                        </div>
-                        <div className="text-right">
-                          <span className="block font-riso-mono text-lg font-bold tracking-widest text-carbon">
-                            {item.code}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 border-2 border-carbon bg-riso-pink/30 px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon">
+                            {typeLabel}
                           </span>
-                          <span className="block font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-soft">
-                            SKT: {expirationDate.toLocaleDateString()}
+                          <span className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-soft">
+                            SKT: {expirationDate.toLocaleDateString('tr-TR')}
                           </span>
                         </div>
                       </div>
 
-                      <div className="border-2 border-carbon bg-carbon px-2 py-1 text-center font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-paper">
-                        Kasada Gösterin
+                      {/* Perforation — ink dashed divider with paper notches on each end */}
+                      <div className="relative">
+                        <span
+                          aria-hidden="true"
+                          className="absolute -left-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="absolute -right-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
+                        />
+                        <div className="border-t-2 border-dashed border-carbon mx-2" />
                       </div>
+
+                      {/* QR + code stacked vertically — readable on small screens */}
+                      <div className="px-4 pt-3 pb-3 flex flex-col items-center gap-2.5">
+                        <div className="p-2 border-2 border-carbon bg-paper">
+                          <QRCodeSVG
+                            value={item.code}
+                            size={88}
+                            bgColor="#FBF7EE"
+                            fgColor="#141413"
+                            level="M"
+                            includeMargin={false}
+                            aria-label={`Kupon kodu: ${item.code}`}
+                          />
+                        </div>
+                        <code className="block w-full text-center font-riso-mono text-[0.7rem] sm:text-xs font-bold tracking-wider text-carbon break-all px-1">
+                          {item.code}
+                        </code>
+                      </div>
+
+                      {/* Action button — opens detail modal with big QR */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCoupon(item)}
+                        disabled={dead}
+                        data-testid={`coupon-show-${item.redeemId}`}
+                        className="riso-focus riso-press group mt-auto flex items-center justify-center gap-2 border-t-2 border-carbon bg-riso-pink text-carbon px-3 py-2.5 font-riso-display text-xs font-bold uppercase tracking-[0.14em] transition-all hover:bg-riso-pink-deep hover:text-paper disabled:cursor-not-allowed disabled:hover:bg-riso-pink disabled:hover:text-carbon"
+                      >
+                        Kasada Göster
+                        <ArrowRight
+                          size={14}
+                          className="transition-transform group-hover:translate-x-0.5"
+                        />
+                      </button>
                     </div>
                   </motion.div>
                 );
@@ -276,6 +324,12 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           )}
         </div>
       )}
+
+      <CouponDetailModal
+        isOpen={selectedCoupon !== null}
+        coupon={selectedCoupon}
+        onClose={() => setSelectedCoupon(null)}
+      />
     </div>
   );
 };

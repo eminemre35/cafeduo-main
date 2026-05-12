@@ -541,15 +541,18 @@ describe('RewardSection', () => {
         />
       );
 
-      // Kupon kodları görünüyor mu?
-      expect(screen.getByText('ABC123')).toBeInTheDocument();
-      expect(screen.getByText('DEF456')).toBeInTheDocument();
-      expect(screen.getByText('GHI789')).toBeInTheDocument();
+      // Kupon kodları görünüyor mu? Each inventory card renders the code in
+      // a <code> element for cashier readability; getAllByText accommodates
+      // the possibility that the type-chip + heading also contain the word.
+      expect(screen.getAllByText('ABC123').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('DEF456').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('GHI789').length).toBeGreaterThan(0);
 
-      // Başlıklar görünüyor mu?
-      expect(screen.getByText('Türk Kahvesi')).toBeInTheDocument();
-      expect(screen.getByText('Çay')).toBeInTheDocument();
-      expect(screen.getByText('Tatlı')).toBeInTheDocument();
+      // Başlıklar — query by heading role so the matching type-chip label
+      // (e.g. another "Tatlı" inside an ICON_LABELS span) doesn't collide.
+      expect(screen.getByRole('heading', { name: 'Türk Kahvesi' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Çay' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Tatlı' })).toBeInTheDocument();
     });
 
     it('should display "KULLANILDI" stamp for used coupons', () => {

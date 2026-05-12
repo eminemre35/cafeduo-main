@@ -94,6 +94,7 @@
     "nodemailer": "8.0.7",
     "pg": "^8.11.3",
     "pixi.js": "^8.6.0",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",

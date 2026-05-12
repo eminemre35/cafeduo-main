@@ -64,7 +64,8 @@ describe('authController security-critical auth flows', () => {
 
   it('register normalizes email and promotes bootstrap admin account at creation', async () => {
     pool.query
-      .mockResolvedValueOnce({ rows: [] }) // duplicate check
+      .mockResolvedValueOnce({ rows: [] }) // email duplicate check
+      .mockResolvedValueOnce({ rows: [] }) // username duplicate check
       .mockResolvedValueOnce({
         rows: [
           {
@@ -93,13 +94,17 @@ describe('authController security-critical auth flows', () => {
 
     await authController.register(req, res);
 
+    expect(pool.query).toHaveBeenNthCalledWith(1, 'SELECT id FROM users WHERE LOWER(email) = $1', [
+      'emin3619@gmail.com',
+    ]);
+
     expect(pool.query).toHaveBeenNthCalledWith(
-      1,
-      'SELECT id FROM users WHERE LOWER(email) = $1',
-      ['emin3619@gmail.com']
+      2,
+      'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
+      ['adminUser']
     );
 
-    const insertCall = pool.query.mock.calls[1];
+    const insertCall = pool.query.mock.calls[2];
     expect(insertCall[0]).toContain('INSERT INTO users');
     expect(insertCall[1]).toEqual([
       'adminUser',
@@ -110,6 +115,35 @@ describe('authController security-critical auth flows', () => {
       true,
     ]);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ role: 'admin' }));
+  });
+
+  it('rejects register when username is already taken (case-insensitive)', async () => {
+    pool.query
+      .mockResolvedValueOnce({ rows: [] }) // email check passes
+      .mockResolvedValueOnce({ rows: [{ id: 5 }] }); // username already exists
+    bcrypt.hash.mockResolvedValue('hashed-password');
+
+    const req = {
+      body: {
+        username: 'Emin',
+        email: 'fresh@example.com',
+        password: 'StrongPass123',
+        department: 'YBS',
+      },
+    };
+    const res = buildRes();
+
+    await authController.register(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
+    });
+    // INSERT must NOT be reached when username is taken
+    const insertCalls = pool.query.mock.calls.filter((call) =>
+      String(call[0]).includes('INSERT INTO users')
+    );
+    expect(insertCalls).toHaveLength(0);
   });
 
   it('rejects register when username format is invalid', async () => {
@@ -259,8 +293,7 @@ describe('authController security-critical auth flows', () => {
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      message:
-        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+      message: 'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
     });
     expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
   });
@@ -296,8 +329,7 @@ describe('authController security-critical auth flows', () => {
     );
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      message:
-        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+      message: 'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
     });
   });
 
@@ -321,8 +353,7 @@ describe('authController security-critical auth flows', () => {
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      message:
-        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+      message: 'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
     });
     expect(logger.error).toHaveBeenCalledWith(
       'forgotPassword e-mail send failed',
@@ -351,7 +382,9 @@ describe('authController security-critical auth flows', () => {
     await authController.forgotPassword(req, res);
 
     expect(pool.query.mock.calls[0][0]).toContain('LOWER(TRIM(email)) = ANY');
-    expect(pool.query.mock.calls[1][0]).toContain("split_part(LOWER(TRIM(email)), '@', 2) IN ('gmail.com', 'googlemail.com')");
+    expect(pool.query.mock.calls[1][0]).toContain(
+      "split_part(LOWER(TRIM(email)), '@', 2) IN ('gmail.com', 'googlemail.com')"
+    );
     expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'emin.3619+web@googlemail.com',
@@ -423,8 +456,6 @@ describe('authController security-critical auth flows', () => {
         path: '/',
       })
     );
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ success: true })
-    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 });

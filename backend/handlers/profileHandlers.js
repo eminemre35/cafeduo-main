@@ -13,7 +13,8 @@ const createProfileHandlers = ({
     try {
       // Single query with CTE to compute eligible achievements and unlock them
       // This replaces the N+1 pattern (1 + N*2 queries) with just 2 queries
-      const result = await pool.query(`
+      const result = await pool.query(
+        `
         WITH user_stats AS (
           SELECT id, username, points, wins, games_played
           FROM users WHERE id = $1
@@ -35,17 +36,25 @@ const createProfileHandlers = ({
         SELECT $1, id FROM eligible
         ON CONFLICT DO NOTHING
         RETURNING (SELECT json_agg(json_build_object('id', id, 'title', title, 'points_reward', points_reward)) FROM eligible)
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       if (result.rows.length > 0 && result.rows[0].json_agg) {
         const unlockedAchievements = result.rows[0].json_agg;
-        const totalPoints = unlockedAchievements.reduce((sum, a) => sum + (a.points_reward || 0), 0);
-        
+        const totalPoints = unlockedAchievements.reduce(
+          (sum, a) => sum + (a.points_reward || 0),
+          0
+        );
+
         if (totalPoints > 0) {
-          await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [totalPoints, userId]);
+          await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [
+            totalPoints,
+            userId,
+          ]);
           logger.info(
             `Achievements unlocked for user ${userId}: +${totalPoints} points ` +
-            `(${unlockedAchievements.map(a => a.title).join(', ')})`
+              `(${unlockedAchievements.map((a) => a.title).join(', ')})`
           );
         }
       }
@@ -62,11 +71,15 @@ const createProfileHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          let query = 'SELECT id, username, points, wins, games_played as "gamesPlayed", department FROM users';
+          // Leaderboard is for end users only — admins and cafe_admins are
+          // operators (super-admin emin3619, cafe manager iibfkantin, etc.)
+          // and shouldn't compete in the rankings.
+          let query =
+            'SELECT id, username, points, wins, games_played as "gamesPlayed", department FROM users WHERE role = \'user\'';
           const params = [];
 
           if (type === 'department' && department) {
-            query += ' WHERE department = $1';
+            query += ' AND department = $1';
             params.push(department);
           }
 
@@ -74,11 +87,18 @@ const createProfileHandlers = ({
           const result = await pool.query(query, params);
           return res.json(result.rows);
         } catch (err) {
-          return sendApiError(res, logger, 'Leaderboard fetch error', err, 'Liderlik tablosu yüklenemedi.');
+          return sendApiError(
+            res,
+            logger,
+            'Leaderboard fetch error',
+            err,
+            'Liderlik tablosu yüklenemedi.'
+          );
         }
       },
       memory: async () => {
-        let users = [...getMemoryUsers()];
+        // Same role filter as the DB path so dev/test parity holds.
+        let users = [...getMemoryUsers()].filter((user) => (user.role || 'user') === 'user');
         if (type === 'department' && department) {
           users = users.filter((user) => user.department === department);
         }
@@ -113,7 +133,13 @@ const createProfileHandlers = ({
 
           return res.json(result);
         } catch (err) {
-          return sendApiError(res, logger, 'Achievements fetch error', err, 'Başarımlar yüklenemedi.');
+          return sendApiError(
+            res,
+            logger,
+            'Achievements fetch error',
+            err,
+            'Başarımlar yüklenemedi.'
+          );
         }
       },
       memory: async () => res.json([]),
@@ -128,7 +154,11 @@ const createProfileHandlers = ({
     const nextGamesPlayed = Math.floor(Number(gamesPlayed));
     const safeDepartment = String(req.body?.department || '').slice(0, 120);
 
-    if (![nextPoints, nextWins, nextGamesPlayed].every((value) => Number.isFinite(value) && value >= 0)) {
+    if (
+      ![nextPoints, nextWins, nextGamesPlayed].every(
+        (value) => Number.isFinite(value) && value >= 0
+      )
+    ) {
       return sendApiProblem(res, {
         status: 400,
         code: 'VALIDATION_ERROR',
@@ -158,7 +188,9 @@ const createProfileHandlers = ({
           const user = result.rows[0];
 
           if (user.cafe_id) {
-            const cafeRes = await pool.query('SELECT name FROM cafes WHERE id = $1', [user.cafe_id]);
+            const cafeRes = await pool.query('SELECT name FROM cafes WHERE id = $1', [
+              user.cafe_id,
+            ]);
             if (cafeRes.rows.length > 0) {
               user.cafe_name = cafeRes.rows[0].name;
             }
@@ -169,7 +201,13 @@ const createProfileHandlers = ({
 
           return res.json(user);
         } catch (err) {
-          return sendApiError(res, logger, 'User profile update error', err, 'Kullanıcı güncellenemedi.');
+          return sendApiError(
+            res,
+            logger,
+            'User profile update error',
+            err,
+            'Kullanıcı güncellenemedi.'
+          );
         }
       },
       memory: async () => {
