@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import {
+  X,
+  User,
+  Mail,
+  Lock,
+  ArrowRight,
+  AlertTriangle,
+  Briefcase,
+  Check,
+  Eye,
+  EyeOff,
+  ChevronDown,
+} from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { CyberMascot, MascotMood } from './CyberMascot';
 import { User as UserType } from '../types';
@@ -21,17 +33,17 @@ const VALIDATION = {
     min: 3,
     max: 20,
     pattern: /^[a-zA-Z0-9_]+$/,
-    message: 'Kullanıcı adı 3-20 karakter, sadece harf, rakam ve alt çizgi içerebilir'
+    message: 'Kullanıcı adı 3-20 karakter, sadece harf, rakam ve alt çizgi içerebilir',
   },
   email: {
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: 'Geçerli bir e-posta adresi girin'
+    message: 'Geçerli bir e-posta adresi girin',
   },
   password: {
     min: 6,
     max: 50,
-    message: 'Şifre en az 6 karakter olmalıdır'
-  }
+    message: 'Şifre en az 6 karakter olmalıdır',
+  },
 };
 
 interface FieldErrors {
@@ -49,7 +61,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   initialMode,
-  onLoginSuccess
+  onLoginSuccess,
 }) => {
   const [mode, setMode] = useState(initialMode);
   const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
@@ -95,8 +107,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       case 'username':
         if (mode !== 'register') return undefined;
         if (!value) return 'Kullanıcı adı gereklidir';
-        if (value.length < VALIDATION.username.min) return `En az ${VALIDATION.username.min} karakter`;
-        if (value.length > VALIDATION.username.max) return `En fazla ${VALIDATION.username.max} karakter`;
+        if (value.length < VALIDATION.username.min)
+          return `En az ${VALIDATION.username.min} karakter`;
+        if (value.length > VALIDATION.username.max)
+          return `En fazla ${VALIDATION.username.max} karakter`;
         if (!VALIDATION.username.pattern.test(value)) return 'Sadece harf, rakam ve alt çizgi';
         return undefined;
       case 'email':
@@ -113,10 +127,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const handleBlur = (field: keyof FieldErrors) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
     const value = field === 'username' ? username : field === 'email' ? email : password;
     const error = validateField(field, value);
-    setFieldErrors(prev => ({ ...prev, [field]: error }));
+    setFieldErrors((prev) => ({ ...prev, [field]: error }));
   };
 
   const handleChange = (field: keyof FieldErrors, value: string) => {
@@ -134,7 +148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     // Clear error when user types
     if (touched[field]) {
       const error = validateField(field, value);
-      setFieldErrors(prev => ({ ...prev, [field]: error }));
+      setFieldErrors((prev) => ({ ...prev, [field]: error }));
     }
   };
 
@@ -159,9 +173,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setFieldErrors(cleanErrors);
     setTouched(
-      isForgotPasswordMode
-        ? { email: true }
-        : { username: true, email: true, password: true }
+      isForgotPasswordMode ? { email: true } : { username: true, email: true, password: true }
     );
 
     return Object.keys(cleanErrors).length === 0;
@@ -232,15 +244,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const inputBaseClass =
     'w-full min-h-12 bg-black/40 border-2 text-cyan-50 font-body text-base leading-6 group-[.is-error]:text-red-100 outline-none transition-colors duration-200 placeholder:text-cyan-800/60 pl-11 pr-12 cursor-text';
   const inputBorderClass =
-    'border-cyan-900/40 focus:border-cyan-400 focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
+    'border-cyan-900/40 focus:border-riso-pink focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
   const inputErrorClass =
-    'border-red-500/50 focus:border-red-400 focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)]';
+    'border-riso-redox/50 focus:border-riso-redox focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)]';
   const iconBaseClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-cyan-700 pointer-events-none transition-colors group-focus-within:text-cyan-400 group-[.is-error]:text-red-400 z-10';
+    'absolute left-4 top-1/2 -translate-y-1/2 text-cyan-700 pointer-events-none transition-colors group-focus-within:text-riso-pink-deep group-[.is-error]:text-riso-redox z-10';
 
-  const mascotMood: MascotMood = ((error || Object.keys(fieldErrors).length > 0) && hasSubmitted)
-    ? 'angry'
-    : (username.length > 0 || email.length > 0 || password.length > 0) ? 'typing' : 'neutral';
+  const mascotMood: MascotMood =
+    (error || Object.keys(fieldErrors).length > 0) && hasSubmitted
+      ? 'angry'
+      : username.length > 0 || email.length > 0 || password.length > 0
+        ? 'typing'
+        : 'neutral';
 
   if (!isOpen) return null;
 
@@ -254,7 +269,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         {/* Backdrop */}
         <motion.div
-          className="cd-auth-backdrop absolute inset-0 bg-[#020304]/95 backdrop-blur-md"
+          className="cd-auth-backdrop absolute inset-0 bg-[#020304]/95 "
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -264,7 +279,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Modal Container Wrapper for absolute positioning */}
         <div className="cd-auth-shell relative w-full max-w-[520px] max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
           {/* Mascot */}
-          <CyberMascot mood={mascotMood} className="hidden sm:block absolute -top-[70px] right-[40px] z-10" />
+          <CyberMascot
+            mood={mascotMood}
+            className="hidden sm:block absolute -top-[70px] right-[40px] z-10"
+          />
 
           <motion.div
             className="cd-auth-panel relative w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-[#050608] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.88),12px_12px_0_rgba(16,231,255,0.16)] sm:rounded-none overflow-hidden flex flex-col"
@@ -282,17 +300,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b-2 border-cyan-900/50 flex-shrink-0 bg-black/40 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-cyan-400 to-transparent opacity-50"></div>
               <div>
-                <p className="font-body text-cyan-400 tracking-widest text-xs uppercase font-bold relative inline-block">
+                <p className="font-body text-riso-pink-deep tracking-widest text-xs uppercase font-bold relative inline-block">
                   Güvenli Erişim
                   <span className="absolute -top-1 -right-2 w-1.5 h-1.5 bg-pink-500 animate-pulse"></span>
                 </p>
-                <h2 className="font-display-tr text-white text-3xl md:text-3xl uppercase mt-1 tracking-wider glitch-text-safe" data-text={mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}>
+                <h2
+                  className="font-riso-display text-carbon text-3xl md:text-3xl uppercase mt-1 tracking-wider glitch-text-safe"
+                  data-text={mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}
+                >
                   {mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}
                 </h2>
               </div>
               <motion.button
                 onClick={onClose}
-                className="w-10 h-10 border-2 border-cyan-900/50 text-cyan-400 bg-black/50 hover:border-pink-500 hover:text-pink-500 flex items-center justify-center transition-colors group"
+                className="w-10 h-10 border-2 border-cyan-900/50 text-riso-pink-deep bg-black/50 hover:border-pink-500 hover:text-pink-500 flex items-center justify-center transition-colors group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -302,47 +323,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {/* Content - Scrollable on mobile */}
             <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto flex flex-col gap-5">
-
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className={`flex-1 h-12 font-display text-lg uppercase tracking-wider transition-colors border-b-2 ${mode === 'login'
-                    ? 'text-cyan-400 border-cyan-400 bg-cyan-950/30'
-                    : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-cyan-200 hover:bg-cyan-950/25'
-                    }`}
+                  className={`flex-1 h-12 font-riso-display text-lg uppercase tracking-wider transition-colors border-b-2 ${
+                    mode === 'login'
+                      ? 'text-riso-pink-deep border-riso-pink bg-cyan-950/30'
+                      : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-carbon-soft hover:bg-cyan-950/25'
+                  }`}
                 >
                   <span className="block">GİRİŞ YAP</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className={`flex-1 h-12 font-display text-lg uppercase tracking-wider transition-colors border-b-2 ${mode === 'register'
-                    ? 'text-pink-400 border-pink-500 bg-pink-950/20'
-                    : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-cyan-200 hover:bg-cyan-950/25'
-                    }`}
+                  className={`flex-1 h-12 font-riso-display text-lg uppercase tracking-wider transition-colors border-b-2 ${
+                    mode === 'register'
+                      ? 'text-pink-400 border-pink-500 bg-pink-950/20'
+                      : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-carbon-soft hover:bg-cyan-950/25'
+                  }`}
                 >
                   <span className="block">KAYIT OL</span>
                 </button>
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border-l-4 border-red-500 text-red-200 px-4 py-3 font-body text-sm flex items-center gap-3 animate-pulse">
+                <div className="bg-red-500/10 border-l-4 border-riso-redox text-riso-redox px-4 py-3 font-body text-sm flex items-center gap-3 animate-pulse">
                   <AlertTriangle size={18} className="shrink-0 text-red-500" />
                   {error}
                 </div>
               )}
               {forgotMessage && (
-                <div className="bg-cyan-500/10 border-l-4 border-cyan-400 text-cyan-200 px-4 py-3 font-body text-sm">
+                <div className="bg-cyan-500/10 border-l-4 border-riso-pink text-carbon-soft px-4 py-3 font-body text-sm">
                   {forgotMessage}
                 </div>
               )}
 
               <form className="space-y-4" onSubmit={handleSubmit}>
-
                 {mode === 'register' && !isForgotPasswordMode && (
                   <>
-                    <div className={`relative group ${fieldErrors.username && touched.username ? 'is-error' : ''}`}>
+                    <div
+                      className={`relative group ${fieldErrors.username && touched.username ? 'is-error' : ''}`}
+                    >
                       <User className={iconBaseClass} size={18} />
                       <input
                         type="text"
@@ -350,15 +373,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onChange={(e) => handleChange('username', e.target.value)}
                         onBlur={() => handleBlur('username')}
                         placeholder="Kullanıcı adı"
-                        className={`${inputBaseClass} ${fieldErrors.username && touched.username ? inputErrorClass : inputBorderClass
-                          }`}
+                        className={`${inputBaseClass} ${
+                          fieldErrors.username && touched.username
+                            ? inputErrorClass
+                            : inputBorderClass
+                        }`}
                       />
                       {!fieldErrors.username && touched.username && username && (
-                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400" size={18} />
+                        <Check
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-pink-deep"
+                          size={18}
+                        />
                       )}
                     </div>
                     {fieldErrors.username && touched.username && (
-                      <p className="text-red-300 text-xs flex items-center gap-1 font-body">
+                      <p className="text-riso-redox text-xs flex items-center gap-1 font-body">
                         <AlertTriangle size={12} /> {fieldErrors.username}
                       </p>
                     )}
@@ -373,8 +402,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         <option value="" className="bg-black text-[var(--rf-muted)]">
                           Bölüm seçiniz (isteğe bağlı)
                         </option>
-                        {PAU_DEPARTMENTS.map(dept => (
-                          <option key={dept} value={dept} className="bg-black border-2 border-cyan-900/50 text-white font-body px-2">
+                        {PAU_DEPARTMENTS.map((dept) => (
+                          <option
+                            key={dept}
+                            value={dept}
+                            className="bg-black border-2 border-cyan-900/50 text-carbon font-body px-2"
+                          >
                             {dept}
                           </option>
                         ))}
@@ -387,7 +420,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </>
                 )}
 
-                <div className={`relative group ${fieldErrors.email && touched.email ? 'is-error' : ''}`}>
+                <div
+                  className={`relative group ${fieldErrors.email && touched.email ? 'is-error' : ''}`}
+                >
                   <Mail className={iconBaseClass} size={18} />
                   <input
                     type="email"
@@ -396,22 +431,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onBlur={() => handleBlur('email')}
                     placeholder="E-posta"
                     data-testid="auth-email-input"
-                    className={`${inputBaseClass} ${fieldErrors.email && touched.email ? inputErrorClass : inputBorderClass
-                      }`}
+                    className={`${inputBaseClass} ${
+                      fieldErrors.email && touched.email ? inputErrorClass : inputBorderClass
+                    }`}
                   />
                   {!fieldErrors.email && touched.email && email && (
-                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400" size={18} />
+                    <Check
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-pink-deep"
+                      size={18}
+                    />
                   )}
                 </div>
                 {fieldErrors.email && touched.email && (
-                  <p className="text-red-300 text-xs flex items-center gap-1 font-body">
+                  <p className="text-riso-redox text-xs flex items-center gap-1 font-body">
                     <AlertTriangle size={12} /> {fieldErrors.email}
                   </p>
                 )}
 
                 {!isForgotPasswordMode && (
                   <>
-                    <div className={`relative group ${fieldErrors.password && touched.password ? 'is-error' : ''}`}>
+                    <div
+                      className={`relative group ${fieldErrors.password && touched.password ? 'is-error' : ''}`}
+                    >
                       <Lock className={iconBaseClass} size={18} />
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -420,20 +461,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onBlur={() => handleBlur('password')}
                         placeholder="Şifre"
                         data-testid="auth-password-input"
-                        className={`${inputBaseClass} ${fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
-                          }`}
+                        className={`${inputBaseClass} ${
+                          fieldErrors.password && touched.password
+                            ? inputErrorClass
+                            : inputBorderClass
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-cyan-400 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600 hover:text-riso-pink-deep transition-colors"
                         aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
                     {fieldErrors.password && touched.password && (
-                      <p className="text-red-300 text-xs flex items-center gap-1 font-body">
+                      <p className="text-riso-redox text-xs flex items-center gap-1 font-body">
                         <AlertTriangle size={12} /> {fieldErrors.password}
                       </p>
                     )}
@@ -448,7 +492,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setError('');
                       setForgotMessage('');
                     }}
-                    className="text-sm font-body text-cyan-400/80 hover:text-cyan-300 hover:underline transition-colors block text-right w-full"
+                    className="text-sm font-body text-riso-pink-deep/80 hover:text-riso-pink-deep hover:underline transition-colors block text-right w-full"
                   >
                     Şifremi unuttum
                   </button>
@@ -458,7 +502,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   type="submit"
                   disabled={isLoading}
                   data-testid="auth-submit-button"
-                  className="w-full mt-4 normal-case text-lg font-display tracking-widest disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full mt-4 normal-case text-lg font-riso-display tracking-widest disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -489,7 +533,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <button
                       type="button"
                       onClick={() => switchMode('register')}
-                      className="text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
+                      className="text-riso-pink-deep hover:text-carbon-soft transition-colors font-semibold"
                     >
                       Kayıt olun
                     </button>
@@ -504,14 +548,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         setIsForgotPasswordMode(false);
                         setError('');
                       }}
-                      className="text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
+                      className="text-riso-pink-deep hover:text-carbon-soft transition-colors font-semibold"
                     >
                       Giriş ekranına dön
                     </button>
                   </p>
                 )}
                 <p className="text-center text-[11px] text-[var(--rf-muted)]">
-                  Giriş sonrası hesabınızın rolüne göre otomatik olarak uygun panele yönlendirilirsiniz.
+                  Giriş sonrası hesabınızın rolüne göre otomatik olarak uygun panele
+                  yönlendirilirsiniz.
                 </p>
               </div>
             </div>

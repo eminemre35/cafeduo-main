@@ -1,95 +1,166 @@
+/**
+ * About — Riso Kantin redesign (PR #24).
+ *
+ * "Why CafeDuo" section with 4 value pillars + 2 side cards. data-testid
+ * 'about-main-heading' preserved.
+ */
 import React from 'react';
 import { Building2, Gauge, Server, ShieldCheck, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Card, Squiggle } from './ui';
 
-const pillars = [
+interface Pillar {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  tone: 'pink' | 'blue' | 'mustard' | 'paper-deep';
+}
+
+const pillars: Pillar[] = [
   {
-    icon: <Server size={18} className="text-sky-200" />,
+    icon: <Server size={20} strokeWidth={2.4} />,
     title: 'Anlık Eşleşme',
     text: 'Aynı kafedeki oyuncuları düşük gecikmeyle ortak oyuna taşır.',
+    tone: 'pink',
   },
   {
-    icon: <Gauge size={18} className="text-emerald-200" />,
+    icon: <Gauge size={20} strokeWidth={2.4} />,
     title: 'Kısa Tur Dinamiği',
     text: 'Dakikalar içinde başlayıp biten oyunlarla akışı hafif tutar.',
+    tone: 'blue',
   },
   {
-    icon: <ShieldCheck size={18} className="text-slate-200" />,
+    icon: <ShieldCheck size={20} strokeWidth={2.4} />,
     title: 'Güvenli Giriş',
     text: 'Rol, oturum ve masa kontrolleriyle kontrollü erişim sunar.',
+    tone: 'paper-deep',
   },
   {
-    icon: <Users size={18} className="text-amber-200" />,
+    icon: <Users size={20} strokeWidth={2.4} />,
     title: 'Ödül Döngüsü',
     text: 'Maç puanı, kupon ve mağaza akışını tek ekonomide birleştirir.',
+    tone: 'mustard',
   },
 ];
 
+const TONE_BG: Record<Pillar['tone'], string> = {
+  pink: 'bg-riso-pink text-carbon',
+  blue: 'bg-riso-blue text-paper',
+  mustard: 'bg-riso-mustard text-carbon',
+  'paper-deep': 'bg-paper-deep text-carbon',
+};
+
 export const About: React.FC = () => {
   return (
-    <section id="about" className="cd-section cd-section-band" aria-label="Hakkımızda">
+    <section id="about" className="riso-kantin bg-paper py-20 sm:py-28" aria-label="Hakkımızda">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-stretch gap-4 lg:grid-cols-12">
-          <div className="cd-card relative overflow-hidden rounded-md p-7 md:p-9 lg:col-span-7">
-            <span className="cd-kicker">Neden CafeDuo?</span>
-            <h2
-              data-testid="about-main-heading"
-              className="mt-4 font-display-tr text-3xl leading-tight text-white md:text-5xl"
-            >
-              Bekleyen kullanıcıyı aktif oyuncuya çeviren sosyal oyun altyapısı.
-            </h2>
-            <p className="mt-5 text-base leading-8 text-slate-400 sm:text-lg">
-              CafeDuo, kafedeki bekleme anını eşleşmeli bir deneyime dönüştürür. Kullanıcı zamanı keyifli geçirir;
-              kafe de masadaki etkileşimi, tekrar ziyareti ve ödül döngüsünü güçlendirir.
-            </p>
+        <div className="grid items-stretch gap-6 lg:grid-cols-12">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.5 }}
+            className="lg:col-span-7"
+          >
+            <Card tone="paper" shadow="md" className="p-7 md:p-9">
+              <p className="mb-3 font-riso-mono text-xs font-bold uppercase tracking-[0.18em] text-carbon-soft">
+                // Neden CafeDuo?
+              </p>
+              <h2
+                data-testid="about-main-heading"
+                className="font-riso-display text-3xl leading-tight text-carbon md:text-5xl"
+              >
+                Bekleyen kullanıcıyı{' '}
+                <span className="relative inline-block">
+                  <span className="relative z-10 text-riso-pink-deep">aktif oyuncuya</span>
+                  <span aria-hidden="true" className="absolute -bottom-1 left-0 right-0 h-2.5">
+                    <Squiggle tone="mustard" />
+                  </span>
+                </span>{' '}
+                çeviren sosyal oyun altyapısı.
+              </h2>
+              <p className="mt-5 font-riso-body text-base leading-8 text-carbon-soft sm:text-lg">
+                CafeDuo, kafedeki bekleme anını eşleşmeli bir deneyime dönüştürür. Kullanıcı zamanı
+                keyifli geçirir; kafe de masadaki etkileşimi, tekrar ziyareti ve ödül döngüsünü
+                güçlendirir.
+              </p>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {pillars.map((pillar) => (
-                <article key={pillar.title} className="rounded-md border border-white/10 bg-white/[0.035] p-4 transition-colors hover:bg-white/[0.055]">
-                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-slate-950/55">
-                    {pillar.icon}
-                  </div>
-                  <h3 className="mt-3 text-base font-semibold text-white">{pillar.title}</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-400">{pillar.text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {pillars.map((pillar) => (
+                  <article
+                    key={pillar.title}
+                    className="border-2 border-carbon bg-paper p-4 transition-colors hover:bg-paper-deep"
+                  >
+                    <div
+                      className={`inline-flex h-10 w-10 items-center justify-center border-2 border-carbon ${TONE_BG[pillar.tone]}`}
+                    >
+                      {pillar.icon}
+                    </div>
+                    <h3 className="mt-3 font-riso-display text-lg text-carbon">{pillar.title}</h3>
+                    <p className="mt-1 font-riso-body text-sm leading-6 text-carbon-soft">
+                      {pillar.text}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
 
-          <div className="flex flex-col gap-4 lg:col-span-5">
-            <article className="cd-card rounded-md p-6">
-              <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex flex-col gap-4 lg:col-span-5"
+          >
+            <Card tone="mustard" shadow="md" rotation={1}>
+              <div className="inline-flex items-center gap-2 font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] text-carbon">
                 <Building2 size={14} />
                 Değer özeti
               </div>
-              <h3 className="mt-3 font-display-tr text-2xl text-white">Kullanıcı + kafe için net kazanım</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                Oyuncu bekleme süresini değerlendirir; kafe etkileşim, sadakat ve tekrar ziyaret motivasyonu kazanır.
+              <h3 className="mt-3 font-riso-display text-2xl text-carbon">
+                Kullanıcı + kafe için net kazanım
+              </h3>
+              <p className="mt-2 font-riso-body text-sm leading-6 text-carbon">
+                Oyuncu bekleme süresini değerlendirir; kafe etkileşim, sadakat ve tekrar ziyaret
+                motivasyonu kazanır.
               </p>
               <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-md border border-white/10 bg-slate-950/35 p-3">
-                  <p className="font-display-tr text-xl text-white">3</p>
-                  <p className="text-[10px] uppercase text-slate-400">Oyun</p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-slate-950/35 p-3">
-                  <p className="font-display-tr text-xl text-white">&lt;60 sn</p>
-                  <p className="text-[10px] uppercase text-slate-400">Tur</p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-slate-950/35 p-3">
-                  <p className="font-display-tr text-xl text-white">Anlık</p>
-                  <p className="text-[10px] uppercase text-slate-400">Puan</p>
-                </div>
+                {[
+                  { v: '3', l: 'Oyun' },
+                  { v: '<60 sn', l: 'Tur' },
+                  { v: 'Anlık', l: 'Puan' },
+                ].map((s) => (
+                  <div key={s.l} className="border-2 border-carbon bg-paper p-3">
+                    <p className="font-riso-display text-xl text-carbon">{s.v}</p>
+                    <p className="font-riso-mono text-[0.6rem] uppercase tracking-wider text-carbon-muted">
+                      {s.l}
+                    </p>
+                  </div>
+                ))}
               </div>
-            </article>
+            </Card>
 
-            <article className="cd-card rounded-md p-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Kazanım başlıkları</p>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-400">
-                <li>Canlı eşleşme ve skor güncellemesi</li>
-                <li>Kısa tur, yüksek tekrar oynanış döngüsü</li>
-                <li>Ödül ekonomisiyle kafe sadakati</li>
+            <Card tone="paper" shadow="sm" rotation={-0.5}>
+              <p className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] text-carbon-soft">
+                Kazanım başlıkları
+              </p>
+              <ul className="mt-3 space-y-2 font-riso-body text-sm leading-6 text-carbon-soft">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-riso-pink" />
+                  Canlı eşleşme ve skor güncellemesi
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-riso-blue" />
+                  Kısa tur, yüksek tekrar oynanış döngüsü
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-riso-mustard" />
+                  Ödül ekonomisiyle kafe sadakati
+                </li>
               </ul>
-            </article>
-          </div>
+            </Card>
+          </motion.div>
         </div>
       </div>
     </section>
