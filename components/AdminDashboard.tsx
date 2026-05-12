@@ -779,26 +779,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         }
                       />
 
-                      <MapLocationPicker
-                        primaryLatitude={editCafeData.latitude}
-                        primaryLongitude={editCafeData.longitude}
-                        primaryRadius={Number(editCafeData.radius) || 150}
-                        secondaryLatitude={editCafeData.secondaryLatitude}
-                        secondaryLongitude={editCafeData.secondaryLongitude}
-                        secondaryRadius={Number(editCafeData.secondaryRadius) || 150}
-                        onPrimaryLatitudeChange={(value) =>
-                          setEditCafeData({ ...editCafeData, latitude: value })
-                        }
-                        onPrimaryLongitudeChange={(value) =>
-                          setEditCafeData({ ...editCafeData, longitude: value })
-                        }
-                        onSecondaryLatitudeChange={(value) =>
-                          setEditCafeData({ ...editCafeData, secondaryLatitude: value })
-                        }
-                        onSecondaryLongitudeChange={(value) =>
-                          setEditCafeData({ ...editCafeData, secondaryLongitude: value })
-                        }
-                      />
+                      <div className="border-2 border-carbon bg-paper p-1 riso-shadow-sm">
+                        <p className="bg-riso-blue text-paper px-3 py-2 font-riso-display text-xs sm:text-sm uppercase tracking-[0.12em] font-bold mb-1">
+                          Haritadan Konum Seç
+                        </p>
+                        <MapLocationPicker
+                          primaryLatitude={editCafeData.latitude}
+                          primaryLongitude={editCafeData.longitude}
+                          primaryRadius={Number(editCafeData.radius) || 150}
+                          secondaryLatitude={editCafeData.secondaryLatitude}
+                          secondaryLongitude={editCafeData.secondaryLongitude}
+                          secondaryRadius={Number(editCafeData.secondaryRadius) || 150}
+                          onPrimaryLatitudeChange={(value) =>
+                            setEditCafeData({ ...editCafeData, latitude: value })
+                          }
+                          onPrimaryLongitudeChange={(value) =>
+                            setEditCafeData({ ...editCafeData, longitude: value })
+                          }
+                          onSecondaryLatitudeChange={(value) =>
+                            setEditCafeData({ ...editCafeData, secondaryLatitude: value })
+                          }
+                          onSecondaryLongitudeChange={(value) =>
+                            setEditCafeData({ ...editCafeData, secondaryLongitude: value })
+                          }
+                        />
+                      </div>
 
                       <Card variant="muted" className="p-5">
                         <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">

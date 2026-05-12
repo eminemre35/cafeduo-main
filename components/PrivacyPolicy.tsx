@@ -1,44 +1,80 @@
-import React from 'react';
-import { Shield, Lock, Eye, Trash2, Mail, Clock, Users, FileText } from 'lucide-react';
+/**
+ * PrivacyPolicy — Riso Kantin redesign.
+ *
+ * Previously rendered text-white on cream paper (invisible title) plus
+ * leftover cyber-dark email box and a neon-shadow back button. Rewritten
+ * here as a clean printed-zine document: ink text on paper-deep sections
+ * with spot-coloured icon chips per section, ink-bordered cards, and a
+ * proper Riso press-button back link.
+ *
+ * Also fixes "scroll to top on mount": when a user opens this route from
+ * elsewhere in the SPA (e.g. footer link), browsers don't reset scroll
+ * for client-side route changes — we force scroll(0,0) ourselves.
+ */
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Shield,
+  Lock,
+  Eye,
+  Trash2,
+  Mail,
+  Clock,
+  Users,
+  FileText,
+  ArrowLeft,
+  Cookie,
+} from 'lucide-react';
 
 export const PrivacyPolicy: React.FC = () => {
+  // Force scroll to top on mount — react-router doesn't do this for SPA
+  // navigations, so users coming from the landing footer would otherwise
+  // land mid-page on the privacy doc.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-paper  text-white py-20 px-4 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12 border-2 border-carbon bg-paper riso-shadow-sm p-8">
-          <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft justify-center mb-3">
+    <div className="riso-kantin min-h-screen bg-paper text-carbon py-12 sm:py-20 px-4 relative overflow-x-hidden">
+      <div className="max-w-3xl mx-auto">
+        {/* Hero */}
+        <header className="text-center mb-10 sm:mb-12 border-2 border-carbon bg-paper riso-shadow-md p-6 sm:p-10">
+          <p className="font-riso-mono text-[11px] sm:text-xs uppercase tracking-[0.18em] text-carbon-soft mb-3">
             Veri Güvenliği Protokolü
           </p>
-          <Shield className="w-16 h-16 text-riso-blue mx-auto mb-4" />
-          <h1 className="text-4xl md:text-5xl leading-[1.05] font-riso-display tracking-[0.08em] mb-2 break-words">
+          <div className="inline-flex h-16 w-16 items-center justify-center border-2 border-carbon bg-riso-blue mb-4">
+            <Shield size={32} className="text-paper" strokeWidth={2.2} />
+          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl leading-[1.15] font-riso-display text-carbon tracking-[0.04em] mb-2 break-words uppercase">
             Gizlilik Politikası ve KVKK Aydınlatma Metni
           </h1>
-          <p className="text-carbon-muted">
+          <p className="text-sm text-carbon-muted font-riso-body mt-3">
             Son güncelleme: {new Date().toLocaleDateString('tr-TR')}
           </p>
-        </div>
+        </header>
 
-        <div className="space-y-8 text-carbon-muted relative z-10">
-          {/* Veri Sorumlusu */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Users size={20} className="text-blue-400" /> 1. Veri Sorumlusu
-            </h2>
+        <div className="space-y-6 sm:space-y-8 text-carbon font-riso-body">
+          <PolicySection
+            number={1}
+            title="Veri Sorumlusu"
+            icon={<Users size={20} />}
+            iconBg="bg-riso-blue text-paper"
+          >
             <p>
               6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, kişisel
               verileriniz; veri sorumlusu olarak <strong>CafeDuo</strong> tarafından aşağıda
               açıklanan kapsamda işlenebilecektir.
             </p>
-          </section>
+          </PolicySection>
 
-          {/* Toplanan Veriler */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <FileText size={20} className="text-purple-400" /> 2. Toplanan Kişisel Veriler
-            </h2>
-            <p className="mb-4">Platformumuz üzerinden aşağıdaki kişisel veriler toplanmaktadır:</p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
+          <PolicySection
+            number={2}
+            title="Toplanan Kişisel Veriler"
+            icon={<FileText size={20} />}
+            iconBg="bg-riso-pink text-carbon"
+          >
+            <p className="mb-3">Platformumuz üzerinden aşağıdaki kişisel veriler toplanmaktadır:</p>
+            <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
               <li>
                 <strong>Kimlik Bilgileri:</strong> Kullanıcı adı
               </li>
@@ -55,59 +91,62 @@ export const PrivacyPolicy: React.FC = () => {
                 <strong>Konum Verileri:</strong> Kafe check-in bilgileri (masa numarası)
               </li>
             </ul>
-          </section>
+          </PolicySection>
 
-          {/* İşleme Amaçları */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Eye size={20} className="text-riso-mustard-deep" /> 3. Verilerin İşlenme Amaçları
-            </h2>
-            <ul className="list-disc list-inside space-y-2 ml-4">
+          <PolicySection
+            number={3}
+            title="Verilerin İşlenme Amaçları"
+            icon={<Eye size={20} />}
+            iconBg="bg-riso-mustard text-carbon"
+          >
+            <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
               <li>Üyelik kaydının oluşturulması ve hesap yönetimi</li>
               <li>Platform hizmetlerinin sunulması</li>
               <li>Oyun ve puan sisteminin işletilmesi</li>
               <li>Kullanıcı deneyiminin iyileştirilmesi</li>
               <li>Yasal yükümlülüklerin yerine getirilmesi</li>
             </ul>
-          </section>
+          </PolicySection>
 
-          {/* Hukuki Dayanak */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Lock size={20} className="text-riso-spring" /> 4. Kişisel Verilerin İşlenmesinin
-              Hukuki Dayanağı
-            </h2>
-            <p className="mb-4">
+          <PolicySection
+            number={4}
+            title="Kişisel Verilerin İşlenmesinin Hukuki Dayanağı"
+            icon={<Lock size={20} />}
+            iconBg="bg-riso-spring text-carbon"
+          >
+            <p className="mb-3">
               KVKK'nın 5. maddesinde belirtilen aşağıdaki hukuki sebeplere dayanılarak
               işlenmektedir:
             </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
+            <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
               <li>Açık rızanızın bulunması</li>
               <li>Sözleşmenin kurulması veya ifası için gerekli olması</li>
               <li>Hukuki yükümlülüğün yerine getirilmesi</li>
               <li>Meşru menfaatlerimiz için zorunlu olması</li>
             </ul>
-          </section>
+          </PolicySection>
 
-          {/* Veri Saklama */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Clock size={20} className="text-orange-400" /> 5. Verilerin Saklanma Süresi
-            </h2>
+          <PolicySection
+            number={5}
+            title="Verilerin Saklanma Süresi"
+            icon={<Clock size={20} />}
+            iconBg="bg-riso-mustard text-carbon"
+          >
             <p>
               Kişisel verileriniz, işleme amaçlarının gerektirdiği süre boyunca ve yasal saklama
               süreleri çerçevesinde saklanmaktadır. Hesabınızı silmeniz durumunda verileriniz 30 gün
               içinde sistemlerimizden kalıcı olarak silinir.
             </p>
-          </section>
+          </PolicySection>
 
-          {/* Kullanıcı Hakları */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Trash2 size={20} className="text-riso-redox" /> 6. KVKK Kapsamındaki Haklarınız
-            </h2>
-            <p className="mb-4">KVKK'nın 11. maddesi uyarınca aşağıdaki haklara sahipsiniz:</p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
+          <PolicySection
+            number={6}
+            title="KVKK Kapsamındaki Haklarınız"
+            icon={<Trash2 size={20} />}
+            iconBg="bg-riso-redox text-paper"
+          >
+            <p className="mb-3">KVKK'nın 11. maddesi uyarınca aşağıdaki haklara sahipsiniz:</p>
+            <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
               <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
               <li>Kişisel verileriniz işlenmişse buna ilişkin bilgi talep etme</li>
               <li>İşleme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme</li>
@@ -123,32 +162,36 @@ export const PrivacyPolicy: React.FC = () => {
                 giderilmesini talep etme
               </li>
             </ul>
-          </section>
+          </PolicySection>
 
-          {/* İletişim */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Mail size={20} className="text-riso-pink-deep" /> 7. İletişim
-            </h2>
-            <p>
+          <PolicySection
+            number={7}
+            title="İletişim"
+            icon={<Mail size={20} />}
+            iconBg="bg-riso-pink text-carbon"
+          >
+            <p className="mb-3">
               KVKK kapsamındaki haklarınızı kullanmak için aşağıdaki kanallardan bizimle iletişime
               geçebilirsiniz:
             </p>
-            <div className="mt-4 bg-black/30 p-4 border border-cyan-800/35">
-              <p>
-                <strong>E-posta:</strong> cafeduotr@gmail.com
+            <div className="mt-3 bg-paper border-2 border-carbon p-4">
+              <p className="font-riso-mono text-sm text-carbon">
+                <strong className="text-riso-pink-deep">E-posta:</strong> cafeduotr@gmail.com
               </p>
             </div>
-          </section>
+          </PolicySection>
 
-          {/* Çerezler */}
-          <section className="border-2 border-carbon bg-paper-deep p-6">
-            <h2 className="text-xl font-bold text-white mb-4">8. Çerez Politikası</h2>
-            <p className="mb-4">
+          <PolicySection
+            number={8}
+            title="Çerez Politikası"
+            icon={<Cookie size={20} />}
+            iconBg="bg-riso-mustard text-carbon"
+          >
+            <p className="mb-3">
               Web sitemiz, kullanıcı deneyimini iyileştirmek için çerezler kullanmaktadır.
               Kullandığımız çerez türleri:
             </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
+            <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
               <li>
                 <strong>Zorunlu Çerezler:</strong> Oturum yönetimi için gerekli
               </li>
@@ -156,22 +199,53 @@ export const PrivacyPolicy: React.FC = () => {
                 <strong>Tercih Çerezleri:</strong> Dil ve tema tercihlerinizi hatırlamak için
               </li>
             </ul>
-            <p className="mt-4 text-sm text-carbon-muted">
+            <p className="mt-3 text-sm text-carbon-muted">
               Tarayıcı ayarlarınızdan çerezleri devre dışı bırakabilirsiniz, ancak bu durumda bazı
               özellikler düzgün çalışmayabilir.
             </p>
-          </section>
+          </PolicySection>
         </div>
 
-        <div className="mt-12 text-center">
-          <a
-            href="/"
-            className="inline-block bg-riso-blue hover:bg-riso-blue text-[#041226] font-semibold px-6 py-3 border-2 border-cyan-200 shadow-[4px_4px_0_rgba(255,0,234,0.3)] transition-colors"
+        <div className="mt-10 sm:mt-12 text-center">
+          <Link
+            to="/"
+            className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-riso-pink text-carbon px-6 py-3 font-riso-display font-bold text-sm uppercase tracking-[0.12em] riso-shadow-md transition-all hover:-translate-y-[1px]"
           >
+            <ArrowLeft size={16} />
             Ana Sayfaya Dön
-          </a>
+          </Link>
         </div>
       </div>
     </div>
   );
 };
+
+interface PolicySectionProps {
+  number: number;
+  title: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  children: React.ReactNode;
+}
+
+/** A single titled section of the policy. Ink-bordered paper-deep card with
+ *  a numbered/iconned heading and a free-form body. Keeps the layout
+ *  uniform across all 8 sections — change once, reflected everywhere. */
+const PolicySection: React.FC<PolicySectionProps> = ({ number, title, icon, iconBg, children }) => (
+  <section className="border-2 border-carbon bg-paper-deep p-5 sm:p-6 riso-shadow-sm">
+    <header className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-carbon">
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 border-carbon ${iconBg}`}
+      >
+        {icon}
+      </div>
+      <h2 className="font-riso-display text-lg sm:text-xl font-bold text-carbon uppercase tracking-[0.04em]">
+        <span className="text-carbon-muted mr-2">{number}.</span>
+        {title}
+      </h2>
+    </header>
+    <div className="text-carbon text-sm sm:text-base leading-relaxed">{children}</div>
+  </section>
+);
+
+export default PrivacyPolicy;

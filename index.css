@@ -2232,22 +2232,9 @@ textarea::placeholder {
   color: rgba(165, 173, 184, 0.62) !important;
 }
 
-.cd-cookie-banner {
-  bottom: max(1rem, env(safe-area-inset-bottom)) !important;
-  left: 1rem !important;
-  right: 1rem !important;
-  z-index: 90 !important;
-}
-
-.cd-cookie-banner > div {
-  border: 2px solid rgba(16, 231, 255, 0.48) !important;
-  border-radius: 0 !important;
-  background:
-    linear-gradient(135deg, rgba(16, 231, 255, 0.08), transparent 34%), rgba(5, 6, 8, 0.96) !important;
-  box-shadow:
-    6px 6px 0 rgba(0, 0, 0, 0.88),
-    8px 8px 0 rgba(255, 48, 69, 0.24) !important;
-}
+/* Legacy .cd-cookie-banner cyber-dark styles removed in PR #32 —
+ * CookieConsent now renders its own ink-bordered paper modal with
+ * Tailwind utilities and no longer carries the legacy class. */
 
 input:focus-visible,
 select:focus-visible,
@@ -2858,30 +2845,8 @@ textarea:focus-visible,
     margin-top: 0.35rem;
   }
 
-  .cd-cookie-banner {
-    bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
-  }
-
-  .cd-cookie-banner > div {
-    padding: 0.75rem !important;
-  }
-
-  .cd-cookie-banner h3 {
-    margin-bottom: 0.2rem !important;
-    font-size: 0.8rem !important;
-  }
-
-  .cd-cookie-banner p {
-    margin-bottom: 0.55rem !important;
-    font-size: 0.72rem !important;
-    line-height: 1.35 !important;
-  }
-
-  .cd-cookie-banner button {
-    min-height: 2.2rem !important;
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.75rem !important;
-  }
+  /* Legacy .cd-cookie-banner mobile overrides removed in PR #32 —
+   * see note above the main rule. */
 
   .cd-reticle-stage {
     min-height: 14rem;

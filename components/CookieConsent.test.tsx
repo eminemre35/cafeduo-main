@@ -7,8 +7,16 @@ describe('CookieConsent', () => {
     jest.clearAllMocks();
   });
 
-  it('does not show banner when consent already exists', () => {
+  it('does not show banner when consent already accepted (legacy true)', () => {
     (window.localStorage.getItem as jest.Mock).mockReturnValue('true');
+
+    render(<CookieConsent />);
+
+    expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
+  });
+
+  it('does not show banner when consent already accepted (new value)', () => {
+    (window.localStorage.getItem as jest.Mock).mockReturnValue('accepted');
 
     render(<CookieConsent />);
 
@@ -22,26 +30,40 @@ describe('CookieConsent', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Çerez Kullanımı')).toBeInTheDocument();
-      expect(screen.getByText(/çerezleri kullanıyoruz/i)).toBeInTheDocument();
     });
 
-    // Should NOT auto-accept - user must click button
+    // Should NOT auto-accept - user must click a button
     expect(window.localStorage.setItem).not.toHaveBeenCalled();
   });
 
-  it('stores consent only after user clicks accept button', async () => {
+  it('stores accepted consent only after user clicks Kabul Et', async () => {
     (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
 
     render(<CookieConsent />);
 
-    const acceptButton = await screen.findByRole('button', { name: 'Anladım' });
+    const acceptButton = await screen.findByRole('button', { name: 'Kabul Et' });
     fireEvent.click(acceptButton);
 
     await waitFor(() => {
       expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
     });
 
-    // Verify consent was stored after user clicked
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'true');
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'accepted');
+  });
+
+  it('stores rejected consent after user clicks Reddet but keeps banner visible', async () => {
+    (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
+
+    render(<CookieConsent />);
+
+    const rejectButton = await screen.findByRole('button', { name: 'Reddet' });
+    fireEvent.click(rejectButton);
+
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'rejected');
+
+    // Banner stays — rejected users must come back and accept to use the app
+    await waitFor(() => {
+      expect(screen.getByText('Çerez Kullanımı')).toBeInTheDocument();
+    });
   });
 });

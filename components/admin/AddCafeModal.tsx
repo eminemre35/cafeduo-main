@@ -58,22 +58,27 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
         }
       />
 
-      <MapLocationPicker
-        primaryLatitude={formData.latitude}
-        primaryLongitude={formData.longitude}
-        primaryRadius={Number(formData.radius) || 150}
-        secondaryLatitude={formData.secondaryLatitude}
-        secondaryLongitude={formData.secondaryLongitude}
-        secondaryRadius={Number(formData.secondaryRadius) || 150}
-        onPrimaryLatitudeChange={(value) => onFormChange({ ...formData, latitude: value })}
-        onPrimaryLongitudeChange={(value) => onFormChange({ ...formData, longitude: value })}
-        onSecondaryLatitudeChange={(value) =>
-          onFormChange({ ...formData, secondaryLatitude: value })
-        }
-        onSecondaryLongitudeChange={(value) =>
-          onFormChange({ ...formData, secondaryLongitude: value })
-        }
-      />
+      <div className="border-2 border-carbon bg-paper p-1 riso-shadow-sm">
+        <p className="bg-riso-blue text-paper px-3 py-2 font-riso-display text-xs sm:text-sm uppercase tracking-[0.12em] font-bold mb-1">
+          Haritadan Konum Seç
+        </p>
+        <MapLocationPicker
+          primaryLatitude={formData.latitude}
+          primaryLongitude={formData.longitude}
+          primaryRadius={Number(formData.radius) || 150}
+          secondaryLatitude={formData.secondaryLatitude}
+          secondaryLongitude={formData.secondaryLongitude}
+          secondaryRadius={Number(formData.secondaryRadius) || 150}
+          onPrimaryLatitudeChange={(value) => onFormChange({ ...formData, latitude: value })}
+          onPrimaryLongitudeChange={(value) => onFormChange({ ...formData, longitude: value })}
+          onSecondaryLatitudeChange={(value) =>
+            onFormChange({ ...formData, secondaryLatitude: value })
+          }
+          onSecondaryLongitudeChange={(value) =>
+            onFormChange({ ...formData, secondaryLongitude: value })
+          }
+        />
+      </div>
 
       <Card variant="muted" className="p-5">
         <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">

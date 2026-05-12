@@ -40,6 +40,12 @@ describe('AuthModal', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Cookie consent gate: AuthModal blocks submission unless consent is
+    // accepted. Default to 'accepted' so tests can exercise the auth
+    // flow; individual tests can override per-test if needed.
+    (window.localStorage.getItem as jest.Mock).mockImplementation((key: string) =>
+      key === 'cookie_consent' ? 'accepted' : null
+    );
   });
 
   it('renders login form by default', () => {

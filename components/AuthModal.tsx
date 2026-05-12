@@ -18,6 +18,7 @@ import { User as UserType } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
 import { useToast } from '../contexts/ToastContext';
+import { readCookieConsent } from './CookieConsent';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -182,6 +183,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setError('');
     setHasSubmitted(true);
+
+    // Cookie consent is a hard prerequisite — auth uses JWT cookies for
+    // session management, so without consent we literally cannot keep the
+    // user logged in. Block submission and prompt them to revisit the
+    // cookie banner.
+    if (readCookieConsent() !== 'accepted') {
+      const message =
+        'Giriş yapabilmek için önce çerez kullanımını kabul etmelisin. Çerez bildirimi tekrar açıldı.';
+      setError(message);
+      toast.error(message);
+      // Wipe any prior 'rejected' value so the banner shows pending again
+      // when the user lands back on the page.
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('cookie_consent');
+        window.dispatchEvent(new Event('cookie-consent-changed'));
+      }
+      return;
+    }
 
     // Validate all fields
     if (!validateForm()) {
