@@ -322,9 +322,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {gameResult && (
-            <div className="mb-6 border-2 border-carbon bg-paper border-riso-spring/30 rounded-xl p-4">
-              <p className="text-sm text-riso-spring">Maç Sonucu</p>
-              <p className="text-lg font-bold text-white mt-1">
+            <div className="mb-6 border-2 border-carbon bg-riso-spring/20 p-4 riso-shadow-sm">
+              <p className="text-sm font-riso-mono uppercase tracking-wider text-carbon">
+                Maç Sonucu
+              </p>
+              <p className="text-lg font-bold text-carbon mt-1 font-riso-display">
                 {gameResult.winner ? `${gameResult.winner} kazandı` : 'Maç berabere bitti'}
               </p>
               <p className="text-sm text-carbon-muted mt-1">

@@ -62,7 +62,7 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
 
         <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {loading ? (
-            <p className="font-sans text-white uppercase tracking-widest animate-pulse">
+            <p className="font-riso-body text-carbon uppercase tracking-widest animate-pulse">
               Veri deşifre ediliyor...
             </p>
           ) : error ? (

@@ -107,41 +107,37 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
       id: 'verification',
       label: 'Kupon İşlemleri',
       icon: QrCode,
-      activeClassName:
-        'bg-riso-blue text-[#041226] border-cyan-300 shadow-[4px_4px_0_rgba(255,0,234,0.35)]',
+      activeClassName: 'bg-riso-blue text-paper border-carbon riso-shadow-sm',
     },
     {
       id: 'rewards',
       label: 'Ödül Yönetimi',
       icon: Gift,
-      activeClassName:
-        'bg-riso-pink text-[#041226] border-pink-300 shadow-[4px_4px_0_rgba(0,243,255,0.3)]',
+      activeClassName: 'bg-riso-pink text-carbon border-carbon riso-shadow-sm',
     },
     {
       id: 'settings',
       label: 'Konum Ayarları',
       icon: MapPin,
-      activeClassName:
-        'bg-emerald-400 text-[#041226] border-emerald-300 shadow-[4px_4px_0_rgba(0,243,255,0.3)]',
+      activeClassName: 'bg-riso-spring text-carbon border-carbon riso-shadow-sm',
     },
   ];
 
   return (
     <div className="min-h-screen bg-paper text-carbon pt-24 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] relative overflow-hidden ">
-      <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8 border-2 border-carbon bg-paper riso-shadow-sm p-5">
-          <div className="w-16 h-16 bg-carbon border-2 border-cyan-400/50 flex items-center justify-center shadow-[4px_4px_0_rgba(255,0,234,0.3)]">
-            <Coffee size={32} className="text-riso-blue" />
+        <div className="flex items-center gap-4 mb-8 border-2 border-carbon bg-paper riso-shadow-md p-5">
+          <div className="w-16 h-16 bg-riso-mustard border-2 border-carbon flex items-center justify-center riso-shadow-sm shrink-0">
+            <Coffee size={32} className="text-carbon" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
               Cafe Control Net
             </p>
-            <h1 className="text-3xl md:text-4xl leading-[1.02] font-riso-display text-white tracking-[0.08em] mb-1 break-words">
+            <h1 className="text-3xl md:text-4xl leading-[1.02] font-riso-display text-carbon tracking-[0.08em] mb-1 break-words uppercase">
               Kafe Yönetim Paneli
             </h1>
-            <p className="text-carbon-muted uppercase tracking-[0.12em] text-xs md:text-sm">
+            <p className="text-carbon-muted uppercase tracking-[0.12em] text-xs md:text-sm font-riso-body">
               Kupon doğrulama, ödül ve konum doğrulama yönetimi
             </p>
           </div>
@@ -166,10 +162,10 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                 aria-controls={`cafe-admin-panel-${tab.id}`}
                 id={`cafe-admin-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 border-2 font-bold transition-all flex items-center gap-2 uppercase tracking-[0.1em] ${
+                className={`riso-focus px-6 py-3 border-2 font-bold transition-all flex items-center gap-2 uppercase tracking-[0.1em] font-riso-display ${
                   isActive
                     ? tab.activeClassName
-                    : 'bg-black/25 text-carbon-soft/70 border-riso-blue/30 hover:bg-paper-deep/35 hover:text-carbon hover:border-cyan-300/60'
+                    : 'bg-paper text-carbon border-carbon hover:bg-paper-deep hover:-translate-y-[1px]'
                 }`}
               >
                 <Icon size={20} />

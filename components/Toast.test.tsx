@@ -25,15 +25,7 @@ describe('Toast', () => {
 
   it('auto closes after duration for non-loading toast', () => {
     const onClose = jest.fn();
-    render(
-      <Toast
-        id="t1"
-        message="saved"
-        type="success"
-        duration={1200}
-        onClose={onClose}
-      />
-    );
+    render(<Toast id="t1" message="saved" type="success" duration={1200} onClose={onClose} />);
 
     act(() => {
       jest.advanceTimersByTime(1199);
@@ -48,9 +40,7 @@ describe('Toast', () => {
 
   it('does not auto close when type is loading', () => {
     const onClose = jest.fn();
-    render(
-      <Toast id="t2" message="processing" type="loading" duration={500} onClose={onClose} />
-    );
+    render(<Toast id="t2" message="processing" type="loading" duration={500} onClose={onClose} />);
 
     act(() => {
       jest.advanceTimersByTime(5000);
@@ -70,15 +60,15 @@ describe('Toast', () => {
     render(<Toast id="t4" message="ok" type="success" onClose={jest.fn()} />);
 
     const container = screen.getByText('ok').closest('div');
-    expect(container).toHaveClass('border-green-500');
-    expect(container).toHaveClass('bg-green-500/5');
+    expect(container).toHaveClass('border-l-riso-spring');
+    expect(container).toHaveClass('bg-riso-spring/15');
   });
 
   it('uses info styling by default', () => {
     render(<Toast id="t5" message="info-default" onClose={jest.fn()} />);
 
     const container = screen.getByText('info-default').closest('div');
-    expect(container).toHaveClass('border-blue-500');
-    expect(container).toHaveClass('bg-blue-500/5');
+    expect(container).toHaveClass('border-l-riso-blue');
+    expect(container).toHaveClass('bg-riso-blue/15');
   });
 });

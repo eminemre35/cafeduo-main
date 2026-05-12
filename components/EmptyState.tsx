@@ -32,11 +32,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         className="text-center py-8 px-4 border-2 border-carbon bg-paper-deep"
         data-testid="empty-state-compact"
       >
-        <div className="inline-flex items-center justify-center w-12 h-12 border border-carbon-muted bg-[#F2EAD8]/80 mb-3">
-          <Icon size={24} className="text-riso-blue" />
+        <div className="inline-flex items-center justify-center w-12 h-12 border-2 border-carbon bg-riso-blue mb-3">
+          <Icon size={24} className="text-paper" />
         </div>
-        <h4 className="text-white font-medium mb-1 uppercase tracking-[0.06em]">{title}</h4>
-        <p className="text-carbon-muted text-sm mb-3">{description}</p>
+        <h4 className="text-carbon font-riso-display font-bold mb-1 uppercase tracking-[0.06em]">
+          {title}
+        </h4>
+        <p className="text-carbon-muted text-sm mb-3 font-riso-body">{description}</p>
         {action && (
           <RetroButton onClick={action.onClick} variant="primary" className="text-xs">
             {action.label}
@@ -48,24 +50,29 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <div
-      className="text-center py-16 px-4 border-2 border-carbon bg-paper riso-shadow-sm "
+      className="text-center py-16 px-4 border-2 border-carbon bg-paper riso-shadow-md"
       data-testid="empty-state"
     >
-      {/* Icon */}
+      {/* Icon — solid riso-blue sticker tile */}
       <div className="relative inline-block mb-6">
-        <div className="absolute inset-0 bg-riso-blue/15 blur-2xl" />
-        <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#06142b] to-[#081b39] border border-carbon-muted">
-          <Icon size={40} className="text-riso-blue" />
+        <div className="relative inline-flex items-center justify-center w-20 h-20 bg-riso-blue border-2 border-carbon riso-shadow-sm">
+          <Icon size={40} className="text-paper" strokeWidth={2.2} />
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-xl font-bold text-white mb-2" data-testid="empty-state-title">
+      <h3
+        className="text-xl sm:text-2xl font-bold text-carbon font-riso-display mb-2 uppercase tracking-[0.06em]"
+        data-testid="empty-state-title"
+      >
         {title}
       </h3>
 
       {/* Description */}
-      <p className="text-carbon-muted max-w-sm mx-auto mb-6" data-testid="empty-state-description">
+      <p
+        className="text-carbon-muted max-w-sm mx-auto mb-6 font-riso-body"
+        data-testid="empty-state-description"
+      >
         {description}
       </p>
 

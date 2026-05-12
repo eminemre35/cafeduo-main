@@ -259,96 +259,113 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   return (
     <div
-      className="border-2 border-carbon bg-paper p-4 sm:p-6 border-2 border-carbon bg-paper mx-auto max-w-3xl p-4 sm:p-6 text-white"
+      className="border-2 border-carbon bg-paper riso-shadow-md mx-auto max-w-3xl p-4 sm:p-6 text-carbon relative overflow-hidden"
       data-testid="arena-battle"
     >
       <ConnectionOverlay gameId={gameId} />
+      {/* Riso confetti accents */}
+      <div
+        aria-hidden="true"
+        className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] hidden sm:block pointer-events-none"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute top-6 right-16 h-2 w-6 bg-riso-pink rotate-[6deg] hidden sm:block pointer-events-none"
+      />
       <div className="relative z-10">
-        <div className="mb-5 flex items-start justify-between gap-4 border-b border-[rgba(16,231,255,0.2)] pb-4">
+        <div className="mb-5 flex items-start justify-between gap-4 border-b-2 border-carbon pb-4">
           <div>
-            <p className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-[#1E3FB5]">
+            <p className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-riso-blue">
               LIVE TARGET LOCK
             </p>
-            <h2 className="font-riso-display text-2xl text-white sm:text-4xl">{AIM_GAME_TYPE}</h2>
-            <p className="mt-2 text-xs text-[#A5ADB8] sm:text-sm">{participants}</p>
+            <h2 className="font-riso-display text-2xl text-carbon sm:text-4xl uppercase tracking-[0.06em]">
+              {AIM_GAME_TYPE}
+            </h2>
+            <p className="mt-2 text-xs text-carbon-muted sm:text-sm">{participants}</p>
           </div>
           <button
             onClick={onLeave}
-            className="border-2 border-carbon bg-paper px-3 py-1.5 font-riso-body text-sm font-semibold text-[#A5ADB8] hover:text-white"
+            className="riso-focus riso-press border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm px-3 py-1.5 font-riso-display text-xs uppercase tracking-[0.14em] font-bold"
           >
             Oyundan Çık
           </button>
         </div>
 
         <div className="mb-5 grid grid-cols-3 gap-3 text-center">
-          <div className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-2">
+          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2 text-carbon font-riso-body">
             <Target size={18} />
-            <span>Tur</span>
-            <strong>
+            <span className="font-bold uppercase text-xs">Tur</span>
+            <strong className="font-riso-display">
               {Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}
             </strong>
           </div>
-          <div className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-2 border-[#1E3FB5]/45">
+          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue text-paper px-3 py-2 font-riso-body">
             <Trophy size={18} />
-            <span>Sen</span>
-            <strong>{live.playerScore}</strong>
+            <span className="font-bold uppercase text-xs">Sen</span>
+            <strong className="font-riso-display">{live.playerScore}</strong>
           </div>
-          <div className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-2 border-[#FF3E94]/45">
+          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-pink text-carbon px-3 py-2 font-riso-body">
             <RadioTower size={18} />
-            <span>Rakip</span>
-            <strong>{live.opponentScore}</strong>
+            <span className="font-bold uppercase text-xs">Rakip</span>
+            <strong className="font-riso-display">{live.opponentScore}</strong>
           </div>
         </div>
 
-        <div className="relative aspect-[2/1] border-2 border-carbon bg-paper relative mb-5 overflow-hidden">
+        <div className="relative aspect-[2/1] border-2 border-carbon bg-paper-deep mb-5 overflow-hidden">
           {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
           <AimBattleStageCanvas ref={pixiStageRef} className="absolute inset-0 h-full w-full" />
           {/* CSS reticle kept as a11y/test fallback and for environments without WebGL */}
           <div className="absolute inset-0 opacity-20 pointer-events-none" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-12 w-12 border-2 border-riso-pink pointer-events-none" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-12 w-12 border-2 border-carbon pointer-events-none" />
           <div
-            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-riso-pink pointer-events-none opacity-0"
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-carbon pointer-events-none opacity-0"
             style={{ left: `${gauge}%` }}
             data-testid="arena-reticle"
             aria-hidden="true"
           >
             <Crosshair size={42} />
           </div>
-          <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-[#A5ADB8]">
+          <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs font-riso-mono text-carbon-muted">
             <span>0</span>
-            <span className="text-[#39FF6A]">MERKEZ 50</span>
+            <span className="text-riso-spring font-bold border-2 border-carbon bg-paper px-2 py-0.5">
+              MERKEZ 50
+            </span>
             <span>100</span>
           </div>
         </div>
 
         <div className="mb-5 border-2 border-carbon bg-paper-deep p-4">
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-[#1E3FB5]">
+            <span className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-riso-blue">
               Nişan Kilidi
             </span>
-            <span className="text-[#F1B41E]">
+            <span className="text-riso-mustard-deep font-riso-mono font-bold">
               {Math.round(gauge)}% / isabet {Math.round(accuracy)}%
             </span>
           </div>
-          <div className="h-2 border-2 border-carbon bg-paper-deep overflow-hidden">
+          <div className="h-2 border-2 border-carbon bg-paper-dim overflow-hidden">
             <div
               className="h-full bg-riso-blue transition-[width]"
               style={{ width: `${accuracy}%` }}
             />
           </div>
-          <p className="mt-3 text-sm text-[#A5ADB8]">{message}</p>
+          <p className="mt-3 text-sm text-carbon-muted">{message}</p>
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-3 text-xs">
           <div className="border-2 border-carbon bg-paper-deep p-3">
-            <div className="text-[#A5ADB8]">Son Atışın</div>
-            <div className="mt-1 font-bold text-white">
+            <div className="text-carbon-muted font-riso-mono uppercase tracking-wider">
+              Son Atışın
+            </div>
+            <div className="mt-1 font-bold text-carbon font-riso-body">
               {playerShot === null ? '-' : `${Math.round(playerShot)}% - ${shotLabel(playerShot)}`}
             </div>
           </div>
           <div className="border-2 border-carbon bg-paper-deep p-3">
-            <div className="text-[#A5ADB8]">Rakip Atışı</div>
-            <div className="mt-1 font-bold text-white">
+            <div className="text-carbon-muted font-riso-mono uppercase tracking-wider">
+              Rakip Atışı
+            </div>
+            <div className="mt-1 font-bold text-carbon font-riso-body">
               {opponentShot === null
                 ? '-'
                 : `${Math.round(opponentShot)}% - ${shotLabel(opponentShot)}`}

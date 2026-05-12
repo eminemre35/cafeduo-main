@@ -162,28 +162,28 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="border-2 border-carbon bg-paper riso-shadow-sm p-8 shadow-xl">
+      <div className="border-2 border-carbon bg-paper riso-shadow-md p-8">
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
           Geo Matrix
         </p>
-        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <h2 className="font-riso-display text-xl sm:text-2xl font-bold text-carbon mb-6 flex items-center gap-2 uppercase tracking-wide">
           <MapPin className="text-riso-spring" />
           Konum Doğrulama Ayarları
         </h2>
 
         <div className="mb-5 border-2 border-carbon bg-paper-deep p-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-carbon-soft uppercase tracking-[0.12em]">
+            <p className="text-xs text-carbon-soft uppercase tracking-[0.12em] font-bold font-riso-body">
               Haritadan Nokta Seç
             </p>
-            <div className="inline-flex border border-carbon-muted bg-black/30">
+            <div className="inline-flex border-2 border-carbon bg-paper">
               <button
                 type="button"
                 onClick={() => setMapTarget('primary')}
-                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] ${
+                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display ${
                   mapTarget === 'primary'
-                    ? 'bg-riso-blue text-[#041226] font-semibold'
-                    : 'text-carbon-soft hover:bg-riso-blue/15'
+                    ? 'bg-riso-blue text-paper font-bold'
+                    : 'text-carbon hover:bg-riso-blue/15'
                 }`}
               >
                 Ana Konum
@@ -191,10 +191,10 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
               <button
                 type="button"
                 onClick={() => setMapTarget('secondary')}
-                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] ${
+                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display border-l-2 border-carbon ${
                   mapTarget === 'secondary'
-                    ? 'bg-riso-blue text-[#041226] font-semibold'
-                    : 'text-carbon-soft hover:bg-riso-blue/15'
+                    ? 'bg-riso-blue text-paper font-bold'
+                    : 'text-carbon hover:bg-riso-blue/15'
                 }`}
               >
                 İkinci Konum
@@ -222,7 +222,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                     <leafletMap.Circle
                       center={primaryCoords}
                       radius={Math.max(10, Number(radius) || 150)}
-                      pathOptions={{ color: '#22d3ee', fillColor: '#0891b2', fillOpacity: 0.12 }}
+                      pathOptions={{ color: '#1D4ED8', fillColor: '#1D4ED8', fillOpacity: 0.15 }}
                     />
                   </>
                 )}
@@ -232,7 +232,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                     <leafletMap.Circle
                       center={secondaryCoords}
                       radius={Math.max(10, Number(secondaryRadius) || 150)}
-                      pathOptions={{ color: '#f0abfc', fillColor: '#a21caf', fillOpacity: 0.12 }}
+                      pathOptions={{ color: '#FF3E94', fillColor: '#FF3E94', fillOpacity: 0.15 }}
                     />
                   </>
                 )}
@@ -270,7 +270,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={latitude}
                 onChange={(event) => onLatitudeChange(event.target.value)}
                 placeholder="37.741000"
-                className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
+                className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
               />
             </div>
           </div>
@@ -294,7 +294,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={longitude}
                 onChange={(event) => onLongitudeChange(event.target.value)}
                 placeholder="29.101000"
-                className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
+                className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
               />
             </div>
           </div>
@@ -319,7 +319,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={radius}
                 onChange={(event) => onRadiusChange(event.target.value)}
                 placeholder="150"
-                className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
+                className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
               />
             </div>
           </div>
@@ -345,7 +345,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryLatitude}
                   onChange={(event) => onSecondaryLatitudeChange(event.target.value)}
                   placeholder="37.742000"
-                  className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
+                  className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
                 />
               </div>
             </div>
@@ -369,7 +369,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryLongitude}
                   onChange={(event) => onSecondaryLongitudeChange(event.target.value)}
                   placeholder="29.102000"
-                  className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
+                  className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
                 />
               </div>
             </div>
@@ -394,7 +394,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryRadius}
                   onChange={(event) => onSecondaryRadiusChange(event.target.value)}
                   placeholder="150"
-                  className="border-2 border-carbon bg-paper w-full pl-10 pr-4 py-3 text-white placeholder:text-carbon-muted outline-none font-mono"
+                  className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
                 />
               </div>
             </div>
@@ -404,7 +404,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <button
               type="button"
               onClick={() => void onPickCurrentLocation()}
-              className="py-3 border-2 border-riso-blue/35 bg-paper-deep text-carbon hover:bg-cyan-900/35 font-semibold flex items-center justify-center gap-2"
+              className="riso-focus riso-press py-3 border-2 border-carbon bg-paper-deep text-carbon hover:bg-paper font-riso-display font-bold flex items-center justify-center gap-2 uppercase tracking-[0.08em] text-sm"
             >
               <LocateFixed size={16} />
               Cihazdan Konumu Al
@@ -413,15 +413,15 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className={`py-3 border-2 font-bold text-white flex items-center justify-center gap-2 transition-all ${
+              className={`riso-focus riso-press py-3 border-2 border-carbon font-riso-display font-bold flex items-center justify-center gap-2 transition-all uppercase tracking-[0.08em] text-sm ${
                 loading
-                  ? 'bg-paper-deep/55 text-carbon-muted cursor-not-allowed border-carbon-muted/45'
-                  : 'bg-green-600 hover:bg-green-500 border-green-300/40'
+                  ? 'bg-paper-dim text-carbon-muted cursor-not-allowed'
+                  : 'bg-riso-spring text-carbon riso-shadow-sm'
               }`}
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-carbon border-t-transparent animate-spin" />
                   Kaydediliyor...
                 </>
               ) : (
@@ -436,22 +436,26 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
 
         {status !== 'idle' && (
           <div
-            className={`mt-6 p-4 border flex items-center gap-3 ${
+            className={`mt-6 p-4 border-2 border-carbon flex items-center gap-3 ${
               status === 'success'
-                ? 'bg-green-900/20 border-green-900/50 text-riso-spring'
-                : 'bg-riso-redox/15 border-red-900/50 text-riso-redox'
+                ? 'bg-riso-spring/25 text-carbon'
+                : 'bg-riso-redox/20 text-carbon'
             }`}
             role="status"
             aria-live="polite"
           >
-            {status === 'success' ? <CheckCircle size={20} /> : <XCircle size={20} />}
-            <p className="font-medium">{message}</p>
+            {status === 'success' ? (
+              <CheckCircle size={20} className="text-riso-spring shrink-0" />
+            ) : (
+              <XCircle size={20} className="text-riso-redox shrink-0" />
+            )}
+            <p className="font-medium font-riso-body">{message}</p>
           </div>
         )}
 
-        <div className="mt-6 p-4 bg-blue-900/10 border border-blue-900/30 text-sm text-blue-300">
-          <p className="font-bold mb-2">Not:</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-400/80">
+        <div className="mt-6 p-4 bg-riso-blue/15 border-2 border-carbon text-sm text-carbon font-riso-body">
+          <p className="font-bold mb-2 font-riso-display uppercase tracking-wide">Not:</p>
+          <ul className="list-disc list-inside space-y-1 text-carbon-soft">
             <li>Check-in yalnızca bu konum yarıçapı içinde yapılabilir.</li>
             <li>Yarıçapı kampüs/kat sınırlarına göre güncelleyin.</li>
             <li>

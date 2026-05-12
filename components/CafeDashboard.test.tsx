@@ -118,7 +118,7 @@ describe('CafeDashboard', () => {
     });
 
     const deleteButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('hover:text-riso-redox')
+      btn.className.includes('hover:bg-riso-redox')
     );
     expect(deleteButton).toBeTruthy();
     fireEvent.click(deleteButton as HTMLButtonElement);

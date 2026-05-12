@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
-import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
@@ -185,26 +184,29 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     <>
       <ConnectionOverlay gameId={gameId} />
       <div
-        className="max-w-2xl mx-auto border-2 border-carbon bg-paper riso-shadow-sm  p-4 sm:p-6 text-white relative overflow-hidden"
+        className="max-w-2xl mx-auto border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6 text-carbon relative overflow-hidden"
         data-testid="knowledge-quiz"
-        style={{
-          backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.knowledgeQuiz}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
       >
-        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
+        {/* Riso confetti accents */}
+        <div
+          aria-hidden="true"
+          className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] hidden sm:block pointer-events-none"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute top-6 right-16 h-2 w-6 bg-riso-pink rotate-[6deg] hidden sm:block pointer-events-none"
+        />
         <div className="relative z-10">
           <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
             Sistem TR-X // Bilgi Tarayıcı
           </div>
           <div className="flex items-start justify-between gap-3 mb-4">
-            <h2 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            <h2 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none text-carbon">
               {QUIZ_GAME_TYPE}
             </h2>
             <button
               onClick={onLeave}
-              className="shrink-0 px-3 py-2 border border-riso-pink/45 bg-riso-pink/15 text-riso-pink-deep hover:bg-riso-pink/24 transition-colors text-xs uppercase tracking-[0.16em]"
+              className="riso-focus riso-press shrink-0 px-3 py-2 border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm transition-all font-riso-display text-xs uppercase tracking-[0.16em]"
             >
               Oyundan Çık
             </button>
@@ -216,7 +218,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
               <div className="font-bold text-carbon">
                 {Math.min(roundIndex + 1, maxRounds)} / {maxRounds}
               </div>
-              <div className="mt-2 h-1.5 bg-[#0a1f3a] rounded-full overflow-hidden">
+              <div className="mt-2 h-1.5 bg-paper-dim border border-carbon overflow-hidden">
                 <div
                   className="h-full bg-riso-blue transition-all duration-500 ease-out"
                   style={{ width: `${((roundIndex + 1) / maxRounds) * 100}%` }}
@@ -262,7 +264,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
             )}
             <p
               data-testid="knowledge-question"
-              className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4"
+              className="text-base md:text-lg font-riso-display font-bold text-carbon leading-relaxed mb-4 uppercase tracking-[0.04em]"
             >
               {currentQuestion.question}
             </p>
@@ -272,23 +274,23 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                 const isCorrect = idx === currentQuestion.answerIndex;
                 const stateClass =
                   selectedOption === null
-                    ? 'border-carbon-muted hover:border-carbon-muted bg-[#F2EAD8]/70 hover:bg-[#15305f]/70 hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(34,211,238,0.15)]'
+                    ? 'border-carbon bg-paper hover:bg-paper-dim hover:-translate-y-[1px] hover:shadow-[3px_3px_0_0_rgba(20,20,19,1)]'
                     : isPicked && isCorrect
-                      ? 'border-riso-spring/60 bg-riso-spring/25 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-[1.02]'
+                      ? 'border-carbon bg-riso-spring/40 ring-2 ring-riso-spring scale-[1.02]'
                       : isPicked
-                        ? 'border-riso-pink/60 bg-riso-pink/25 shadow-[0_0_20px_rgba(244,63,94,0.3)] scale-[1.02]'
+                        ? 'border-carbon bg-riso-redox/30 ring-2 ring-riso-redox scale-[1.02]'
                         : isCorrect
-                          ? 'border-riso-spring/40 bg-riso-spring/15'
-                          : 'border-carbon-muted bg-[#F2EAD8]/55 opacity-60';
+                          ? 'border-carbon bg-riso-spring/25'
+                          : 'border-carbon-muted bg-paper-dim opacity-55';
                 const leftBorderClass =
                   selectedOption === null
-                    ? 'hover:border-l-4'
+                    ? ''
                     : isPicked && isCorrect
-                      ? 'border-l-4 border-l-emerald-400'
+                      ? 'border-l-[6px] border-l-riso-spring'
                       : isPicked
-                        ? 'border-l-4 border-l-rose-400'
+                        ? 'border-l-[6px] border-l-riso-redox'
                         : isCorrect
-                          ? 'border-l-4 border-l-emerald-400/50'
+                          ? 'border-l-[6px] border-l-riso-spring/60'
                           : '';
                 return (
                   <button
@@ -296,26 +298,25 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                     data-testid={`knowledge-option-${idx}`}
                     onClick={() => handleAnswer(idx)}
                     disabled={selectedOption !== null || live.done || live.resolvingMatch}
-                    className={`text-left border px-3.5 py-3 transition-all duration-200 ${stateClass} ${leftBorderClass}`}
+                    className={`text-left border-2 px-3.5 py-3 transition-all duration-200 font-riso-body text-carbon disabled:cursor-not-allowed ${stateClass} ${leftBorderClass}`}
                   >
                     <span className="flex items-center gap-3">
                       <span
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                      ${
-                        selectedOption === null
-                          ? 'bg-riso-blue/20 text-riso-blue'
-                          : isPicked && isCorrect
-                            ? 'bg-emerald-400 text-white'
-                            : isPicked
-                              ? 'bg-rose-400 text-white'
-                              : isCorrect
-                                ? 'bg-emerald-400/30 text-riso-spring'
-                                : 'bg-riso-blue/10 text-riso-blue/50'
-                      }`}
+                        className={`w-7 h-7 border-2 border-carbon flex items-center justify-center font-riso-display text-xs font-bold shrink-0 ${
+                          selectedOption === null
+                            ? 'bg-riso-blue text-paper'
+                            : isPicked && isCorrect
+                              ? 'bg-riso-spring text-carbon'
+                              : isPicked
+                                ? 'bg-riso-redox text-paper'
+                                : isCorrect
+                                  ? 'bg-riso-spring/60 text-carbon'
+                                  : 'bg-paper text-carbon-muted'
+                        }`}
                       >
                         {String.fromCharCode(65 + idx)}
                       </span>
-                      <span>{option}</span>
+                      <span className="font-medium">{option}</span>
                     </span>
                   </button>
                 );
