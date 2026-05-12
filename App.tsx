@@ -243,7 +243,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
+    <div className="riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
       <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
 
       <main>

@@ -1,8 +1,27 @@
+/**
+ * CafeSelection — Riso Kantin redesign (PR #24).
+ *
+ * The first big surface a user hits after login. Hosts the GPS check-in flow
+ * (cafe picker + table number + optional verification code). State + handlers
+ * are unchanged — only the presentational layer was rewritten.
+ *
+ * `data-testid` attributes preserved so existing tests still pass.
+ */
+
 import React from 'react';
-import { MapPin, Navigation, Coffee, AlertTriangle, CheckCircle, LocateFixed, ChevronDown } from 'lucide-react';
+import {
+  MapPin,
+  AlertTriangle,
+  CheckCircle,
+  LocateFixed,
+  Coffee,
+  Hash,
+  KeyRound,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { User } from '../types';
 import { useCafeSelection } from '../hooks/useCafeSelection';
-import { CyberMascot, MascotMood } from './CyberMascot';
+import { Card, Button, Input, Select, Squiggle } from './ui';
 
 interface CafeSelectionProps {
   currentUser: User;
@@ -27,172 +46,207 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     requestLocationAccess,
     checkIn,
   } = useCafeSelection({ currentUser, onCheckInSuccess });
+
   const [hasSubmitted, setHasSubmitted] = React.useState(false);
+  const [showVerificationField, setShowVerificationField] = React.useState(false);
 
-  const fieldBaseClass =
-    'rf-input rf-control h-12 font-sans text-[1.02rem] leading-[1.1] text-white tracking-normal cursor-text';
-  const fieldIconClass =
-    'absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] pointer-events-none transition-colors group-focus-within:text-cyan-300';
+  const locationLabel = (() => {
+    switch (locationStatus) {
+      case 'ready':
+        return {
+          color: 'text-riso-spring',
+          icon: <CheckCircle size={14} />,
+          text: 'Konum doğrulandı',
+        };
+      case 'requesting':
+        return {
+          color: 'text-riso-blue',
+          icon: <LocateFixed size={14} className="animate-pulse" />,
+          text: 'Konum alınıyor...',
+        };
+      case 'denied':
+        return {
+          color: 'text-riso-redox',
+          icon: <AlertTriangle size={14} />,
+          text: 'Konum izni gerekli',
+        };
+      default:
+        return { color: 'text-carbon-muted', icon: <MapPin size={14} />, text: 'Konum bekleniyor' };
+    }
+  })();
 
-  const mascotMood: MascotMood = (error && hasSubmitted) ? 'angry' : (tableNumber.length > 0 ? 'typing' : 'neutral');
+  const cafeOptions = React.useMemo(
+    () => cafes.map((c) => ({ value: String(c.id), label: c.name })),
+    [cafes]
+  );
 
   return (
-    <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 pb-[calc(8rem+env(safe-area-bottom))] px-4 font-sans relative overflow-hidden noise-bg">
-      <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
+    <div
+      className="riso-kantin-app relative min-h-screen overflow-hidden px-4 py-16 sm:py-20"
+      data-testid="cafe-selection-shell"
+    >
+      {/* Decorative riso confetti — subtle, behind everything */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-[10%] top-[18%] h-3 w-3 bg-riso-pink riso-tilt-right" />
+        <div className="absolute left-[80%] top-[12%] h-2 w-6 bg-riso-blue riso-tilt-left" />
+        <div className="absolute left-[20%] top-[80%] h-4 w-4 bg-riso-mustard rounded-full" />
+        <div className="absolute left-[88%] top-[68%] h-2 w-2 bg-riso-pink rounded-full" />
+        <div className="absolute left-[5%] top-[55%] h-3 w-3 bg-riso-blue rounded-full" />
+      </div>
 
-      <div className="relative w-full max-w-md mx-auto pt-24 sm:pt-28">
-        <div className="absolute left-1/2 top-0 z-[80] -translate-x-1/2">
-          <CyberMascot mood={mascotMood} className="drop-shadow-[0_0_24px_rgba(16,231,255,0.42)]" />
-        </div>
+      <div className="mx-auto w-full max-w-md">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="mb-8 text-center"
+        >
+          <p className="mb-3 inline-block font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
+            // Check-In Gateway
+          </p>
+          <h1 className="riso-squiggle mb-2 inline-block font-riso-display text-5xl leading-none text-carbon sm:text-6xl">
+            Kafeye Giriş
+          </h1>
+          <p className="mt-3 text-sm text-carbon-muted">
+            Hangi masadasın? Konum doğrulamasıyla oyuna katıl.
+          </p>
+        </motion.div>
 
-        <div className="w-full rf-screen-card p-6 sm:p-8 relative overflow-visible rf-elevated">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60 blur-sm" />
-
-          <div className="text-center mb-8">
-            <p className="rf-terminal-strip rf-terminal-strip-balanced justify-center mb-3">Check-In Gateway</p>
-            <div className="w-16 h-16 bg-black flex items-center justify-center mx-auto mb-4 border-2 border-cyan-400/45 shadow-[4px_4px_0_rgba(255,0,234,0.3)]">
-              <MapPin size={32} className="text-cyan-300" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl leading-[1.05] font-display-tr text-white mb-2 tracking-[0.08em] break-words">
-              Kafe Giriş
-            </h1>
-            <p className="text-[var(--rf-muted)] text-sm uppercase tracking-[0.11em]">Oyunlara katılmak için konum izniyle kafe doğrulaması yapın.</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-900/20 border border-red-800 text-red-300 p-4 mb-6 text-sm animate-shake" role="alert" aria-live="polite">
-              <div className="flex items-start gap-3">
-                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold mb-1">Giriş Başarısız!</p>
-                  <p>{error}</p>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+        >
+          <Card tone="paper" shadow="md" data-testid="cafe-selection-card">
+            {/* Error banner */}
+            {error && (
+              <div
+                role="alert"
+                aria-live="polite"
+                data-testid="cafe-selection-error"
+                className="mb-5 border-2 border-riso-redox bg-paper p-3.5"
+              >
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle size={18} className="mt-0.5 shrink-0 text-riso-redox" />
+                  <div className="min-w-0">
+                    <p className="font-riso-display text-sm font-bold uppercase tracking-wider text-riso-redox">
+                      Giriş Başarısız
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-carbon">{error}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="space-y-5" aria-busy={loading} aria-live="polite">
-            <div>
-              <label htmlFor="checkin-cafe-select" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold uppercase tracking-[0.12em]">
-                Kafe Seçimi
-              </label>
-              <div className="relative group">
-                <Coffee className={fieldIconClass} size={18} />
-                <select
-                  id="checkin-cafe-select"
-                  value={selectedCafeId || ''}
-                  onChange={(event) => setSelectedCafeId(event.target.value)}
-                  data-testid="checkin-cafe-select"
-                  className={`${fieldBaseClass} rf-select rf-input-icon-double appearance-none cursor-pointer`}
-                >
-                  {cafes.map((cafe) => (
-                    <option key={cafe.id} value={cafe.id}>
-                      {cafe.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] pointer-events-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="checkin-table-input" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold uppercase tracking-[0.12em]">
-                Masa Numarası
-              </label>
-              <div className="relative group">
-                <Navigation className={fieldIconClass} size={18} />
-                <input
-                  id="checkin-table-input"
-                  type="number"
-                  placeholder={`1 - ${selectedCafe?.table_count || selectedCafe?.total_tables || 20}`}
-                  value={tableNumber}
-                  onChange={(event) => setTableNumber(event.target.value)}
-                  min="1"
-                  max={maxTableCount}
-                  data-testid="checkin-table-input"
-                  inputMode="numeric"
-                  className={`${fieldBaseClass} rf-input-icon-left pr-4 rf-number-clean`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="checkin-verification-code" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold uppercase tracking-[0.12em]">
-                Masa Doğrulama Kodu (opsiyonel)
-              </label>
-              <input
-                id="checkin-verification-code"
-                type="text"
-                placeholder="Konum alınamazsa personel kodunu girin"
-                value={tableVerificationCode}
-                onChange={(event) => setTableVerificationCode(event.target.value)}
-                autoComplete="one-time-code"
-                className={`${fieldBaseClass} px-4`}
+            <div className="space-y-5" aria-busy={loading} aria-live="polite">
+              <Select
+                label="Kafe Seçimi"
+                value={selectedCafeId || ''}
+                onChange={(e) => setSelectedCafeId(e.target.value)}
+                options={cafeOptions}
+                data-testid="checkin-cafe-select"
+                disabled={loading || cafes.length === 0}
               />
-            </div>
 
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => void requestLocationAccess()}
-                className="w-full py-3 font-semibold border-2 border-cyan-400/35 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-100 flex items-center justify-center gap-2 rf-control"
-                onFocus={clearError}
-              >
-                <LocateFixed size={18} />
-                Konumu Doğrula
-              </button>
+              <Input
+                label="Masa Numarası"
+                type="number"
+                inputMode="numeric"
+                icon={<Hash size={16} />}
+                placeholder={`1 - ${selectedCafe?.table_count || selectedCafe?.total_tables || 20}`}
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                min={1}
+                max={maxTableCount}
+                data-testid="checkin-table-input"
+              />
 
-              <div className="mt-2 flex items-center justify-center gap-2 text-sm">
-                {locationStatus === 'ready' ? (
-                  <span className="text-green-400 flex items-center gap-1">
-                    <CheckCircle size={14} /> Konum doğrulandı
+              {/* Verification code — collapsed by default, toggle reveals it. */}
+              {!showVerificationField && (
+                <button
+                  type="button"
+                  onClick={() => setShowVerificationField(true)}
+                  className="riso-focus inline-flex w-full items-center justify-between gap-2 border-2 border-dashed border-carbon-muted bg-paper-deep px-3 py-2.5 text-left text-sm font-medium text-carbon hover:border-carbon hover:bg-paper-dim transition-colors"
+                  data-testid="checkin-show-verification"
+                >
+                  <span className="flex items-center gap-2">
+                    <KeyRound size={14} />
+                    Konum vermek istemiyorsan: masa doğrulama kodu kullan
                   </span>
-                ) : locationStatus === 'requesting' ? (
-                  <span className="text-cyan-300">Konum alınıyor...</span>
-                ) : locationStatus === 'denied' ? (
-                  <span className="text-red-300">Konum izni gerekli</span>
-                ) : (
-                  <span className="text-[var(--rf-muted)]">Devam etmek için konum izni verin</span>
-                )}
+                  <span aria-hidden="true">+</span>
+                </button>
+              )}
+
+              {showVerificationField && (
+                <Input
+                  label="Masa Doğrulama Kodu"
+                  type="text"
+                  icon={<KeyRound size={16} />}
+                  placeholder="Personelden alacağın kod"
+                  value={tableVerificationCode}
+                  onChange={(e) => setTableVerificationCode(e.target.value)}
+                  autoComplete="one-time-code"
+                  helperText="Konum izni vermek istemezsen bu kodla devam edebilirsin."
+                />
+              )}
+
+              <Button
+                tone="blue"
+                size="md"
+                block
+                onClick={() => void requestLocationAccess()}
+                onFocus={clearError}
+                leadingIcon={<LocateFixed size={18} />}
+              >
+                Konumu Doğrula
+              </Button>
+
+              {/* Location status indicator */}
+              <div
+                className={`flex items-center justify-center gap-2 text-sm font-medium ${locationLabel.color}`}
+              >
+                {locationLabel.icon}
+                <span>{locationLabel.text}</span>
               </div>
 
-              <div className="p-3 bg-cyan-900/20 border border-cyan-700/30 text-center">
-                <p className="text-xs text-cyan-200">
-                  Konum izni yalnızca kafe doğrulaması için kullanılır ve giriş sırasında kontrol edilir.
+              <div className="border-2 border-dashed border-carbon-muted bg-paper-deep p-3 text-center">
+                <p className="text-xs leading-relaxed text-carbon-muted">
+                  Konum izni yalnızca kafe doğrulaması için kullanılır. Hiçbir yere kaydedilmez.
                 </p>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setHasSubmitted(true);
-                void checkIn();
-              }}
-              disabled={loading || !tableNumber}
-              data-testid="checkin-submit-button"
-              className={`w-full py-4 font-bold text-white flex items-center justify-center gap-2 transition-all rf-control border-2 ${loading || !tableNumber
-                ? 'bg-cyan-950/55 border-cyan-900/45 text-[var(--rf-muted)] cursor-not-allowed opacity-50'
-                : 'bg-cyan-500 border-cyan-200 hover:bg-cyan-400 text-[#041226] shadow-[5px_5px_0_rgba(255,0,234,0.3)] hover:scale-[1.02] active:scale-95'
-                }`}
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Doğrulanıyor...
-                </>
-              ) : (
-                <>
-                  <MapPin size={20} />
-                  KAFEYE GİR & OYNA
-                </>
-              )}
-            </button>
-          </div>
+              <Button
+                tone="pink"
+                size="lg"
+                block
+                disabled={loading || !tableNumber}
+                data-testid="checkin-submit-button"
+                onClick={() => {
+                  setHasSubmitted(true);
+                  void checkIn();
+                }}
+                leadingIcon={
+                  loading ? (
+                    <span className="h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon rounded-full" />
+                  ) : (
+                    <Coffee size={20} />
+                  )
+                }
+              >
+                {loading ? 'Doğrulanıyor...' : 'Kafeye Gir & Oyna'}
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Squiggle decoration under the card */}
+        <div className="mx-auto mt-6 w-32 opacity-60">
+          <Squiggle tone="blue" />
         </div>
+
+        {/* Re-render trigger to avoid unused warning */}
+        <span className="sr-only" data-submitted={hasSubmitted ? 'true' : 'false'} />
       </div>
     </div>
   );

@@ -26,6 +26,15 @@
 @import '@fontsource-variable/fraunces';
 @import '@fontsource-variable/dm-sans';
 
+/* Riso Kantin — new app-wide aesthetic (Mayıs 2026 redesign).
+ * Self-hosted Google fonts to avoid runtime fetch + CSP friction. */
+@import '@fontsource-variable/unbounded';
+@import '@fontsource/familjen-grotesk/400.css';
+@import '@fontsource/familjen-grotesk/500.css';
+@import '@fontsource/familjen-grotesk/600.css';
+@import '@fontsource/familjen-grotesk/700.css';
+@import '@fontsource-variable/jetbrains-mono';
+
 @import 'tailwindcss';
 @config "./tailwind.config.js";
 @source "./index.html";
@@ -2881,4 +2890,157 @@ textarea:focus-visible,
   .cd-stat-tile {
     min-height: 4.75rem;
   }
+}
+
+/* =====================================================================
+ * RISO KANTIN — app-wide aesthetic introduced in PR #24 (Mayıs 2026).
+ * Risograph-print inspired: cream paper, fluorescent spot colours,
+ * misregistration shadows, halftone overlays, sticker-pinned cards.
+ * Tokens are scoped under the `.riso-kantin` class so the legacy
+ * cyber-retro and café-concierge themes still work alongside until
+ * every page is migrated.
+ * ===================================================================== */
+
+.riso-kantin {
+  /* Surfaces */
+  --paper: #fbf7ee;
+  --paper-deep: #f2ead8;
+  --paper-dim: #ece3cc;
+
+  /* Ink */
+  --ink: #141413;
+  --ink-soft: #2a2a28;
+  --ink-muted: #6a6a66;
+
+  /* Spot colours */
+  --riso-pink: #ff3e94;
+  --riso-pink-deep: #d8246f;
+  --riso-blue: #1e3fb5;
+  --riso-blue-deep: #142c82;
+  --riso-mustard: #f1b41e;
+  --riso-mustard-deep: #c9921a;
+
+  /* Semantic */
+  --win-spring: #5bc25a;
+  --alarm-redox: #e03b1e;
+
+  font-family: 'Familjen Grotesk', system-ui, sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Body class — applied to <body> when the new theme is active. */
+.riso-kantin-app {
+  min-height: 100vh;
+  background-color: var(--paper);
+}
+
+/* Halftone overlay — applied via the `riso-halftone` utility class.
+ * Pure-CSS radial gradient = no SVG asset, retina-crisp, lightweight. */
+.riso-halftone {
+  position: relative;
+}
+.riso-halftone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size: 4px 4px;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+.riso-halftone > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Misregistration shadows — the signature character.
+ * Used by Card + Button primitives via Tailwind shadow utility. */
+.riso-shadow-md {
+  box-shadow:
+    4px 4px 0 var(--riso-blue),
+    8px 8px 0 var(--riso-pink);
+}
+.riso-shadow-sm {
+  box-shadow:
+    3px 3px 0 var(--riso-blue),
+    6px 6px 0 var(--riso-pink);
+}
+.riso-shadow-pink-only {
+  box-shadow: 5px 5px 0 var(--riso-pink);
+}
+.riso-shadow-blue-only {
+  box-shadow: 5px 5px 0 var(--riso-blue);
+}
+/* Pressed state — shadows collapse, the element "stamps down". */
+.riso-press:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 0 0 var(--riso-blue),
+    0 0 0 var(--riso-pink);
+}
+
+/* Display font shorthand — for headlines (Unbounded). */
+.font-riso-display {
+  font-family: 'Unbounded Variable', 'Unbounded', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Mono font shorthand — for scores, timers, codes. */
+.font-riso-mono {
+  font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Squiggle underline — hand-drawn-looking accent under headlines.
+ * Applied as ::after on elements with .riso-squiggle class. */
+.riso-squiggle {
+  position: relative;
+  padding-bottom: 0.4em;
+}
+.riso-squiggle::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 8px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'><path d='M0 4 Q 10 0, 20 4 T 40 4 T 60 4 T 80 4 T 100 4 T 120 4' stroke='%23FF3E94' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+.riso-squiggle--blue::after {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'><path d='M0 4 Q 10 0, 20 4 T 40 4 T 60 4 T 80 4 T 100 4 T 120 4' stroke='%231E3FB5' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
+}
+
+/* Sticker rotation helpers — sparingly, on hero cards/posters. */
+.riso-tilt-left {
+  transform: rotate(-1.5deg);
+}
+.riso-tilt-right {
+  transform: rotate(1deg);
+}
+@media (max-width: 640px) {
+  .riso-tilt-left {
+    transform: rotate(-1deg);
+  }
+  .riso-tilt-right {
+    transform: rotate(0.5deg);
+  }
+}
+
+/* Focus ring — keep accessibility while preserving the look.
+ * Three-layer offset: ink → pink → blue. */
+.riso-focus:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--ink),
+    4px 4px 0 var(--riso-pink),
+    8px 8px 0 var(--riso-blue);
 }

@@ -13,6 +13,10 @@ jest.mock('../lib/api', () => ({
   },
 }));
 
+// Helper: find the submit button regardless of casing changes (Riso Kantin
+// renames the headline from "KAFEYE GİR & OYNA" to "Kafeye Gir & Oyna").
+const getSubmitButton = () => screen.getByTestId('checkin-submit-button');
+
 describe('CafeSelection', () => {
   const currentUser: User = {
     id: 1,
@@ -63,7 +67,8 @@ describe('CafeSelection', () => {
     await waitFor(() => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
-    expect(screen.getByText('Kafe Giriş')).toBeInTheDocument();
+    // Riso Kantin heading
+    expect(screen.getByText('Kafeye Giriş')).toBeInTheDocument();
     expect(screen.getByText('Merkez Kafe')).toBeInTheDocument();
   });
 
@@ -74,7 +79,7 @@ describe('CafeSelection', () => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    expect(screen.getByText('KAFEYE GİR & OYNA')).toBeDisabled();
+    expect(getSubmitButton()).toBeDisabled();
   });
 
   it('submits check-in with geolocation and stores last cafe/table on success', async () => {
@@ -91,7 +96,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '5' } });
-    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+    fireEvent.click(getSubmitButton());
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
@@ -121,7 +126,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '4' } });
-    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+    fireEvent.click(getSubmitButton());
 
     await waitFor(() => {
       expect(onCheckInSuccess).toHaveBeenCalledWith('Merkez Kafe', 'MASA04', '10');
@@ -149,7 +154,7 @@ describe('CafeSelection', () => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+    fireEvent.click(getSubmitButton());
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
@@ -172,7 +177,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
-    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+    fireEvent.click(getSubmitButton());
 
     await waitFor(() => {
       expect(screen.getByText(/Sunucuya bağlanılamadı/)).toBeInTheDocument();
@@ -184,7 +189,10 @@ describe('CafeSelection', () => {
       configurable: true,
       value: {
         getCurrentPosition: jest.fn(
-          (_onSuccess: (pos: GeolocationPosition) => void, onError: (err: GeolocationPositionError) => void) => {
+          (
+            _onSuccess: (pos: GeolocationPosition) => void,
+            onError: (err: GeolocationPositionError) => void
+          ) => {
             onError({ code: 1 } as GeolocationPositionError);
           }
         ),
@@ -195,7 +203,7 @@ describe('CafeSelection', () => {
     await waitFor(() => expect(api.cafes.list).toHaveBeenCalled());
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
-    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+    fireEvent.click(getSubmitButton());
 
     await waitFor(() => {
       expect(screen.getByText(/Konum izni reddedildi/)).toBeInTheDocument();
@@ -207,7 +215,10 @@ describe('CafeSelection', () => {
       configurable: true,
       value: {
         getCurrentPosition: jest.fn(
-          (_onSuccess: (pos: GeolocationPosition) => void, onError: (err: GeolocationPositionError) => void) => {
+          (
+            _onSuccess: (pos: GeolocationPosition) => void,
+            onError: (err: GeolocationPositionError) => void
+          ) => {
             onError({ code: 3 } as GeolocationPositionError);
           }
         ),
@@ -223,8 +234,14 @@ describe('CafeSelection', () => {
     await waitFor(() => expect(api.cafes.list).toHaveBeenCalled());
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '3' } });
-    fireEvent.change(screen.getByLabelText(/Masa Doğrulama Kodu/i), { target: { value: '1234-MASA03' } });
-    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+
+    // Riso Kantin: verification field is collapsed behind a toggle to keep
+    // the primary flow focused on GPS check-in. Reveal it before typing.
+    fireEvent.click(screen.getByTestId('checkin-show-verification'));
+    fireEvent.change(screen.getByLabelText(/Masa Doğrulama Kodu/i), {
+      target: { value: '1234-MASA03' },
+    });
+    fireEvent.click(getSubmitButton());
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
