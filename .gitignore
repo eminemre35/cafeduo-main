@@ -29,6 +29,10 @@ dist-ssr
 .env.ai
 .env.local
 .env*.local
+.env.mcp
+
+# MCP local config (contains Qdrant Cloud API key — never commit)
+.mcp.json
 
 # Temporary extracted assets
 temp_assets/
