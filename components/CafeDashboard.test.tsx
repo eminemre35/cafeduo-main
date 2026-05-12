@@ -54,7 +54,7 @@ describe('CafeDashboard', () => {
   it('verifies coupon successfully', async () => {
     render(<CafeDashboard currentUser={currentUser} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Kupon kodunu girin...'), {
+    fireEvent.change(screen.getByPlaceholderText('CD-XXXX-XXXX-XXXX'), {
       target: { value: 'abc123' },
     });
     fireEvent.click(screen.getByText('KUPONU ONAYLA'));
@@ -72,7 +72,7 @@ describe('CafeDashboard', () => {
     });
 
     render(<CafeDashboard currentUser={currentUser} />);
-    fireEvent.change(screen.getByPlaceholderText('Kupon kodunu girin...'), {
+    fireEvent.change(screen.getByPlaceholderText('CD-XXXX-XXXX-XXXX'), {
       target: { value: 'bad' },
     });
     fireEvent.click(screen.getByText('KUPONU ONAYLA'));

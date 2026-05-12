@@ -2,10 +2,39 @@ const crypto = require('crypto');
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+
+/**
+ * Build a per-redemption unique coupon code. 12 hex chars in three groups
+ * of 4 (CD-XXXX-XXXX-XXXX) — short enough to read aloud at the cashier if
+ * the QR fails, long enough to make accidental collisions astronomically
+ * unlikely (48 bits of entropy).
+ */
+const generateCouponCode = () => {
+  const hex = crypto.randomBytes(6).toString('hex').toUpperCase();
+  return `CD-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}`;
+};
 const BASELINE_REWARDS = [
-  { id: 9001, title: 'Bedava Filtre Kahve', cost: 500, description: 'Günün yorgunluğunu at.', icon: 'coffee' },
-  { id: 9002, title: '%20 Hesap İndirimi', cost: 850, description: 'Tüm masada geçerli.', icon: 'discount' },
-  { id: 9003, title: 'Cheesecake İkramı', cost: 400, description: 'Tatlı bir mola ver.', icon: 'dessert' },
+  {
+    id: 9001,
+    title: 'Bedava Filtre Kahve',
+    cost: 500,
+    description: 'Günün yorgunluğunu at.',
+    icon: 'coffee',
+  },
+  {
+    id: 9002,
+    title: '%20 Hesap İndirimi',
+    cost: 850,
+    description: 'Tüm masada geçerli.',
+    icon: 'discount',
+  },
+  {
+    id: 9003,
+    title: 'Cheesecake İkramı',
+    cost: 400,
+    description: 'Tatlı bir mola ver.',
+    icon: 'dessert',
+  },
   { id: 9004, title: 'Oyun Jetonu x5', cost: 100, description: 'Ekstra oyun hakkı.', icon: 'game' },
 ];
 
@@ -19,7 +48,9 @@ const createCommerceHandlers = ({
   setMemoryUsers = () => {},
 }) => {
   const ensureActiveRewardsDb = async () => {
-    const activeRewardsResult = await pool.query('SELECT COUNT(*) FROM rewards WHERE is_active = true');
+    const activeRewardsResult = await pool.query(
+      'SELECT COUNT(*) FROM rewards WHERE is_active = true'
+    );
     if (Number(activeRewardsResult.rows?.[0]?.count || 0) > 0) {
       return;
     }
@@ -77,7 +108,8 @@ const createCommerceHandlers = ({
         try {
           await ensureActiveRewardsDb();
 
-          let query = 'SELECT id, title, description, cost, icon, cafe_id, is_active, created_at FROM rewards WHERE is_active = true';
+          let query =
+            'SELECT id, title, description, cost, icon, cafe_id, is_active, created_at FROM rewards WHERE is_active = true';
           const params = [];
 
           if (cafeId) {
@@ -93,9 +125,10 @@ const createCommerceHandlers = ({
         }
       },
       memory: async () => {
-        const rewards = Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
-          ? getMemoryRewards()
-          : BASELINE_REWARDS;
+        const rewards =
+          Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
+            ? getMemoryRewards()
+            : BASELINE_REWARDS;
         return res.json(rewards);
       },
     });
@@ -159,9 +192,10 @@ const createCommerceHandlers = ({
           });
         }
 
-        const rewards = Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
-          ? getMemoryRewards()
-          : BASELINE_REWARDS;
+        const rewards =
+          Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
+            ? getMemoryRewards()
+            : BASELINE_REWARDS;
         const reward = rewards.find((entry) => Number(entry.id) === Number(requestedRewardId));
         if (!reward) {
           return sendApiProblem(res, {
@@ -216,10 +250,9 @@ const createCommerceHandlers = ({
     try {
       await client.query('BEGIN');
 
-      const userRes = await client.query(
-        'SELECT points FROM users WHERE id = $1 FOR UPDATE',
-        [userId]
-      );
+      const userRes = await client.query('SELECT points FROM users WHERE id = $1 FOR UPDATE', [
+        userId,
+      ]);
       if (userRes.rows.length === 0) {
         await client.query('ROLLBACK');
         return sendApiProblem(res, {
@@ -256,11 +289,42 @@ const createCommerceHandlers = ({
       const newPoints = currentPoints - reward.cost;
       await client.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
 
-      const code = `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-      const redeemRes = await client.query(
-        'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at',
-        [userId, reward.id, reward.title, code]
-      );
+      // Per-redemption unique coupon code. Format: CD-XXXX-XXXX-XXXX
+      // (12 hex chars = 48 bits randomness → collision odds ~2.8e14).
+      // user_items.code has a UNIQUE INDEX (migration 20260513000003), so
+      // on the freakishly rare collision the INSERT will fail; we retry up
+      // to 3 times before giving up. In practice this loop almost never
+      // iterates past i=0.
+      let code = '';
+      let redeemRes = null;
+      let attempt = 0;
+      while (attempt < 3 && !redeemRes) {
+        attempt += 1;
+        code = generateCouponCode();
+        try {
+          redeemRes = await client.query(
+            'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at',
+            [userId, reward.id, reward.title, code]
+          );
+        } catch (insertErr) {
+          // unique_violation pg error code = 23505. Retry; any other error is fatal.
+          if (insertErr && insertErr.code === '23505' && attempt < 3) {
+            redeemRes = null;
+            continue;
+          }
+          throw insertErr;
+        }
+      }
+      if (!redeemRes) {
+        await client.query('ROLLBACK');
+        return sendApiError(
+          res,
+          logger,
+          'Coupon code generation collision',
+          new Error('Failed to allocate unique coupon code after 3 attempts'),
+          'Kupon oluşturulamadı, lütfen tekrar deneyin.'
+        );
+      }
 
       await client.query('COMMIT');
       return res.json({ success: true, newPoints, reward: redeemRes.rows[0] });

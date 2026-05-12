@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { CheckCircle, Coffee, QrCode, XCircle } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { Camera, CheckCircle, Coffee, QrCode, XCircle } from 'lucide-react';
 import { RetroButton } from '../RetroButton';
+import { QrScannerModal } from './QrScannerModal';
 import type { CafeCouponStatus, CouponItem } from './types';
 
 interface CouponScannerProps {
@@ -27,9 +28,33 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
     [lastItem]
   );
 
+  /** When true, the camera scanner modal is mounted. */
+  const [scannerOpen, setScannerOpen] = useState(false);
+  /** Stable ref to the latest onSubmit so the scan callback can invoke a
+   *  fresh submit without listing the prop as a dependency. */
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await onSubmit();
+  };
+
+  // When the QR scanner returns a code, write it into the manual-entry input
+  // (so the cafe admin can see what was scanned + edit if needed) and auto-
+  // submit. Close the modal regardless of whether submit succeeds or fails;
+  // status banner below will reflect the outcome.
+  const handleScan = (code: string) => {
+    const trimmed = String(code || '')
+      .trim()
+      .toUpperCase();
+    if (!trimmed) return;
+    onCouponCodeChange(trimmed);
+    setScannerOpen(false);
+    // microtask so onCouponCodeChange's state flush propagates before submit
+    Promise.resolve().then(() => {
+      void onSubmitRef.current();
+    });
   };
 
   return (
@@ -43,20 +68,31 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
           Kupon Kullan
         </h2>
 
+        <button
+          type="button"
+          onClick={() => setScannerOpen(true)}
+          data-testid="open-qr-scanner-button"
+          className="riso-focus riso-press w-full mb-5 border-2 border-carbon bg-riso-blue text-paper py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.1em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px]"
+        >
+          <Camera size={18} />
+          Kamerayla QR Oku
+        </button>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="coupon-code-input"
               className="block text-sm font-bold text-carbon mb-2 uppercase tracking-[0.08em] font-riso-body"
             >
-              Kupon Kodu
+              Kupon Kodu{' '}
+              <span className="font-normal text-carbon-muted normal-case">(manuel giriş)</span>
             </label>
             <input
               id="coupon-code-input"
               type="text"
               value={couponCode}
               onChange={(event) => onCouponCodeChange(event.target.value.toUpperCase())}
-              placeholder="Kupon kodunu girin..."
+              placeholder="CD-XXXX-XXXX-XXXX"
               className="border-2 border-carbon bg-paper-deep w-full px-4 py-3 text-carbon placeholder:text-carbon-muted outline-none transition-all font-riso-mono text-lg tracking-wider focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
             />
           </div>
@@ -124,6 +160,12 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
           </div>
         )}
       </div>
+
+      <QrScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+      />
     </div>
   );
 };

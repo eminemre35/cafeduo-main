@@ -155,10 +155,12 @@ describe('storeController', () => {
 
     await storeController.buyItem(req, res);
 
+    // Ownership check now uses item_id instead of code, since per-purchase
+    // codes are unique per redemption (cannot lookup by static product code).
     expect(client.query).toHaveBeenNthCalledWith(
       3,
-      'SELECT id FROM user_items WHERE user_id = $1 AND code = $2',
-      [7, 'RANK_NEON_SWORD']
+      'SELECT id FROM user_items WHERE user_id = $1 AND item_id = $2',
+      [7, 1]
     );
     expect(client.query).toHaveBeenNthCalledWith(4, 'ROLLBACK');
     expect(res.status).toHaveBeenCalledWith(400);
@@ -178,7 +180,15 @@ describe('storeController', () => {
       .mockResolvedValueOnce({ rows: [] }) // ownership check
       .mockResolvedValueOnce({ rowCount: 1 }) // update user points
       .mockResolvedValueOnce({
-        rows: [{ id: 555, user_id: 8, item_id: 1, item_title: 'Zehirli Neon Kılıç (Rütbe)', code: 'RANK_NEON_SWORD' }],
+        rows: [
+          {
+            id: 555,
+            user_id: 8,
+            item_id: 1,
+            item_title: 'Zehirli Neon Kılıç (Rütbe)',
+            code: 'RANK_NEON_SWORD',
+          },
+        ],
       }) // insert inventory
       .mockResolvedValueOnce({}); // COMMIT
 
@@ -196,7 +206,10 @@ describe('storeController', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       message: 'Satın alma başarılı',
-      inventoryItem: expect.objectContaining({ id: 555, code: 'RANK_NEON_SWORD' }),
+      // Coupon code is now generated per-redemption (CD-XXXX-XXXX-XXXX) so
+      // we only assert the shape that comes back from the DB mock — the id
+      // matches but the code is whatever generateCouponCode() returned.
+      inventoryItem: expect.objectContaining({ id: 555 }),
       remainingPoints: 600,
     });
     expect(client.release).toHaveBeenCalledTimes(1);
