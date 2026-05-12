@@ -119,6 +119,14 @@ export interface Cafe {
   secondary_latitude?: number;
   secondary_longitude?: number;
   secondary_radius?: number;
+  /** PR #36 — per-cafe daily game limit. Default 10. Set by cafe admin. */
+  daily_game_limit?: number;
+  /** Same field, camelCase — admin update endpoint accepts both. */
+  dailyGameLimit?: number;
+  /** PR #36 — per-cafe daily reward wheel slices ({points, weight}[]). */
+  daily_reward_wheel?: Array<{ points: number; weight: number }>;
+  /** Same field, camelCase — admin update endpoint accepts both. */
+  dailyRewardWheel?: Array<{ points: number; weight: number }>;
 }
 
 export interface BuildMeta {

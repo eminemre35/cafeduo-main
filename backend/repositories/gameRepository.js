@@ -114,11 +114,13 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
   };
 
   const insertWaitingGame = async (client, params) => {
-    const { hostName, gameType, points, table, gameState } = params;
+    const { hostName, gameType, points, table, gameState, cafeId } = params;
+    // PR #36 — `cafe_id` recorded on every new game so per-cafe daily limits
+    // and isolation queries don't need an extra join through users.
     const result = await client.query(
       `
-        INSERT INTO games (host_name, game_type, points, table_code, status, game_state)
-        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb)
+        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, cafe_id)
+        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)
         RETURNING
           id,
           host_name as "hostName",
@@ -128,9 +130,10 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           status,
           guest_name as "guestName",
           game_state as "gameState",
+          cafe_id as "cafeId",
           created_at as "createdAt"
       `,
-      [hostName, gameType, points, table, JSON.stringify(gameState || {})]
+      [hostName, gameType, points, table, JSON.stringify(gameState || {}), cafeId ?? null]
     );
 
     return result.rows[0] || null;

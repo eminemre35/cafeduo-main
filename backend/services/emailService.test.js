@@ -76,13 +76,15 @@ describe('emailService', () => {
     return { service, nodemailer, logger, mockTransport };
   };
 
-  it('falls back to log-only mode when SMTP is missing', async () => {
+  it('falls back to log-only mode when neither Resend nor SMTP is configured', async () => {
     const { service, logger } = loadService();
     const response = await service.sendPasswordResetEmail(buildPayload());
 
     expect(response).toEqual({ delivered: false, mode: 'log-only' });
+    // PR #36 — error message updated to reference both providers (Resend
+    // primary, SMTP fallback). Matches new emailService.js wording.
     expect(logger.warn).toHaveBeenCalledWith(
-      'SMTP not configured. Password reset link logged instead of e-mail send.',
+      expect.stringContaining('No email provider configured'),
       expect.objectContaining({ to: 'player@example.com' })
     );
   });

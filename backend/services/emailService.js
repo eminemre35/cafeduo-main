@@ -21,7 +21,11 @@ const normalizeSmtpPassword = (password, host) => {
   const raw = String(password || '').trim();
   if (!raw.includes(' ')) return raw;
   const normalized = raw.replace(/\s+/g, '');
-  if (String(host || '').toLowerCase().includes('gmail')) {
+  if (
+    String(host || '')
+      .toLowerCase()
+      .includes('gmail')
+  ) {
     logger.warn('SMTP_PASS contained whitespace; normalized for Gmail app-password format.');
     return normalized;
   }
@@ -85,6 +89,34 @@ const sendWithTimeout = async ({ transporter, from, to, subject, text, timeoutMs
     }),
   ]);
 
+/**
+ * Send via Resend HTTPS API. Preferred path because it just needs one
+ * env var (RESEND_API_KEY) — no SMTP host/port/auth dance. If the API
+ * call fails (network, 4xx/5xx), we let the caller try the SMTP path
+ * as fallback.
+ *
+ * Resend free tier: 100 emails/day, 3000/month — plenty for password
+ * reset traffic.
+ */
+const sendViaResend = async ({ from, to, subject, text }) => {
+  const apiKey = String(process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return null;
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ from, to, subject, text }),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`Resend API ${response.status}: ${body.slice(0, 200)}`);
+  }
+  const data = await response.json().catch(() => ({}));
+  return data?.id || 'resend-ok';
+};
+
 const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes }) => {
   const safeTo = String(to || '').trim();
   if (!safeTo) {
@@ -92,9 +124,10 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
   }
 
   const fromAddress =
+    String(process.env.RESEND_FROM || '').trim() ||
     String(process.env.SMTP_FROM || '').trim() ||
     String(process.env.SMTP_USER || '').trim() ||
-    'noreply@cafeduo.com';
+    'CafeDuo <noreply@cafeduotr.com>';
   const ttl = Math.max(5, Number(expiresInMinutes) || 30);
   const subject = 'CafeDuo - Şifre Sıfırlama';
   const displayName = String(username || 'Oyuncu').trim() || 'Oyuncu';
@@ -110,12 +143,36 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
     'CafeDuo Güvenlik',
   ].join('\n');
 
+  // Try Resend first if RESEND_API_KEY is set — single-env-var setup,
+  // no SMTP servers to manage. Falls through to nodemailer SMTP on error
+  // or when the key isn't configured.
+  if (String(process.env.RESEND_API_KEY || '').trim()) {
+    try {
+      const messageId = await sendViaResend({ from: fromAddress, to: safeTo, subject, text });
+      logger.info('Password reset e-mail sent', {
+        to: safeTo,
+        mode: 'resend',
+        messageId,
+      });
+      return { delivered: true, mode: 'resend', messageId };
+    } catch (error) {
+      logger.error('Resend delivery failed; falling back to SMTP if configured', {
+        to: safeTo,
+        message: error?.message || String(error),
+      });
+      // Fall through to SMTP attempt below
+    }
+  }
+
   const transporter = getTransporter();
   if (!transporter) {
-    logger.warn('SMTP not configured. Password reset link logged instead of e-mail send.', {
-      to: safeTo,
-      resetUrl,
-    });
+    logger.warn(
+      'No email provider configured (RESEND_API_KEY + SMTP both missing). Reset link logged instead.',
+      {
+        to: safeTo,
+        resetUrl,
+      }
+    );
     return { delivered: false, mode: 'log-only' };
   }
 

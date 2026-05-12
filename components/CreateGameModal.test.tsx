@@ -1,6 +1,6 @@
 ﻿/**
  * CreateGameModal Component Tests
- * 
+ *
  * @description Game creation modal functionality tests
  */
 
@@ -11,28 +11,30 @@ import { useToast } from '../contexts/ToastContext';
 
 // Mock useToast
 jest.mock('../contexts/ToastContext', () => ({
-  useToast: jest.fn()
+  useToast: jest.fn(),
 }));
 
 // Mock RetroButton
 jest.mock('./RetroButton', () => ({
   RetroButton: ({ children, onClick, disabled, type }: any) => (
-    <button onClick={onClick} disabled={disabled} type={type}>{children}</button>
-  )
+    <button onClick={onClick} disabled={disabled} type={type}>
+      {children}
+    </button>
+  ),
 }));
 
 describe('CreateGameModal', () => {
   const mockToast = {
     success: jest.fn(),
     error: jest.fn(),
-    warning: jest.fn()
+    warning: jest.fn(),
   };
 
   const defaultProps = {
     isOpen: true,
     onClose: jest.fn(),
     onSubmit: jest.fn(),
-    maxPoints: 1000
+    maxPoints: 1000,
   };
 
   beforeEach(() => {
@@ -67,17 +69,24 @@ describe('CreateGameModal', () => {
     it('shows game descriptions', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      expect(screen.getByText('Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.')).toBeInTheDocument();
-      expect(screen.getByText('Kısa bilgi sorularında doğru cevabı en hızlı ver')).toBeInTheDocument();
-      expect(screen.getByText('Nişangahı merkeze kilitle, tur tur isabet topla.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Kısa bilgi sorularında doğru cevabı en hızlı ver')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Nişangahı merkeze kilitle, tur tur isabet topla.')
+      ).toBeInTheDocument();
     });
 
-    it('renders preset point buttons', () => {
+    it('renders preset point buttons (PR #36 — Min/100/Max within the 150 cap)', () => {
+      // 250 preset is filtered out now (above the 150 stake cap). Min still
+      // shows (value=0 since minPoints=0), 100 is in range, Max maps to 150.
       render(<CreateGameModal {...defaultProps} />);
 
       expect(screen.getByText('Min')).toBeInTheDocument();
       expect(screen.getByText('100')).toBeInTheDocument();
-      expect(screen.getByText('250')).toBeInTheDocument();
       expect(screen.getByText('Max')).toBeInTheDocument();
     });
 
@@ -102,29 +111,22 @@ describe('CreateGameModal', () => {
       expect(screen.getAllByText('Nişancı Düellosu').length).toBeGreaterThan(0);
     });
 
-    it('shows minimum points requirement for each game type', () => {
+    it('renders all game type cards (PR #36 no minimum badges)', () => {
+      // The "MIN X PUAN" badge is gone because minPoints=0 for every game now.
+      // Just verify the cards themselves render with their names.
       render(<CreateGameModal {...defaultProps} />);
-
-      // Nişancı Düellosu requires min 40
-      expect(screen.getByText('MIN 40 PUAN')).toBeInTheDocument();
-
-      // Retro Satranç requires min 90
-      expect(screen.getByText('MIN 90 PUAN')).toBeInTheDocument();
+      expect(screen.getAllByText('Retro Satranç').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Bilgi Yarışı').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Nişancı Düellosu').length).toBeGreaterThan(0);
     });
 
-    it('auto-adjusts points when switching to higher minimum game', () => {
+    it('does not auto-adjust points on game-type switch (no minimums anymore)', () => {
+      // PR #36 — every game type's minPoints is 0 so switching games no
+      // longer raises a "minimum X puan" toast. Test renamed; behavior
+      // verified by ensuring the warning toast is NOT called.
       render(<CreateGameModal {...defaultProps} />);
-
-      // Initially Nişancı Düellosu (min 40)
-      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('40');
-
-      // Switch to Retro Satranç (min 90)
       fireEvent.click(screen.getByText('Retro Satranç'));
-
-      // Should show warning and auto-adjust
-      expect(mockToast.warning).toHaveBeenCalledWith(
-        expect.stringContaining('minimum 90 puan')
-      );
+      expect(mockToast.warning).not.toHaveBeenCalled();
     });
   });
 
@@ -154,24 +156,28 @@ describe('CreateGameModal', () => {
       fireEvent.blur(input);
 
       // Trigger validation by touching the field
-      await waitFor(() => {
-        const errorMessages = screen.queryAllByText(/Maksimum/i);
-        // Error might not show until form submit or validation trigger
-        expect(errorMessages.length >= 0).toBe(true);
-      }, { timeout: 1000 });
+      await waitFor(
+        () => {
+          const errorMessages = screen.queryAllByText(/Maksimum/i);
+          // Error might not show until form submit or validation trigger
+          expect(errorMessages.length >= 0).toBe(true);
+        },
+        { timeout: 1000 }
+      );
     });
 
-    it('auto-adjusts points when switching to higher minimum game', async () => {
+    it('keeps points unchanged on game-type switch (PR #36 no minimum)', async () => {
       render(<CreateGameModal {...defaultProps} />);
-
-      // Initially Nişancı Düellosu (min 40), points = 40
-      // Switch to Retro Satranç (min 90) - should auto-adjust to 90
+      // All game types have minPoints=0 now, so the auto-adjust path is dead.
+      // The input should keep whatever the user set (or the default of 0).
       fireEvent.click(screen.getByText('Retro Satranç'));
-
-      await waitFor(() => {
-        const input = screen.getByTestId('game-points-input') as HTMLInputElement;
-        expect(input.value).toBe('90');
-      }, { timeout: 1000 });
+      await waitFor(
+        () => {
+          const input = screen.getByTestId('game-points-input') as HTMLInputElement;
+          expect(input.value).toBe('0');
+        },
+        { timeout: 1000 }
+      );
     });
   });
 
@@ -191,9 +197,12 @@ describe('CreateGameModal', () => {
         fireEvent.click(screen.getByText('LOBİYE GÖNDER'));
       }
 
-      await waitFor(() => {
-        expect(defaultProps.onSubmit).toHaveBeenCalled();
-      }, { timeout: 1000 });
+      await waitFor(
+        () => {
+          expect(defaultProps.onSubmit).toHaveBeenCalled();
+        },
+        { timeout: 1000 }
+      );
     });
 
     it('calls onClose after successful submission', async () => {
@@ -223,11 +232,14 @@ describe('CreateGameModal', () => {
       }
 
       // Wait for validation to trigger
-      await waitFor(() => {
-        // Either onSubmit not called OR error shown
-        const submitCalled = defaultProps.onSubmit.mock.calls.length > 0;
-        expect(submitCalled).toBe(false);
-      }, { timeout: 1000 });
+      await waitFor(
+        () => {
+          // Either onSubmit not called OR error shown
+          const submitCalled = defaultProps.onSubmit.mock.calls.length > 0;
+          expect(submitCalled).toBe(false);
+        },
+        { timeout: 1000 }
+      );
     });
 
     it('disables submit button while submitting', async () => {
@@ -299,13 +311,13 @@ describe('CreateGameModal', () => {
       expect(screen.getAllByText('500 Puan')[0]).toBeInTheDocument();
     });
 
-    it('calculates remaining points correctly', () => {
+    it('calculates remaining points correctly (PR #36 caps form max at 150)', () => {
       render(<CreateGameModal {...defaultProps} maxPoints={1000} />);
 
-      fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '300' } });
+      fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '100' } });
 
-      // Should show 700 remaining (1000 - 300) in summary
-      expect(screen.getByText('700 Puan')).toBeInTheDocument();
+      // Should show 900 remaining (1000 wallet - 100 stake) in summary
+      expect(screen.getByText('900 Puan')).toBeInTheDocument();
     });
   });
 
@@ -316,8 +328,8 @@ describe('CreateGameModal', () => {
       // Open modal
       rerender(<CreateGameModal {...defaultProps} isOpen={true} />);
 
-      // Should reset to default values
-      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('40');
+      // Should reset to default values — PR #36: default points dropped 40 → 0.
+      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('0');
       expect(screen.getAllByText('Nişancı Düellosu')[0]).toBeInTheDocument();
     });
 

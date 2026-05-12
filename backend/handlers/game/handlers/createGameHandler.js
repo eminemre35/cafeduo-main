@@ -34,14 +34,21 @@ const createCreateGameHandler = (deps) => {
       return res.status(400).json({ error: 'hostName ve gameType zorunludur.' });
     }
     if (!adminActor && !hasCheckIn) {
-      return res.status(403).json({ error: 'Oyun kurmak için önce kafe check-in işlemi yapmalısın.' });
+      return res
+        .status(403)
+        .json({ error: 'Oyun kurmak için önce kafe check-in işlemi yapmalısın.' });
     }
     if (points > actorPoints && !adminActor) {
       return res.status(400).json({ error: 'Katılım puanı mevcut bakiyenden yüksek olamaz.' });
     }
-    if (points > 5000) {
-      return res.status(400).json({ error: 'Katılım puanı üst limiti aşıldı.' });
+    // Stake cap tightened to 150 in PR #36 (was 5000). Same value is mirrored
+    // in backend/validators/gameValidators.js and CreateGameModal.tsx so the
+    // form, validator, and handler all agree.
+    if (points > 150) {
+      return res.status(400).json({ error: 'Katılım puanı en fazla 150 olabilir.' });
     }
+
+    const actorCafeId = req.user?.cafe_id ?? null;
 
     if (await isDbConnected()) {
       const client = await pool.connect();
@@ -60,6 +67,39 @@ const createCreateGameHandler = (deps) => {
           });
         }
 
+        // Per-cafe daily game cap (PR #36). Each cafe admin sets their own
+        // `cafes.daily_game_limit`; users are limited to that many hosted
+        // games per Turkish calendar day in that cafe. Super-admins are
+        // exempt (`adminActor`). Cafe admins acting in their own panel
+        // skip the check too — they manage, they don't compete.
+        if (!adminActor && actorCafeId) {
+          const limitRes = await client.query(`SELECT daily_game_limit FROM cafes WHERE id = $1`, [
+            actorCafeId,
+          ]);
+          const limit = Number(limitRes.rows[0]?.daily_game_limit ?? 10);
+          if (Number.isFinite(limit) && limit > 0) {
+            const countRes = await client.query(
+              `SELECT COUNT(*)::int AS count FROM games
+                 WHERE LOWER(host_name) = LOWER($1)
+                   AND cafe_id = $2
+                   AND status IN ('active', 'finished')
+                   AND (created_at AT TIME ZONE 'Europe/Istanbul')::date
+                     = (NOW() AT TIME ZONE 'Europe/Istanbul')::date`,
+              [hostName, actorCafeId]
+            );
+            const todaysGames = Number(countRes.rows[0]?.count ?? 0);
+            if (todaysGames >= limit) {
+              await client.query('ROLLBACK');
+              return res.status(429).json({
+                error: `Bu kafede günlük oyun sınırına (${limit}) ulaştın. Yarın tekrar dene.`,
+                code: 'DAILY_GAME_LIMIT_REACHED',
+                limit,
+                played: todaysGames,
+              });
+            }
+          }
+        }
+
         const initialGameState = isChessGameType(gameType)
           ? { chess: createInitialChessState(req.body?.chessClock) }
           : {};
@@ -71,6 +111,7 @@ const createCreateGameHandler = (deps) => {
               points,
               table,
               gameState: initialGameState,
+              cafeId: actorCafeId,
             })
           : null;
 
@@ -78,15 +119,17 @@ const createCreateGameHandler = (deps) => {
         if (!createdGame) {
           throw new Error('Created game could not be returned');
         }
-        
+
         // Cache invalidation - oyun oluşturuldu
-        lobbyCacheService?.onGameCreated({
-          tableCode: table,
-          cafeId: req.user?.cafe_id,
-        }).catch((err) => {
-          logger.warn(`Cache invalidation failed on game created: ${err.message}`);
-        });
-        
+        lobbyCacheService
+          ?.onGameCreated({
+            tableCode: table,
+            cafeId: req.user?.cafe_id,
+          })
+          .catch((err) => {
+            logger.warn(`Cache invalidation failed on game created: ${err.message}`);
+          });
+
         emitLobbyUpdate({
           action: 'game_created',
           gameId: createdGame.id,
@@ -124,7 +167,9 @@ const createCreateGameHandler = (deps) => {
       table,
       status: 'waiting',
       guestName: null,
-      gameState: isChessGameType(gameType) ? { chess: createInitialChessState(req.body?.chessClock) } : {},
+      gameState: isChessGameType(gameType)
+        ? { chess: createInitialChessState(req.body?.chessClock) }
+        : {},
       createdAt: new Date().toISOString(),
     };
     const nextGames = [newGame, ...memoryGames];

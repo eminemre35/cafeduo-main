@@ -39,13 +39,21 @@ const validateCreateGamePayload = (req, res, next) => {
   if (!gameType) {
     details.push(buildDetail('body.gameType', 'gameType zorunludur.', body.gameType));
   } else if (gameType.length > 64) {
-    details.push(buildDetail('body.gameType', 'gameType en fazla 64 karakter olabilir.', body.gameType));
+    details.push(
+      buildDetail('body.gameType', 'gameType en fazla 64 karakter olabilir.', body.gameType)
+    );
   }
 
   if (body.points !== undefined) {
     const points = Number(body.points);
-    if (!Number.isFinite(points) || points < 0 || points > 5000) {
-      details.push(buildDetail('body.points', 'points 0 ile 5000 arasında sayı olmalıdır.', body.points));
+    // Stake bounds tightened in PR #36 — minimum dropped (a 0-point game is
+    // valid "for fun") and the max capped at 150 so a single match can't
+    // wipe out a user's balance in one go. Same cap is mirrored client-side
+    // in CreateGameModal.tsx.
+    if (!Number.isFinite(points) || points < 0 || points > 150) {
+      details.push(
+        buildDetail('body.points', 'points 0 ile 150 arasında sayı olmalıdır.', body.points)
+      );
     }
   }
 
@@ -67,7 +75,11 @@ const validateCreateGamePayload = (req, res, next) => {
         const value = Number(chessClock.baseSeconds);
         if (!Number.isFinite(value) || value < 60 || value > 1800) {
           details.push(
-            buildDetail('body.chessClock.baseSeconds', 'baseSeconds 60-1800 aralığında olmalıdır.', chessClock.baseSeconds)
+            buildDetail(
+              'body.chessClock.baseSeconds',
+              'baseSeconds 60-1800 aralığında olmalıdır.',
+              chessClock.baseSeconds
+            )
           );
         }
       }
@@ -106,9 +118,17 @@ const validateJoinGamePayload = (req, res, next) => {
   if (req.body && typeof req.body === 'object' && req.body.guestName !== undefined) {
     const guestName = String(req.body.guestName || '').trim();
     if (!guestName) {
-      details.push(buildDetail('body.guestName', 'guestName boş string olamaz.', req.body.guestName));
+      details.push(
+        buildDetail('body.guestName', 'guestName boş string olamaz.', req.body.guestName)
+      );
     } else if (guestName.length > 64) {
-      details.push(buildDetail('body.guestName', 'guestName en fazla 64 karakter olabilir.', req.body.guestName));
+      details.push(
+        buildDetail(
+          'body.guestName',
+          'guestName en fazla 64 karakter olabilir.',
+          req.body.guestName
+        )
+      );
     }
   }
 
@@ -131,8 +151,13 @@ const validateMovePayload = (req, res, next) => {
   }
 
   if (body) {
-    const actionKeys = ['chessMove', 'liveSubmission', 'scoreSubmission', 'gameState', 'move']
-      .filter((key) => body[key] !== undefined && body[key] !== null);
+    const actionKeys = [
+      'chessMove',
+      'liveSubmission',
+      'scoreSubmission',
+      'gameState',
+      'move',
+    ].filter((key) => body[key] !== undefined && body[key] !== null);
 
     if (actionKeys.length === 0) {
       details.push(
@@ -145,16 +170,14 @@ const validateMovePayload = (req, res, next) => {
     }
     if (actionKeys.length > 1) {
       details.push(
-        buildDetail(
-          'body',
-          'Aynı istekte birden fazla hamle türü gönderilemez.',
-          actionKeys
-        )
+        buildDetail('body', 'Aynı istekte birden fazla hamle türü gönderilemez.', actionKeys)
       );
     }
 
     if (body.player !== undefined && !['host', 'guest'].includes(String(body.player))) {
-      details.push(buildDetail('body.player', 'player sadece host veya guest olabilir.', body.player));
+      details.push(
+        buildDetail('body.player', 'player sadece host veya guest olabilir.', body.player)
+      );
     }
 
     if (body.chessMove !== undefined) {
@@ -162,18 +185,36 @@ const validateMovePayload = (req, res, next) => {
       if (!chessMove || typeof chessMove !== 'object' || Array.isArray(chessMove)) {
         details.push(buildDetail('body.chessMove', 'chessMove obje olmalıdır.', chessMove));
       } else {
-        const from = String(chessMove.from || '').trim().toLowerCase();
-        const to = String(chessMove.to || '').trim().toLowerCase();
+        const from = String(chessMove.from || '')
+          .trim()
+          .toLowerCase();
+        const to = String(chessMove.to || '')
+          .trim()
+          .toLowerCase();
         if (!CHESS_SQUARE_RE.test(from)) {
-          details.push(buildDetail('body.chessMove.from', 'from kare formatı geçersiz (örn: e2).', chessMove.from));
+          details.push(
+            buildDetail(
+              'body.chessMove.from',
+              'from kare formatı geçersiz (örn: e2).',
+              chessMove.from
+            )
+          );
         }
         if (!CHESS_SQUARE_RE.test(to)) {
-          details.push(buildDetail('body.chessMove.to', 'to kare formatı geçersiz (örn: e4).', chessMove.to));
+          details.push(
+            buildDetail('body.chessMove.to', 'to kare formatı geçersiz (örn: e4).', chessMove.to)
+          );
         }
         if (chessMove.promotion !== undefined) {
           const promotion = String(chessMove.promotion || '').toLowerCase();
           if (!['q', 'r', 'b', 'n'].includes(promotion)) {
-            details.push(buildDetail('body.chessMove.promotion', 'promotion q/r/b/n olmalıdır.', chessMove.promotion));
+            details.push(
+              buildDetail(
+                'body.chessMove.promotion',
+                'promotion q/r/b/n olmalıdır.',
+                chessMove.promotion
+              )
+            );
           }
         }
       }
@@ -182,35 +223,63 @@ const validateMovePayload = (req, res, next) => {
     if (body.liveSubmission !== undefined) {
       const liveSubmission = body.liveSubmission;
       if (!liveSubmission || typeof liveSubmission !== 'object' || Array.isArray(liveSubmission)) {
-        details.push(buildDetail('body.liveSubmission', 'liveSubmission obje olmalıdır.', liveSubmission));
+        details.push(
+          buildDetail('body.liveSubmission', 'liveSubmission obje olmalıdır.', liveSubmission)
+        );
       } else {
         if (liveSubmission.mode !== undefined && String(liveSubmission.mode).trim().length > 64) {
-          details.push(buildDetail('body.liveSubmission.mode', 'mode en fazla 64 karakter olabilir.', liveSubmission.mode));
+          details.push(
+            buildDetail(
+              'body.liveSubmission.mode',
+              'mode en fazla 64 karakter olabilir.',
+              liveSubmission.mode
+            )
+          );
         }
         ['score', 'roundsWon', 'round'].forEach((field) => {
           if (liveSubmission[field] !== undefined) {
             const value = Number(liveSubmission[field]);
             if (!Number.isFinite(value) || value < 0) {
-              details.push(buildDetail(`body.liveSubmission.${field}`, `${field} negatif olamaz.`, liveSubmission[field]));
+              details.push(
+                buildDetail(
+                  `body.liveSubmission.${field}`,
+                  `${field} negatif olamaz.`,
+                  liveSubmission[field]
+                )
+              );
             }
           }
         });
         if (liveSubmission.done !== undefined && typeof liveSubmission.done !== 'boolean') {
-          details.push(buildDetail('body.liveSubmission.done', 'done boolean olmalıdır.', liveSubmission.done));
+          details.push(
+            buildDetail('body.liveSubmission.done', 'done boolean olmalıdır.', liveSubmission.done)
+          );
         }
       }
     }
 
     if (body.scoreSubmission !== undefined) {
       const scoreSubmission = body.scoreSubmission;
-      if (!scoreSubmission || typeof scoreSubmission !== 'object' || Array.isArray(scoreSubmission)) {
-        details.push(buildDetail('body.scoreSubmission', 'scoreSubmission obje olmalıdır.', scoreSubmission));
+      if (
+        !scoreSubmission ||
+        typeof scoreSubmission !== 'object' ||
+        Array.isArray(scoreSubmission)
+      ) {
+        details.push(
+          buildDetail('body.scoreSubmission', 'scoreSubmission obje olmalıdır.', scoreSubmission)
+        );
       } else {
         ['score', 'roundsWon', 'durationMs'].forEach((field) => {
           if (scoreSubmission[field] !== undefined) {
             const value = Number(scoreSubmission[field]);
             if (!Number.isFinite(value) || value < 0) {
-              details.push(buildDetail(`body.scoreSubmission.${field}`, `${field} negatif olamaz.`, scoreSubmission[field]));
+              details.push(
+                buildDetail(
+                  `body.scoreSubmission.${field}`,
+                  `${field} negatif olamaz.`,
+                  scoreSubmission[field]
+                )
+              );
             }
           }
         });
@@ -225,7 +294,13 @@ const validateMovePayload = (req, res, next) => {
         try {
           const serialized = JSON.stringify(gameState);
           if (serialized.length > 50_000) {
-            details.push(buildDetail('body.gameState', 'gameState boyutu 50KB sınırını aşıyor.', serialized.length));
+            details.push(
+              buildDetail(
+                'body.gameState',
+                'gameState boyutu 50KB sınırını aşıyor.',
+                serialized.length
+              )
+            );
           }
         } catch {
           details.push(buildDetail('body.gameState', 'gameState serialize edilemedi.', null));

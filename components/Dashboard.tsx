@@ -24,6 +24,7 @@ import { useToast } from '../contexts/ToastContext';
 import { StatusBar } from './dashboard/StatusBar';
 import { GameSection } from './dashboard/GameSection';
 import { RewardSection } from './dashboard/RewardSection';
+import { DailyRewardWheel } from './dashboard/DailyRewardWheel';
 
 // Icons
 import { Trophy, Gift, Gamepad2 } from 'lucide-react';
@@ -522,8 +523,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   />
                 </div>
 
-                {/* Sağ: Ödüller & Envanter */}
-                <div className="order-2 min-w-0">
+                {/* Sağ: Günlük Çark + Ödüller & Envanter */}
+                <div className="order-2 min-w-0 space-y-6">
+                  {/* PR #36 — günlük çark her kafe için ayrı çalışır,
+                      kullanıcı check-in yapmış olduğu kafede çevirir. */}
+                  <DailyRewardWheel
+                    cafeId={currentUser.cafe_id ?? null}
+                    onPointsWon={(points) => {
+                      // Echo points into the local user state so the wallet
+                      // badge in the navbar updates immediately; the next
+                      // refetch confirms it from the server.
+                      onUpdateUser({
+                        ...currentUser,
+                        points: (currentUser.points || 0) + points,
+                      });
+                      void refetch();
+                    }}
+                  />
+
                   <RewardSection
                     currentUser={currentUser}
                     rewards={rewards}

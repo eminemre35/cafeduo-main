@@ -13,6 +13,13 @@ export interface AdminUserFormData {
   cafe_id: string;
 }
 
+/** PR #36 — slice on the daily reward wheel. weights need not sum to a
+ *  particular total; backend normalizes them on spin. */
+export interface RewardWheelSlice {
+  points: number;
+  weight: number;
+}
+
 export interface AdminCafeFormData {
   name: string;
   address: string;
@@ -23,6 +30,9 @@ export interface AdminCafeFormData {
   secondaryLatitude: string;
   secondaryLongitude: string;
   secondaryRadius: number;
+  /** PR #36 per-cafe knobs */
+  dailyGameLimit?: number;
+  dailyRewardWheel?: RewardWheelSlice[];
 }
 
 export interface AdminCafeEditData {
@@ -34,6 +44,9 @@ export interface AdminCafeEditData {
   secondaryLatitude: string;
   secondaryLongitude: string;
   secondaryRadius: number;
+  /** PR #36 per-cafe knobs */
+  dailyGameLimit?: number;
+  dailyRewardWheel?: RewardWheelSlice[];
 }
 
 export type AdminUserRow = User;

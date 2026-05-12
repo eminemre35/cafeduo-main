@@ -48,32 +48,33 @@ const createAdminHandlers = ({
     return cafeColumnCache;
   };
 
-  const buildCafeProjection = (columns) => [
-    'id',
-    'name',
-    columns.has('address') ? 'address' : 'NULL::text AS address',
-    columns.has('total_tables')
-      ? 'total_tables'
-      : columns.has('table_count')
-        ? 'table_count AS total_tables'
-        : '20::integer AS total_tables',
-    columns.has('pin')
-      ? 'pin'
-      : columns.has('daily_pin')
-        ? 'SUBSTRING(daily_pin FROM 1 FOR 4) AS pin'
-        : "'0000'::varchar AS pin",
-    'latitude',
-    'longitude',
-    columns.has('table_count')
-      ? 'table_count'
-      : columns.has('total_tables')
-        ? 'total_tables AS table_count'
-        : '20::integer AS table_count',
-    'radius',
-    'secondary_latitude',
-    'secondary_longitude',
-    'secondary_radius',
-  ].join(', ');
+  const buildCafeProjection = (columns) =>
+    [
+      'id',
+      'name',
+      columns.has('address') ? 'address' : 'NULL::text AS address',
+      columns.has('total_tables')
+        ? 'total_tables'
+        : columns.has('table_count')
+          ? 'table_count AS total_tables'
+          : '20::integer AS total_tables',
+      columns.has('pin')
+        ? 'pin'
+        : columns.has('daily_pin')
+          ? 'SUBSTRING(daily_pin FROM 1 FOR 4) AS pin'
+          : "'0000'::varchar AS pin",
+      'latitude',
+      'longitude',
+      columns.has('table_count')
+        ? 'table_count'
+        : columns.has('total_tables')
+          ? 'total_tables AS table_count'
+          : '20::integer AS table_count',
+      'radius',
+      'secondary_latitude',
+      'secondary_longitude',
+      'secondary_radius',
+    ].join(', ');
 
   const getUsers = async (req, res) =>
     executeDataMode(isDbConnected, {
@@ -91,7 +92,13 @@ const createAdminHandlers = ({
           `);
           return res.json(result.rows);
         } catch (err) {
-          return sendApiError(res, logger, 'Error fetching users', err, 'Kullanıcılar yüklenemedi.');
+          return sendApiError(
+            res,
+            logger,
+            'Error fetching users',
+            err,
+            'Kullanıcılar yüklenemedi.'
+          );
         }
       },
       memory: async () => res.json(getMemoryUsers()),
@@ -112,7 +119,9 @@ const createAdminHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [payload.email]);
+          const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [
+            payload.email,
+          ]);
           if (existingUser.rows.length > 0) {
             return sendApiProblem(res, {
               status: 409,
@@ -143,12 +152,19 @@ const createAdminHandlers = ({
 
           return res.status(201).json(result.rows[0]);
         } catch (err) {
-          return sendApiError(res, logger, 'Admin create user error', err, 'Kullanıcı oluşturulamadı.');
+          return sendApiError(
+            res,
+            logger,
+            'Admin create user error',
+            err,
+            'Kullanıcı oluşturulamadı.'
+          );
         }
       },
       memory: async () => {
         const users = getMemoryUsers();
-        const nextId = (users.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) || 0) + 1;
+        const nextId =
+          (users.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) || 0) + 1;
         const createdUser = {
           id: nextId,
           username: payload.username,
@@ -207,10 +223,9 @@ const createAdminHandlers = ({
           let result;
 
           if (payload.role === 'cafe_admin') {
-            const cafeResult = await pool.query(
-              'SELECT id FROM cafes WHERE id = $1 LIMIT 1',
-              [payload.cafeId]
-            );
+            const cafeResult = await pool.query('SELECT id FROM cafes WHERE id = $1 LIMIT 1', [
+              payload.cafeId,
+            ]);
             if (cafeResult.rows.length === 0) {
               return sendApiProblem(res, {
                 status: 404,
@@ -302,7 +317,13 @@ const createAdminHandlers = ({
 
           return res.json(result.rows[0]);
         } catch (err) {
-          return sendApiError(res, logger, 'Admin update points error', err, 'Puan güncellenemedi.');
+          return sendApiError(
+            res,
+            logger,
+            'Admin update points error',
+            err,
+            'Puan güncellenemedi.'
+          );
         }
       },
       memory: async () => {
@@ -377,6 +398,13 @@ const createAdminHandlers = ({
           }
           if (updatesPayload.secondaryRadius !== undefined) {
             addUpdate('secondary_radius', updatesPayload.secondaryRadius);
+          }
+          // PR #36 per-cafe knobs — daily game cap + wheel slices
+          if (updatesPayload.dailyGameLimit !== undefined) {
+            addUpdate('daily_game_limit', updatesPayload.dailyGameLimit);
+          }
+          if (updatesPayload.dailyRewardWheel !== undefined) {
+            addUpdate('daily_reward_wheel', JSON.stringify(updatesPayload.dailyRewardWheel));
           }
 
           if (updates.length === 0) {
@@ -519,7 +547,12 @@ const createAdminHandlers = ({
             `INSERT INTO users (username, email, password_hash, role, cafe_id) 
              VALUES ($1, $2, $3, 'cafe_admin', $4) 
              RETURNING id, username, email, role, cafe_id`,
-            [String(username).trim(), String(email).trim().toLowerCase(), hashedPassword, Number(cafeId)]
+            [
+              String(username).trim(),
+              String(email).trim().toLowerCase(),
+              hashedPassword,
+              Number(cafeId),
+            ]
           );
           return res.json(result.rows[0]);
         } catch (err) {
@@ -581,11 +614,9 @@ const createAdminHandlers = ({
             [cafeId]
           );
           const users = usersResult.rows || [];
-          const usernames = [...new Set(
-            users
-              .map((user) => String(user.username || '').trim())
-              .filter(Boolean)
-          )];
+          const usernames = [
+            ...new Set(users.map((user) => String(user.username || '').trim()).filter(Boolean)),
+          ];
 
           const cafeAdminsDemoted = users.filter((user) => user.role === 'cafe_admin').length;
 

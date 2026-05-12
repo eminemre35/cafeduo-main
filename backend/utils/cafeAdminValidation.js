@@ -21,8 +21,7 @@ const toFiniteInteger = (value) => {
 };
 
 const validateRange = (value, min, max) => value >= min && value <= max;
-const hasOwn = (object, key) =>
-  Object.prototype.hasOwnProperty.call(object || {}, key);
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
 const isEmpty = (value) => value === null || value === undefined || value === '';
 
 const normalizePin = (value) => {
@@ -122,15 +121,16 @@ const normalizeCafeCreatePayload = (payload = {}) => {
     return radiusCheck;
   }
 
-  const secondaryLatitudeRaw = payload.secondaryLatitude !== undefined
-    ? payload.secondaryLatitude
-    : payload.secondary_latitude;
-  const secondaryLongitudeRaw = payload.secondaryLongitude !== undefined
-    ? payload.secondaryLongitude
-    : payload.secondary_longitude;
-  const secondaryRadiusRaw = payload.secondaryRadius !== undefined
-    ? payload.secondaryRadius
-    : payload.secondary_radius;
+  const secondaryLatitudeRaw =
+    payload.secondaryLatitude !== undefined
+      ? payload.secondaryLatitude
+      : payload.secondary_latitude;
+  const secondaryLongitudeRaw =
+    payload.secondaryLongitude !== undefined
+      ? payload.secondaryLongitude
+      : payload.secondary_longitude;
+  const secondaryRadiusRaw =
+    payload.secondaryRadius !== undefined ? payload.secondaryRadius : payload.secondary_radius;
   const hasSecondaryInput =
     secondaryLatitudeRaw !== undefined ||
     secondaryLongitudeRaw !== undefined ||
@@ -158,10 +158,9 @@ const normalizeCafeCreatePayload = (payload = {}) => {
         return { ok: false, error: `Ek konum: ${secondaryLongitudeCheck.error}` };
       }
 
-      const secondaryRadiusCheck =
-        isEmpty(secondaryRadiusRaw)
-          ? { ok: true, value: radiusCheck.value }
-          : normalizeRadius(secondaryRadiusRaw);
+      const secondaryRadiusCheck = isEmpty(secondaryRadiusRaw)
+        ? { ok: true, value: radiusCheck.value }
+        : normalizeRadius(secondaryRadiusRaw);
       if (!secondaryRadiusCheck.ok) {
         return { ok: false, error: `Ek konum: ${secondaryRadiusCheck.error}` };
       }
@@ -312,6 +311,56 @@ const normalizeCafeUpdatePayload = (payload = {}) => {
         }
       }
     }
+  }
+
+  // PR #36 — per-cafe knobs: daily game cap + daily reward wheel.
+  // Cafe admin panel posts these alongside the other fields; we validate
+  // separately so legacy fields keep their existing semantics.
+  if (payload.dailyGameLimit !== undefined || payload.daily_game_limit !== undefined) {
+    const raw = payload.dailyGameLimit ?? payload.daily_game_limit;
+    const limit = Number(raw);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
+      return {
+        ok: false,
+        error: 'Günlük oyun sınırı 1 ile 200 arası tam sayı olmalıdır.',
+      };
+    }
+    updates.dailyGameLimit = limit;
+  }
+
+  if (payload.dailyRewardWheel !== undefined || payload.daily_reward_wheel !== undefined) {
+    const raw = payload.dailyRewardWheel ?? payload.daily_reward_wheel;
+    if (!Array.isArray(raw) || raw.length === 0 || raw.length > 12) {
+      return {
+        ok: false,
+        error: 'Reward wheel 1 ile 12 dilim arasında bir dizi olmalıdır.',
+      };
+    }
+    const sanitized = [];
+    for (const slice of raw) {
+      const points = Number(slice?.points);
+      const weight = Number(slice?.weight);
+      if (!Number.isFinite(points) || points < 0 || points > 5000) {
+        return {
+          ok: false,
+          error: 'Wheel dilim puanı 0 ile 5000 arasında olmalıdır.',
+        };
+      }
+      if (!Number.isFinite(weight) || weight < 0 || weight > 1000) {
+        return {
+          ok: false,
+          error: 'Wheel dilim ağırlığı 0 ile 1000 arasında olmalıdır.',
+        };
+      }
+      sanitized.push({ points: Math.floor(points), weight: Math.floor(weight) });
+    }
+    if (sanitized.every((s) => s.weight === 0)) {
+      return {
+        ok: false,
+        error: 'En az bir dilim için weight > 0 olmalıdır.',
+      };
+    }
+    updates.dailyRewardWheel = sanitized;
   }
 
   if (Object.keys(updates).length === 0) {

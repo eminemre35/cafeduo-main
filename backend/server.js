@@ -734,17 +734,50 @@ const initDb = async () => {
       `);
 
       // 11. Seed Initial Achievements
+      //     PR #36 — thresholds rebalanced upward so milestones aren't unlocked
+      //     in the first session. Older values (1/1/10/10/1000) made progress
+      //     feel hollow; new ladder spans early/mid/late game (~5 → ~100).
       const achievementsCheck = await pool.query('SELECT COUNT(*) FROM achievements');
       if (parseInt(achievementsCheck.rows[0].count) === 0) {
         await pool.query(`
             INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value) VALUES
-            ('İlk Adım', 'İlk oyununu oyna.', 'footsteps', 50, 'games_played', 1),
-            ('Acemi Şanslı', 'İlk galibiyetini al.', 'trophy', 100, 'wins', 1),
-            ('Oyun Kurdu', '10 oyun oyna.', 'gamepad', 200, 'games_played', 10),
-            ('Yenilmez', '10 galibiyet al.', 'crown', 500, 'wins', 10),
-            ('Zengin', '1000 puana ulaş.', 'coins', 300, 'points', 1000)
+            ('İlk Adım', '5 oyun oyna.', 'footsteps', 50, 'games_played', 5),
+            ('Acemi Şanslı', '3 galibiyet al.', 'trophy', 120, 'wins', 3),
+            ('Oyun Kurdu', '50 oyun oyna.', 'gamepad', 250, 'games_played', 50),
+            ('Yenilmez', '30 galibiyet al.', 'crown', 600, 'wins', 30),
+            ('Zengin', '5.000 puana ulaş.', 'coins', 400, 'points', 5000),
+            ('Maraton Oyuncu', '200 oyun oyna.', 'gamepad', 800, 'games_played', 200),
+            ('Efsane', '100 galibiyet al.', 'crown', 1000, 'wins', 100),
+            ('Milyoner', '50.000 puana ulaş.', 'coins', 1200, 'points', 50000)
           `);
         logger.info('🏆 Başlangıç başarımları eklendi.');
+        clearCache('achievements:*');
+      } else {
+        // Existing DBs (production) already have the 5 legacy rows. Upgrade
+        // them in-place to the harder thresholds AND insert the 3 new ones
+        // if missing. Idempotent: re-running has no effect.
+        await pool.query(`
+            UPDATE achievements SET condition_value = 5, description = '5 oyun oyna.'
+              WHERE title = 'İlk Adım' AND condition_type = 'games_played';
+            UPDATE achievements SET condition_value = 3, description = '3 galibiyet al.', points_reward = 120
+              WHERE title = 'Acemi Şanslı' AND condition_type = 'wins';
+            UPDATE achievements SET condition_value = 50, description = '50 oyun oyna.', points_reward = 250
+              WHERE title = 'Oyun Kurdu' AND condition_type = 'games_played';
+            UPDATE achievements SET condition_value = 30, description = '30 galibiyet al.', points_reward = 600
+              WHERE title = 'Yenilmez' AND condition_type = 'wins';
+            UPDATE achievements SET condition_value = 5000, description = '5.000 puana ulaş.', points_reward = 400
+              WHERE title = 'Zengin' AND condition_type = 'points';
+
+            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value)
+              SELECT 'Maraton Oyuncu', '200 oyun oyna.', 'gamepad', 800, 'games_played', 200
+              WHERE NOT EXISTS (SELECT 1 FROM achievements WHERE title = 'Maraton Oyuncu');
+            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value)
+              SELECT 'Efsane', '100 galibiyet al.', 'crown', 1000, 'wins', 100
+              WHERE NOT EXISTS (SELECT 1 FROM achievements WHERE title = 'Efsane');
+            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value)
+              SELECT 'Milyoner', '50.000 puana ulaş.', 'coins', 1200, 'points', 50000
+              WHERE NOT EXISTS (SELECT 1 FROM achievements WHERE title = 'Milyoner');
+        `);
         clearCache('achievements:*');
       }
 

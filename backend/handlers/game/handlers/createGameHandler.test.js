@@ -146,19 +146,20 @@ describe('createGameHandler validation gates', () => {
     expect(res.payload.error).toMatch(/bakiyenden/);
   });
 
-  it('returns 400 when stake exceeds the 5000 ceiling even for admin', async () => {
+  it('returns 400 when stake exceeds the 150 cap even for admin', async () => {
+    // PR #36 — stake cap tightened from 5000 → 150 to keep matches reasonable.
     const deps = makeDeps();
     const handler = createCreateGameHandler(deps);
     const req = {
       user: { username: 'admin', role: 'admin', isAdmin: true, points: 100000 },
-      body: { gameType: 'Nişancı Düellosu', points: 9999 },
+      body: { gameType: 'Nişancı Düellosu', points: 200 },
     };
     const res = createMockRes();
 
     await handler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res.payload.error).toMatch(/üst limit/i);
+    expect(res.payload.error).toMatch(/en fazla 150/i);
   });
 
   it('allows admin without check-in to create game (bypasses 403)', async () => {

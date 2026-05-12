@@ -263,7 +263,7 @@ const createCommerceHandlers = ({
       }
 
       const rewardRes = await client.query(
-        'SELECT id, title, cost FROM rewards WHERE id = $1 AND is_active = true',
+        'SELECT id, title, cost, cafe_id FROM rewards WHERE id = $1 AND is_active = true',
         [requestedRewardId]
       );
       if (rewardRes.rows.length === 0) {
@@ -286,6 +286,14 @@ const createCommerceHandlers = ({
         });
       }
 
+      // Cafe association for the coupon — reward's own cafe_id wins if it is
+      // a cafe-specific reward (the cafe admin who created it knows where it
+      // belongs). For "house" rewards (cafe_id NULL) we fall back to the
+      // buyer's current cafe (where they checked in). This way the cafe
+      // admin who later scans the QR can be checked against the right cafe.
+      const buyerCafeRes = await client.query('SELECT cafe_id FROM users WHERE id = $1', [userId]);
+      const couponCafeId = reward.cafe_id ?? buyerCafeRes.rows[0]?.cafe_id ?? null;
+
       const newPoints = currentPoints - reward.cost;
       await client.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
 
@@ -303,8 +311,8 @@ const createCommerceHandlers = ({
         code = generateCouponCode();
         try {
           redeemRes = await client.query(
-            'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at',
-            [userId, reward.id, reward.title, code]
+            'INSERT INTO user_items (user_id, item_id, item_title, code, cafe_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, item_id, item_title, code, cafe_id, is_used, redeemed_at, used_at',
+            [userId, reward.id, reward.title, code, couponCafeId]
           );
         } catch (insertErr) {
           // unique_violation pg error code = 23505. Retry; any other error is fatal.
@@ -379,19 +387,65 @@ const createCommerceHandlers = ({
 
   const useCoupon = async (req, res) => {
     const { code } = req.body || {};
+    // Cafe-admin's own cafe — cross-cafe redemption is the bug we're fixing.
+    // `requireCafeAdmin` middleware already populated req.user with the
+    // admin's profile, so cafe_id is on the auth payload. Super-admins
+    // (role='admin') have cafe_id NULL — they get to scan any cafe.
+    const adminCafeId = req.user?.cafe_id ?? null;
+    const isSuperAdmin = String(req.user?.role || '') === 'admin';
 
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          const result = await pool.query(
-            `UPDATE user_items
-             SET is_used = TRUE, used_at = NOW()
-             WHERE code = $1 AND is_used = FALSE AND redeemed_at > NOW() - INTERVAL '5 days'
-             RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at`,
-            [code]
-          );
+          // Three-tier matching:
+          //   1. Super admin (cafe_id NULL on the user row) → no cafe filter.
+          //   2. Cafe admin → coupon must belong to their cafe, OR be a
+          //      legacy NULL row (pre-PR #36 coupons that we can't reassign).
+          //   3. Cafe admin without a cafe_id → reject everything (defensive).
+          const couponQuery = isSuperAdmin
+            ? `UPDATE user_items
+                   SET is_used = TRUE, used_at = NOW()
+                 WHERE code = $1 AND is_used = FALSE
+                   AND redeemed_at > NOW() - INTERVAL '5 days'
+                 RETURNING id, user_id, item_id, item_title, code, cafe_id, is_used, redeemed_at, used_at`
+            : `UPDATE user_items
+                   SET is_used = TRUE, used_at = NOW()
+                 WHERE code = $1 AND is_used = FALSE
+                   AND redeemed_at > NOW() - INTERVAL '5 days'
+                   AND (cafe_id = $2 OR cafe_id IS NULL)
+                 RETURNING id, user_id, item_id, item_title, code, cafe_id, is_used, redeemed_at, used_at`;
+          const params = isSuperAdmin ? [code] : [code, adminCafeId];
+
+          if (!isSuperAdmin && !adminCafeId) {
+            return sendApiProblem(res, {
+              status: 403,
+              code: 'CAFE_ADMIN_NO_CAFE',
+              message: 'Bu hesap bir kafeye bağlı değil. Yöneticiden kafe ataması iste.',
+            });
+          }
+
+          const result = await pool.query(couponQuery, params);
 
           if (result.rows.length === 0) {
+            // Distinguish "coupon belongs to a different cafe" from "doesn't
+            // exist / used / expired" — check first WITHOUT the cafe filter
+            // so we can give the cafe admin a clearer message.
+            if (!isSuperAdmin) {
+              const exists = await pool.query(
+                `SELECT cafe_id FROM user_items
+                   WHERE code = $1 AND is_used = FALSE
+                     AND redeemed_at > NOW() - INTERVAL '5 days'
+                   LIMIT 1`,
+                [code]
+              );
+              if (exists.rows.length > 0 && exists.rows[0].cafe_id !== null) {
+                return sendApiProblem(res, {
+                  status: 403,
+                  code: 'COUPON_WRONG_CAFE',
+                  message: 'Bu kupon başka bir kafeye ait, burada kullanılamaz.',
+                });
+              }
+            }
             return sendApiProblem(res, {
               status: 400,
               code: 'COUPON_INVALID',
@@ -409,7 +463,11 @@ const createCommerceHandlers = ({
         const now = Date.now();
         const index = items.findIndex((item) => {
           const redeemedAt = new Date(item.redeemed_at).getTime();
-          return item.code === code && !item.is_used && redeemedAt >= now - FIVE_DAYS_MS;
+          if (item.code !== code || item.is_used) return false;
+          if (redeemedAt < now - FIVE_DAYS_MS) return false;
+          if (isSuperAdmin) return true;
+          if (item.cafe_id == null) return true; // legacy
+          return Number(item.cafe_id) === Number(adminCafeId);
         });
 
         if (index === -1) {
@@ -485,7 +543,230 @@ const createCommerceHandlers = ({
     getUserItems,
     useCoupon,
     getShopInventory,
+    getDailyWheel,
+    spinDailyWheel,
+    setCafeWheel,
   };
+
+  /**
+   * Per-cafe daily reward wheel. Each cafe owns a JSONB array of
+   * `{points, weight}` slices; users spin once per Turkish calendar day
+   * per cafe. Unique constraint on (user_id, cafe_id, DATE(spun_at TZ))
+   * is the race-condition primitive — a second concurrent INSERT throws
+   * 23505 which we surface as "zaten çevirdin".
+   */
+
+  function getDailyWheel(req, res) {
+    const userId = Number(req.user?.id);
+    const cafeId = Number(req.params?.cafeId ?? req.user?.cafe_id ?? 0);
+    if (!cafeId) {
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'CAFE_ID_REQUIRED',
+        message: 'Kafe seçilmedi.',
+      });
+    }
+    return executeDataMode(isDbConnected, {
+      db: async () => {
+        try {
+          const wheelRes = await pool.query(
+            `SELECT daily_reward_wheel, name FROM cafes WHERE id = $1`,
+            [cafeId]
+          );
+          if (wheelRes.rows.length === 0) {
+            return sendApiProblem(res, {
+              status: 404,
+              code: 'CAFE_NOT_FOUND',
+              message: 'Kafe bulunamadı.',
+            });
+          }
+          const spinRes = await pool.query(
+            `SELECT id, points_won, spun_at FROM user_daily_spins
+               WHERE user_id = $1 AND cafe_id = $2
+                 AND (spun_at AT TIME ZONE 'Europe/Istanbul')::date
+                   = (NOW() AT TIME ZONE 'Europe/Istanbul')::date
+               ORDER BY spun_at DESC LIMIT 1`,
+            [userId, cafeId]
+          );
+          return res.json({
+            cafeId,
+            cafeName: wheelRes.rows[0].name,
+            wheel: wheelRes.rows[0].daily_reward_wheel || [],
+            alreadySpunToday: spinRes.rows.length > 0,
+            lastSpin: spinRes.rows[0] || null,
+          });
+        } catch (err) {
+          return sendApiError(res, logger, 'Get wheel error', err, 'Çark yüklenemedi.');
+        }
+      },
+      memory: async () => res.json({ cafeId, wheel: [], alreadySpunToday: false, lastSpin: null }),
+    });
+  }
+
+  async function spinDailyWheel(req, res) {
+    const userId = Number(req.user?.id);
+    const cafeId = Number(req.params?.cafeId ?? req.user?.cafe_id ?? 0);
+    if (!cafeId) {
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'CAFE_ID_REQUIRED',
+        message: 'Kafe seçilmedi.',
+      });
+    }
+    if (!(await isDbConnected())) {
+      return sendApiProblem(res, {
+        status: 501,
+        code: 'NOT_IMPLEMENTED',
+        message: 'Demo modda çark çevrilemez.',
+      });
+    }
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const wheelRes = await client.query(
+        `SELECT daily_reward_wheel FROM cafes WHERE id = $1 FOR UPDATE`,
+        [cafeId]
+      );
+      if (wheelRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'CAFE_NOT_FOUND',
+          message: 'Kafe bulunamadı.',
+        });
+      }
+      const wheel = Array.isArray(wheelRes.rows[0].daily_reward_wheel)
+        ? wheelRes.rows[0].daily_reward_wheel
+        : [];
+      const slices = wheel
+        .map((slice) => ({
+          points: Math.max(0, Math.floor(Number(slice?.points ?? 0))),
+          weight: Math.max(0, Number(slice?.weight ?? 0)),
+        }))
+        .filter((slice) => slice.weight > 0);
+      if (slices.length === 0) {
+        await client.query('ROLLBACK');
+        return sendApiProblem(res, {
+          status: 503,
+          code: 'WHEEL_NOT_CONFIGURED',
+          message: 'Bu kafenin çarkı henüz ayarlanmamış.',
+        });
+      }
+      // Weighted random pick (normalized in-place — weights need not sum to 1)
+      const totalWeight = slices.reduce((sum, s) => sum + s.weight, 0);
+      let r = Math.random() * totalWeight;
+      let picked = slices[0];
+      let pickedIndex = 0;
+      for (let i = 0; i < slices.length; i += 1) {
+        r -= slices[i].weight;
+        if (r <= 0) {
+          picked = slices[i];
+          pickedIndex = i;
+          break;
+        }
+      }
+      try {
+        const spinRes = await client.query(
+          `INSERT INTO user_daily_spins (user_id, cafe_id, points_won)
+             VALUES ($1, $2, $3)
+             RETURNING id, points_won, spun_at`,
+          [userId, cafeId, picked.points]
+        );
+        await client.query(`UPDATE users SET points = points + $1 WHERE id = $2`, [
+          picked.points,
+          userId,
+        ]);
+        await client.query('COMMIT');
+        return res.json({
+          success: true,
+          pointsWon: picked.points,
+          pickedIndex,
+          spin: spinRes.rows[0],
+        });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        if (err && err.code === '23505') {
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'ALREADY_SPUN_TODAY',
+            message: 'Bugün bu kafede zaten çark çevirdin. Yarın tekrar dene.',
+          });
+        }
+        throw err;
+      }
+    } catch (err) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        /* already rolled */
+      }
+      return sendApiError(res, logger, 'Spin wheel error', err, 'Çark çevirme başarısız.');
+    } finally {
+      client.release();
+    }
+  }
+
+  /** Cafe admin endpoint — overwrite this cafe's wheel slices. */
+  async function setCafeWheel(req, res) {
+    const adminCafeId = Number(req.user?.cafe_id ?? 0);
+    const isSuper = String(req.user?.role || '') === 'admin';
+    const targetCafeId = Number(req.params?.cafeId ?? adminCafeId);
+    if (!isSuper && (!adminCafeId || adminCafeId !== targetCafeId)) {
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Sadece kendi kafenin çarkını düzenleyebilirsin.',
+      });
+    }
+    const slices = Array.isArray(req.body?.wheel) ? req.body.wheel : null;
+    if (!slices || slices.length === 0 || slices.length > 12) {
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'wheel 1 ile 12 dilim arası olmalıdır.',
+      });
+    }
+    const sanitized = slices.map((slice) => ({
+      points: Math.max(0, Math.floor(Number(slice?.points ?? 0))),
+      weight: Math.max(0, Math.floor(Number(slice?.weight ?? 1))),
+    }));
+    if (sanitized.every((s) => s.weight === 0)) {
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'En az bir dilim için weight > 0 olmalıdır.',
+      });
+    }
+    if (!(await isDbConnected())) {
+      return sendApiProblem(res, {
+        status: 501,
+        code: 'NOT_IMPLEMENTED',
+        message: 'Demo modda çark düzenlenemez.',
+      });
+    }
+    try {
+      const result = await pool.query(
+        `UPDATE cafes SET daily_reward_wheel = $1::jsonb
+           WHERE id = $2
+           RETURNING id, daily_reward_wheel`,
+        [JSON.stringify(sanitized), targetCafeId]
+      );
+      if (result.rows.length === 0) {
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'CAFE_NOT_FOUND',
+          message: 'Kafe bulunamadı.',
+        });
+      }
+      return res.json({
+        success: true,
+        cafeId: targetCafeId,
+        wheel: result.rows[0].daily_reward_wheel,
+      });
+    } catch (err) {
+      return sendApiError(res, logger, 'Set wheel error', err, 'Çark güncellenemedi.');
+    }
+  }
 };
 
 module.exports = {

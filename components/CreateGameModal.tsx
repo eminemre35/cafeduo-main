@@ -40,13 +40,18 @@ interface GameDef {
   tone: 'mustard' | 'blue' | 'pink';
 }
 
+// PR #36 — stake bounds rewritten: minimum dropped (0-point matches OK for
+// fun), shared max cap of 150 across all game types. Backend mirrors this
+// in gameValidators.js and createGameHandler.js.
+const STAKE_MAX = 150;
+
 const GAME_TYPES: GameDef[] = [
   {
     id: 'chess',
     name: 'Retro Satranç',
     category: 'Strateji',
     description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.',
-    minPoints: 90,
+    minPoints: 0,
     tone: 'mustard',
   },
   {
@@ -54,7 +59,7 @@ const GAME_TYPES: GameDef[] = [
     name: 'Bilgi Yarışı',
     category: 'Bilgi',
     description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver',
-    minPoints: 120,
+    minPoints: 0,
     tone: 'blue',
   },
   {
@@ -62,7 +67,7 @@ const GAME_TYPES: GameDef[] = [
     name: 'Nişancı Düellosu',
     category: 'Refleks',
     description: 'Nişangahı merkeze kilitle, tur tur isabet topla.',
-    minPoints: 40,
+    minPoints: 0,
     tone: 'pink',
   },
 ];
@@ -101,10 +106,14 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  maxPoints,
+  maxPoints: maxPointsProp,
 }) => {
+  // Cap the user-visible max at STAKE_MAX (150). Even if the user has a
+  // bigger wallet, a single match's stake is bounded — keeps loss exposure
+  // sane and matches the backend validator.
+  const maxPoints = Math.min(maxPointsProp ?? 0, STAKE_MAX);
   const [gameType, setGameType] = useState('Nişancı Düellosu');
-  const [points, setPoints] = useState(40);
+  const [points, setPoints] = useState(0);
   const [chessTempoId, setChessTempoId] =
     useState<(typeof CHESS_TEMPO_OPTIONS)[number]['id']>('blitz_3_2');
   const [errors, setErrors] = useState<ValidationError>({});
@@ -116,7 +125,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setGameType('Nişancı Düellosu');
-      setPoints(40);
+      setPoints(0);
       setChessTempoId('blitz_3_2');
       setErrors({});
       setTouched({});
@@ -228,14 +237,16 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
         {/* Scrollable body — flex-1 + overflow-y-auto so mouse wheel reaches here */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-5">
-          {/* Points info */}
+          {/* Points info — show the user's true wallet balance, not the
+              per-match stake cap. Form validation uses the capped value
+              (`maxPoints`) but the display shows what they actually have. */}
           <div className="flex items-center justify-between border-2 border-carbon bg-riso-mustard px-3 py-2">
             <span className="font-riso-body text-sm font-semibold text-carbon">
               Mevcut Puanınız:
             </span>
             <span className="font-riso-display text-xl text-carbon flex items-center gap-1.5">
               <Trophy size={16} strokeWidth={2.5} />
-              {maxPoints}
+              {maxPointsProp}
             </span>
           </div>
 
@@ -417,10 +428,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 <span className="text-carbon-soft">Kalan:</span>
                 <span
                   className={`font-riso-mono font-bold ${
-                    maxPoints - points >= 0 ? 'text-riso-spring' : 'text-riso-redox'
+                    maxPointsProp - points >= 0 ? 'text-riso-spring' : 'text-riso-redox'
                   }`}
                 >
-                  {maxPoints - points} Puan
+                  {maxPointsProp - points} Puan
                 </span>
               </div>
             </div>

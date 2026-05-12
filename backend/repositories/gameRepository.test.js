@@ -49,11 +49,10 @@ describe('gameRepository', () => {
 
     expect(found).toEqual({ id: 50, status: 'active' });
     expect(missing).toBeNull();
-    expect(pool.query).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining("status = 'active'"),
-      ['emin', ['reflex_hunt', 'retro_chess', 'knowledge_quiz']]
-    );
+    expect(pool.query).toHaveBeenNthCalledWith(1, expect.stringContaining("status = 'active'"), [
+      'emin',
+      ['reflex_hunt', 'retro_chess', 'knowledge_quiz'],
+    ]);
   });
 
   it('inserts waiting game and serializes json state', async () => {
@@ -70,9 +69,10 @@ describe('gameRepository', () => {
       gameState: { chess: { fen: 'startpos' } },
     });
 
+    // PR #36 — cafe_id added as $6 (null when not provided)
     expect(client.query).toHaveBeenCalledWith(
-      expect.stringContaining("VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb)"),
-      ['emin', 'retro_chess', 100, 'MASA08', JSON.stringify({ chess: { fen: 'startpos' } })]
+      expect.stringContaining("VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)"),
+      ['emin', 'retro_chess', 100, 'MASA08', JSON.stringify({ chess: { fen: 'startpos' } }), null]
     );
     expect(row).toEqual({ id: 77, gameType: 'retro_chess', status: 'waiting' });
   });

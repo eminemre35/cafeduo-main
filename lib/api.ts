@@ -641,6 +641,44 @@ export const api = {
     },
   },
 
+  // DAILY REWARD WHEEL (PR #36) — per-cafe, per-user, once daily.
+  wheel: {
+    get: async (
+      cafeId: string | number
+    ): Promise<{
+      cafeId: number;
+      cafeName?: string;
+      wheel: Array<{ points: number; weight: number }>;
+      alreadySpunToday: boolean;
+      lastSpin: { id: number; points_won: number; spun_at: string } | null;
+    }> => {
+      return await fetchAPI(`/wheel/${cafeId}`);
+    },
+    spin: async (
+      cafeId: string | number
+    ): Promise<{
+      success: true;
+      pointsWon: number;
+      pickedIndex: number;
+      spin: { id: number; points_won: number; spun_at: string };
+    }> => {
+      return await fetchAPI(`/wheel/${cafeId}/spin`, { method: 'POST' });
+    },
+    setSlices: async (
+      cafeId: string | number,
+      wheel: Array<{ points: number; weight: number }>
+    ): Promise<{
+      success: true;
+      cafeId: number;
+      wheel: Array<{ points: number; weight: number }>;
+    }> => {
+      return await fetchAPI(`/wheel/${cafeId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ wheel }),
+      });
+    },
+  },
+
   // LEADERBOARD
   leaderboard: {
     get: async (): Promise<User[]> => {
