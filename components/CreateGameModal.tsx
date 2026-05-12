@@ -205,16 +205,16 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="riso-kantin fixed inset-0 z-[1000] flex h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-5">
-      {/* Backdrop */}
+    <div className="riso-kantin fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6">
+      {/* Backdrop — covers whole viewport, click closes */}
       <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
       <div
-        className="relative my-0 w-full max-w-3xl overflow-y-auto bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2.5rem)]"
+        className="relative flex flex-col w-full max-w-2xl bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-3rem)]"
         data-testid="create-game-modal"
       >
-        {/* Header */}
-        <div className="sticky top-0 z-20 flex items-center justify-between border-b-2 border-carbon bg-paper-deep px-4 py-3">
+        {/* Sticky header */}
+        <div className="shrink-0 flex items-center justify-between border-b-2 border-carbon bg-paper-deep px-4 py-3">
           <h3 className="font-riso-display text-lg sm:text-xl text-carbon">YENİ OYUN KUR</h3>
           <button
             type="button"
@@ -226,7 +226,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 space-y-5">
+        {/* Scrollable body — flex-1 + overflow-y-auto so mouse wheel reaches here */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-5">
           {/* Points info */}
           <div className="flex items-center justify-between border-2 border-carbon bg-riso-mustard px-3 py-2">
             <span className="font-riso-body text-sm font-semibold text-carbon">
@@ -320,7 +321,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                     min={minPoints}
                     max={maxPoints}
                     data-testid="game-points-input"
-                    className={`riso-focus flex-1 border-2 bg-paper text-carbon p-2 font-riso-display text-lg text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                    style={{ backgroundColor: '#FBF7EE', color: '#141413', colorScheme: 'light' }}
+                    className={`riso-focus flex-1 border-2 p-2 font-riso-display text-lg text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                       errors.points && touched.points ? 'border-riso-redox' : 'border-carbon'
                     }`}
                   />
@@ -426,7 +428,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
         </div>
 
         {/* Sticky footer */}
-        <div className="sticky bottom-0 z-20 grid grid-cols-1 gap-2 border-t-2 border-carbon bg-paper-deep px-4 py-3 sm:grid-cols-[0.38fr_1fr]">
+        <div className="shrink-0 grid grid-cols-1 gap-2 border-t-2 border-carbon bg-paper-deep px-4 py-3 sm:grid-cols-[0.38fr_1fr]">
           <button
             type="button"
             onClick={onClose}

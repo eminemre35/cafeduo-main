@@ -2902,6 +2902,11 @@ textarea:focus-visible,
  * ===================================================================== */
 
 .riso-kantin {
+  /* Force light form control rendering — without this, the global dark body
+   * background causes Brave/Chrome to render <input>, <select> spinners and
+   * autofill in a dark theme even when the explicit Tailwind bg is paper. */
+  color-scheme: light;
+
   /* Surfaces */
   --paper: #fbf7ee;
   --paper-deep: #f2ead8;
