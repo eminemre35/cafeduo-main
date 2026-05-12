@@ -6,6 +6,7 @@ import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
 import { useLiveScoreGame } from '../hooks/useLiveScoreGame';
+import { QuizStageCanvas, type QuizStageHandle } from './games/QuizStageCanvas';
 
 interface KnowledgeQuizProps {
   currentUser: User;
@@ -48,6 +49,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const [floatingScore, setFloatingScore] = useState<string | null>(null);
 
   const advanceTimerRef = useRef<number | null>(null);
+  const quizStageRef = useRef<QuizStageHandle | null>(null);
 
   const fallbackQuestion = useMemo(
     () => ({
@@ -107,6 +109,12 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     []
   );
 
+  // Pause the PixiJS overlay's animation loop once the match is over so we're
+  // not burning frames while the user reads the result.
+  useEffect(() => {
+    quizStageRef.current?.setActive(!live.done);
+  }, [live.done]);
+
   const handleAnswer = (optionIndex: number) => {
     if (live.done || live.resolvingMatch || selectedOption !== null || !currentQuestion) return;
 
@@ -119,6 +127,10 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
 
     setFeedbackAnimation(isCorrect ? 'correct' : 'incorrect');
     window.setTimeout(() => setFeedbackAnimation(null), 600);
+
+    // PixiJS particle layer on top of the CSS feedback — enriches, doesn't replace.
+    if (isCorrect) quizStageRef.current?.playCorrect();
+    else quizStageRef.current?.playWrong();
 
     setScoreAnimation(isCorrect ? 'player' : 'opponent');
     window.setTimeout(() => setScoreAnimation(null), 400);
@@ -147,6 +159,8 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
 
     if (isLastRound) {
       live.setDone(true);
+      // Big multi-color celebration on the last answer (mirrors checkmate energy).
+      quizStageRef.current?.playFinale();
       if (isBot || !gameId) {
         const localWinner =
           nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName;
@@ -228,6 +242,13 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           <div
             className={`rf-screen-card-muted p-4 transition-all duration-300 relative overflow-hidden ${feedbackAnimation === 'correct' ? 'animate-flash-green animate-glow-pulse' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
           >
+            {/* PixiJS overlay — sits above floatingScore (z-30 vs z-20) so confetti
+                renders ON TOP of the "+1" / "✕" text. CSS feedback (border/shadow
+                on the option button + flash on this card) stays intact below. */}
+            <QuizStageCanvas
+              ref={quizStageRef}
+              className="pointer-events-none absolute inset-0 z-30 h-full w-full"
+            />
             {floatingScore && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                 <span

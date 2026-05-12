@@ -4,6 +4,17 @@ import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { User } from '../types';
 import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
 
+// PixiJS overlay requires WebGL; mock as inert canvas in tests so the
+// dynamic import + app.init() don't fire in jsdom.
+jest.mock('./games/QuizStageCanvas', () => ({
+  QuizStageCanvas: React.forwardRef(function MockQuizStageCanvas(
+    _props: { className?: string },
+    _ref: React.Ref<unknown>
+  ) {
+    return <canvas data-testid="quiz-pixi-canvas" />;
+  }),
+}));
+
 describe('KnowledgeQuiz', () => {
   const mockUser: User = {
     id: 1,
