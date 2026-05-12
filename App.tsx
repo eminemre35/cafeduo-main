@@ -44,15 +44,10 @@ const ResetPasswordPage = lazyWithRetry(
     })),
   'ResetPasswordPage'
 );
-const Store = lazyWithRetry(
-  () => import('./components/Store').then((module) => ({ default: module.Store })),
-  'Store'
-);
-
 // Loading Component
 const PageLoader = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center text-[var(--rf-ink)]">
-    <div className="w-14 h-14 border-4 border-cyan-300 border-t-transparent rounded-full animate-spin"></div>
+  <div className="min-h-[60vh] flex flex-col items-center justify-center text-carbon">
+    <div className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
 
@@ -331,14 +326,6 @@ const AppContent: React.FC = () => {
                 element={
                   <PageTransition>
                     <ResetPasswordPage />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/store"
-                element={
-                  <PageTransition>
-                    <Store user={user} updateUser={updateUser} onShowToast={toast} />
                   </PageTransition>
                 }
               />

@@ -75,6 +75,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [leavingGame, setLeavingGame] = useState(false);
   const [showGlitchAnim, setShowGlitchAnim] = useState(false);
   const gameEndHandledRef = useRef(false);
+  /**
+   * Synchronous flag tracking whether the active match has reached a server-
+   * resolved end state. Game components call `handleMatchSettled` the moment
+   * their internal `serverStatus === 'finished'` (or `live.done`) flips. This
+   * short-circuits the forfeit confirm in handleLeaveGame so the user is not
+   * prompted with "Oyundan çıkarsan mağlup sayılacaksın" after they have
+   * already lost or won server-side (the actual gameResult is still set via
+   * the ~700-900ms delayed onGameEnd path).
+   */
+  const matchSettledRef = useRef(false);
+
+  const handleMatchSettled = React.useCallback(() => {
+    matchSettledRef.current = true;
+  }, []);
 
   // ==========================================
   // CUSTOM HOOKS
@@ -113,6 +127,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setTableCode(normalizedTable);
     setIsMatched(Boolean(currentUser.cafe_id) && Boolean(normalizedTable));
   }, [currentUser.cafe_id, currentUser.table_number]);
+
+  // Reset per-match refs when the active game changes — otherwise a
+  // previously-settled flag would suppress the forfeit confirm on a fresh
+  // ongoing match.
+  useEffect(() => {
+    matchSettledRef.current = false;
+    gameEndHandledRef.current = false;
+  }, [activeGameId]);
 
   useEffect(() => {
     if (isProfileOpen && isOwnProfile) {
@@ -266,7 +288,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handleLeaveGame = () => {
-    if (!gameResult) {
+    // Only warn about forfeit when the match is genuinely still in progress.
+    // If gameResult is already set OR the game component told us the server
+    // marked the match settled (matchSettledRef), skip the confirm — the
+    // user is not abandoning anything, the match is over.
+    const matchInProgress = !gameResult && !matchSettledRef.current;
+    if (matchInProgress) {
       const accepted = window.confirm(
         'Oyundan çıkarsan mağlup sayılacaksın. Oyundan çıkmak istiyor musun?'
       );
@@ -352,6 +379,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
+              onMatchSettled={handleMatchSettled}
             />
           ) : activeGameType === 'Bilgi Yarışı' ? (
             <KnowledgeQuiz
@@ -361,6 +389,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
+              onMatchSettled={handleMatchSettled}
             />
           ) : activeGameType === 'Nişancı Düellosu' ? (
             <ArenaBattle
@@ -370,6 +399,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
+              onMatchSettled={handleMatchSettled}
             />
           ) : (
             <div className="border-2 border-carbon bg-paper border-riso-redox/30 rounded-xl p-8 text-center">
@@ -492,7 +522,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   />
                 </div>
 
-                {/* Sağ: Mağaza & Envanter */}
+                {/* Sağ: Ödüller & Envanter */}
                 <div className="order-2 min-w-0">
                   <RewardSection
                     currentUser={currentUser}

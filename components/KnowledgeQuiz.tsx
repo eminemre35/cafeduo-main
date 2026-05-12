@@ -14,6 +14,9 @@ interface KnowledgeQuizProps {
   isBot: boolean;
   onGameEnd: (winner: string, points: number) => void;
   onLeave: () => void;
+  /** Fires the instant the match is settled (live.done flips true) so the
+   *  parent can suppress its forfeit-confirm dialog. */
+  onMatchSettled?: () => void;
 }
 
 const QUIZ_ROUND_COUNT = 10;
@@ -27,6 +30,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   isBot,
   onGameEnd,
   onLeave,
+  onMatchSettled,
 }) => {
   const live = useLiveScoreGame({
     currentUser,
@@ -113,6 +117,12 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   useEffect(() => {
     quizStageRef.current?.setActive(!live.done);
   }, [live.done]);
+
+  // Tell the parent the match is settled so the forfeit confirm gets
+  // suppressed before the delayed onGameEnd actually sets gameResult.
+  useEffect(() => {
+    if (live.done) onMatchSettled?.();
+  }, [live.done, onMatchSettled]);
 
   const handleAnswer = (optionIndex: number) => {
     if (live.done || live.resolvingMatch || selectedOption !== null || !currentQuestion) return;

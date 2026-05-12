@@ -11,8 +11,8 @@ jest.mock('../contexts/ToastContext', () => ({
   useToast: () => ({
     success: mockToastSuccess,
     error: mockToastError,
-    warning: mockToastWarning
-  })
+    warning: mockToastWarning,
+  }),
 }));
 
 // Mock api
@@ -22,8 +22,8 @@ jest.mock('../lib/api', () => ({
       login: jest.fn(),
       register: jest.fn(),
       forgotPassword: jest.fn(),
-    }
-  }
+    },
+  },
 }));
 
 describe('AuthModal', () => {
@@ -52,7 +52,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('GİRİŞ MERKEZİ')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Giriş Yap' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('E-posta')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Şifre')).toBeInTheDocument();
   });
@@ -67,7 +67,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('KAYIT MERKEZİ')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Kayıt Ol' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Kullanıcı adı')).toBeInTheDocument();
   });
 

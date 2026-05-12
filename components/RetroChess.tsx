@@ -34,6 +34,10 @@ interface RetroChessProps {
   isBot: boolean;
   onGameEnd: (winner: string, points: number) => void;
   onLeave: () => void;
+  /** Fires synchronously when the server reports the match as finished, so
+   *  the parent can suppress the forfeit-confirm dialog before the delayed
+   *  onGameEnd callback sets gameResult. */
+  onMatchSettled?: () => void;
 }
 
 interface ChessRealtimeState {
@@ -99,6 +103,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   isBot,
   onGameEnd,
   onLeave,
+  onMatchSettled,
 }) => {
   const [chess, setChess] = useState<Chess>(() => new Chess());
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -260,6 +265,15 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   useEffect(() => {
     pixiOverlayRef.current?.setOrientation(orientation);
   }, [orientation]);
+
+  // Notify the parent (Dashboard) the moment the match is settled server-side,
+  // so the forfeit-confirm dialog gets suppressed before the delayed
+  // onGameEnd callback (700ms) actually sets gameResult.
+  useEffect(() => {
+    if (serverStatus === 'finished') {
+      onMatchSettled?.();
+    }
+  }, [serverStatus, onMatchSettled]);
   const turn = chess.turn();
   const effectiveSelectableColor = playerColor || turn;
   const isMyTurn = Boolean(playerColor) && turn === playerColor && serverStatus !== 'finished';

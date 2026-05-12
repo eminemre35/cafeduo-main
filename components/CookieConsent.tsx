@@ -28,27 +28,27 @@ export const CookieConsent: React.FC = () => {
     <div
       role="region"
       aria-label="Çerez bildirimi"
-      className="cd-cookie-banner pointer-events-none fixed md:left-auto md:right-6 md:w-[26rem]"
+      className="riso-kantin cd-cookie-banner pointer-events-none fixed bottom-4 left-4 right-4 z-[120] md:left-auto md:right-6 md:bottom-6 md:w-[26rem]"
     >
-      <div className="pointer-events-auto rounded-md border border-carbon-muted bg-[#F2EAD8]/95 p-3 shadow-2xl shadow-black/30 -xl sm:p-3.5">
+      <div className="pointer-events-auto border-2 border-carbon bg-paper p-4 riso-shadow-md">
         <div className="flex items-start gap-3">
-          <div className="hidden shrink-0 rounded-md border border-carbon-muted bg-paper p-2.5 text-carbon-soft sm:flex">
+          <div className="hidden shrink-0 border-2 border-carbon bg-riso-mustard p-2.5 text-carbon sm:flex">
             <Cookie size={22} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted font-riso-mono">
               Sistem bilgisi
             </p>
-            <h3 className="mb-1.5 text-sm font-bold uppercase tracking-[0.08em] text-white sm:text-base">
+            <h3 className="mb-1.5 text-base font-bold uppercase tracking-[0.08em] text-carbon font-riso-display">
               Çerez Kullanımı
             </h3>
-            <p className="mb-2.5 break-words text-xs leading-5 text-carbon-muted sm:text-[13px]">
+            <p className="mb-3 break-words text-xs leading-5 text-carbon-soft sm:text-[13px] font-riso-body">
               Deneyim ve konum doğrulaması için gerekli çerezleri kullanıyoruz.
             </p>
             <button
               type="button"
               onClick={handleAccept}
-              className="w-full rounded-md bg-slate-100 py-2.5 text-sm font-bold uppercase tracking-[0.08em] text-[#07111f] transition-colors hover:bg-white"
+              className="riso-focus riso-press w-full border-2 border-carbon bg-riso-pink text-carbon py-2.5 text-sm font-bold uppercase tracking-[0.1em] font-riso-display transition-all riso-shadow-sm hover:-translate-y-[1px]"
             >
               Anladım
             </button>

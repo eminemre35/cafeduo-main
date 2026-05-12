@@ -8,7 +8,7 @@
  * Handler signatures + data-testid attributes preserved (logout-button).
  */
 import React, { useEffect, useState } from 'react';
-import { Bell, Menu, X, Coffee, LogOut, ChevronRight, ShoppingCart, Wallet } from 'lucide-react';
+import { Bell, Menu, X, Coffee, LogOut, ChevronRight, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
@@ -106,15 +106,6 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     </span>
                   </div>
                 )}
-                {!isHomePage && (
-                  <button
-                    onClick={() => navigate('/store')}
-                    className="riso-focus flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-1.5 font-riso-body text-sm font-semibold text-carbon transition-colors hover:bg-paper-deep"
-                  >
-                    <ShoppingCart size={16} />
-                    <span className="hidden lg:inline">Mağaza</span>
-                  </button>
-                )}
                 <button
                   onClick={onLogout}
                   data-testid="logout-button"
@@ -181,18 +172,6 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       </span>
                       <span className="font-riso-mono">{user.points} CP</span>
                     </div>
-                  )}
-                  {!isHomePage && (
-                    <button
-                      onClick={() => {
-                        navigate('/store');
-                        setIsOpen(false);
-                      }}
-                      className="riso-focus flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
-                    >
-                      <span>Mağaza</span>
-                      <ShoppingCart size={20} className="text-carbon-muted" />
-                    </button>
                   )}
                   <button
                     onClick={() => {

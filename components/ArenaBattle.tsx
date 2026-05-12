@@ -15,6 +15,9 @@ interface ArenaBattleProps {
   isBot: boolean;
   onGameEnd: (winner: string, points: number) => void;
   onLeave: () => void;
+  /** Fires the instant the match is settled (live.done flips true) so the
+   *  parent can suppress its forfeit-confirm dialog. */
+  onMatchSettled?: () => void;
 }
 
 interface ArenaWindow extends Window {
@@ -60,6 +63,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   isBot,
   onGameEnd,
   onLeave,
+  onMatchSettled,
 }) => {
   const live = useLiveScoreGame({
     currentUser,
@@ -131,6 +135,12 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   useEffect(() => {
     pixiStageRef.current?.setActive(!live.done);
   }, [live.done]);
+
+  // Tell the parent the match is settled so the forfeit confirm gets
+  // suppressed before the delayed onGameEnd actually sets gameResult.
+  useEffect(() => {
+    if (live.done) onMatchSettled?.();
+  }, [live.done, onMatchSettled]);
 
   // Surface a friendly status message when the snapshot tells us who joined.
   useEffect(() => {

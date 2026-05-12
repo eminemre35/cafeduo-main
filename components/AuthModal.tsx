@@ -240,16 +240,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setHasSubmitted(false);
   };
 
+  /** Riso Kantin: ink-bordered paper input with focus ring. No neon glow. */
   const inputBaseClass =
-    'w-full min-h-12 bg-paper border-2 border-carbon text-carbon font-riso-body text-base leading-6 group-[.is-error]:text-riso-redox outline-none transition-colors duration-200 placeholder:text-carbon-muted pl-11 pr-12 cursor-text riso-focus';
-  const inputBorderClass =
-    'border-carbon-muted/40 focus:border-riso-pink focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
-  const inputErrorClass =
-    'border-riso-redox/50 focus:border-riso-redox focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)]';
+    'w-full min-h-12 bg-paper-deep border-2 text-carbon font-riso-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper';
+  const inputBorderClass = 'border-carbon focus:ring-riso-blue';
+  const inputErrorClass = 'border-riso-redox focus:ring-riso-redox';
   const iconBaseClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none transition-colors group-focus-within:text-riso-pink-deep group-[.is-error]:text-riso-redox z-10';
+    'absolute left-4 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none transition-colors group-focus-within:text-carbon group-[.is-error]:text-riso-redox z-10';
 
   if (!isOpen) return null;
+
+  const title = isForgotPasswordMode
+    ? 'Şifremi Unuttum'
+    : mode === 'login'
+      ? 'Giriş Yap'
+      : 'Kayıt Ol';
+  const subtitle = isForgotPasswordMode
+    ? 'E-posta adresine sıfırlama bağlantısı gönderilir.'
+    : mode === 'login'
+      ? 'Hesabına giriş yap, kafede oyna.'
+      : 'CafeDuo ailesine katıl, ilk puanını kazan.';
 
   return (
     <AnimatePresence>
@@ -259,89 +269,92 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Backdrop */}
+        {/* Backdrop — soft ink wash */}
         <motion.div
-          className="absolute inset-0 bg-carbon/80"
+          className="absolute inset-0 bg-carbon/60 backdrop-blur-sm"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         />
 
-        {/* Modal Container Wrapper for absolute positioning */}
-        <div className="riso-kantin relative w-full max-w-[520px] max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
+        {/* Modal Container */}
+        <div className="riso-kantin relative w-full max-w-[480px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
           <motion.div
-            className="relative w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col"
+            className="relative w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col"
             initial={{ y: 24, opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
-            {/* Drag handle for mobile */}
-            <div className="sm:hidden w-full pt-3 pb-1 flex justify-center" onClick={onClose}>
-              <div className="w-12 h-1.5 bg-paper-dim" />
-            </div>
+            {/* Decorative riso confetti corner — printed-zine flair */}
+            <div
+              aria-hidden="true"
+              className="absolute top-3 right-16 h-2 w-12 bg-riso-mustard rotate-[-4deg] pointer-events-none hidden sm:block"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute top-7 right-24 h-2 w-6 bg-riso-pink rotate-[6deg] pointer-events-none hidden sm:block"
+            />
 
-            {/* Header Bar */}
-            <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b-2 border-carbon-muted/50 flex-shrink-0 bg-carbon/40 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-riso-pink opacity-50"></div>
-              <div>
-                <p className="font-riso-body text-riso-pink-deep tracking-widest text-xs uppercase font-bold relative inline-block">
-                  Güvenli Erişim
-                  <span className="absolute -top-1 -right-2 w-1.5 h-1.5 bg-riso-pink animate-pulse"></span>
+            {/* Header */}
+            <div className="px-5 md:px-7 pt-5 md:pt-6 pb-3 flex justify-between items-start border-b-2 border-carbon shrink-0 bg-paper">
+              <div className="min-w-0">
+                <p className="font-riso-mono text-[10px] tracking-[0.22em] uppercase text-carbon-muted font-bold mb-1">
+                  CafeDuo // Auth
                 </p>
-                <h2
-                  className="font-riso-display text-carbon text-3xl md:text-3xl uppercase mt-1 tracking-wider glitch-text-safe"
-                  data-text={mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}
-                >
-                  {mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}
+                <h2 className="font-riso-display text-carbon text-2xl md:text-3xl uppercase tracking-[0.06em]">
+                  {title}
                 </h2>
+                <p className="font-riso-body text-sm text-carbon-soft mt-1">{subtitle}</p>
               </div>
-              <motion.button
+              <button
                 onClick={onClose}
-                className="w-10 h-10 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors group"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                aria-label="Kapat"
+                className="riso-focus shrink-0 w-9 h-9 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
               >
-                <X size={20} />
-              </motion.button>
+                <X size={18} />
+              </button>
             </div>
 
-            {/* Content - Scrollable on mobile */}
-            <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto flex flex-col gap-5">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className={`flex-1 h-12 font-riso-display text-lg uppercase tracking-wider transition-colors border-b-2 ${
-                    mode === 'login'
-                      ? 'text-riso-pink-deep border-riso-pink bg-paper-deep/30'
-                      : 'text-carbon-muted border-carbon-muted/45 hover:text-carbon-soft hover:bg-paper-deep/25'
-                  }`}
-                >
-                  <span className="block">GİRİŞ YAP</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchMode('register')}
-                  className={`flex-1 h-12 font-riso-display text-lg uppercase tracking-wider transition-colors border-b-2 ${
-                    mode === 'register'
-                      ? 'text-riso-pink-deep border-pink-500 bg-pink-950/20'
-                      : 'text-carbon-muted border-carbon-muted/45 hover:text-carbon-soft hover:bg-paper-deep/25'
-                  }`}
-                >
-                  <span className="block">KAYIT OL</span>
-                </button>
-              </div>
+            {/* Content */}
+            <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto overscroll-contain flex flex-col gap-5">
+              {/* Mode switch — ink-bordered tab pair (hidden in forgot mode) */}
+              {!isForgotPasswordMode && (
+                <div className="flex border-2 border-carbon">
+                  <button
+                    type="button"
+                    onClick={() => switchMode('login')}
+                    className={`flex-1 h-11 font-riso-display text-sm sm:text-base uppercase tracking-[0.1em] transition-all ${
+                      mode === 'login'
+                        ? 'bg-riso-pink text-carbon font-bold'
+                        : 'bg-paper text-carbon-muted hover:bg-paper-deep'
+                    }`}
+                  >
+                    Giriş Yap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMode('register')}
+                    className={`flex-1 h-11 font-riso-display text-sm sm:text-base uppercase tracking-[0.1em] transition-all border-l-2 border-carbon ${
+                      mode === 'register'
+                        ? 'bg-riso-pink text-carbon font-bold'
+                        : 'bg-paper text-carbon-muted hover:bg-paper-deep'
+                    }`}
+                  >
+                    Kayıt Ol
+                  </button>
+                </div>
+              )}
 
               {error && (
-                <div className="bg-riso-redox/10 border-l-4 border-riso-redox text-riso-redox px-4 py-3 font-riso-body text-sm flex items-center gap-3 animate-pulse">
+                <div className="bg-riso-redox/15 border-2 border-carbon border-l-[6px] border-l-riso-redox text-carbon px-4 py-3 font-riso-body text-sm flex items-center gap-3">
                   <AlertTriangle size={18} className="shrink-0 text-riso-redox" />
-                  {error}
+                  <span>{error}</span>
                 </div>
               )}
               {forgotMessage && (
-                <div className="bg-riso-blue/10 border-l-4 border-riso-pink text-carbon-soft px-4 py-3 font-riso-body text-sm">
+                <div className="bg-riso-blue/15 border-2 border-carbon border-l-[6px] border-l-riso-blue text-carbon px-4 py-3 font-riso-body text-sm">
                   {forgotMessage}
                 </div>
               )}
@@ -350,7 +363,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {mode === 'register' && !isForgotPasswordMode && (
                   <>
                     <div
-                      className={`relative group ${fieldErrors.username && touched.username ? 'is-error' : ''}`}
+                      className={`relative group ${
+                        fieldErrors.username && touched.username ? 'is-error' : ''
+                      }`}
                     >
                       <User className={iconBaseClass} size={18} />
                       <input
@@ -367,7 +382,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       />
                       {!fieldErrors.username && touched.username && username && (
                         <Check
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-pink-deep"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-spring"
                           size={18}
                         />
                       )}
@@ -378,36 +393,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       </p>
                     )}
 
-                    <div className={`relative group`}>
-                      <Briefcase className={`${iconBaseClass} z-10`} size={18} />
+                    <div className="relative group">
+                      <Briefcase className={iconBaseClass} size={18} />
                       <select
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
-                        className={`${inputBaseClass} ${inputBorderClass} border-2 border-carbon bg-paper-icon-double appearance-none cursor-pointer`}
+                        className={`${inputBaseClass} ${inputBorderClass} appearance-none cursor-pointer pr-10`}
                       >
-                        <option value="" className="bg-carbon text-carbon-muted">
-                          Bölüm seçiniz (isteğe bağlı)
-                        </option>
+                        <option value="">Bölüm seçiniz (isteğe bağlı)</option>
                         {PAU_DEPARTMENTS.map((dept) => (
-                          <option
-                            key={dept}
-                            value={dept}
-                            className="bg-carbon border-2 border-carbon-muted/50 text-carbon font-riso-body px-2"
-                          >
+                          <option key={dept} value={dept}>
                             {dept}
                           </option>
                         ))}
                       </select>
                       <ChevronDown
                         size={16}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-carbon-muted/70"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-carbon-muted"
                       />
                     </div>
                   </>
                 )}
 
                 <div
-                  className={`relative group ${fieldErrors.email && touched.email ? 'is-error' : ''}`}
+                  className={`relative group ${
+                    fieldErrors.email && touched.email ? 'is-error' : ''
+                  }`}
                 >
                   <Mail className={iconBaseClass} size={18} />
                   <input
@@ -423,7 +434,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                   {!fieldErrors.email && touched.email && email && (
                     <Check
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-pink-deep"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-spring"
                       size={18}
                     />
                   )}
@@ -437,7 +448,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {!isForgotPasswordMode && (
                   <>
                     <div
-                      className={`relative group ${fieldErrors.password && touched.password ? 'is-error' : ''}`}
+                      className={`relative group ${
+                        fieldErrors.password && touched.password ? 'is-error' : ''
+                      }`}
                     >
                       <Lock className={iconBaseClass} size={18} />
                       <input
@@ -456,7 +469,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-carbon-muted hover:text-riso-pink-deep transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-carbon-muted hover:text-carbon transition-colors"
                         aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -478,7 +491,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setError('');
                       setForgotMessage('');
                     }}
-                    className="text-sm font-riso-body text-riso-pink-deep/80 hover:text-riso-pink-deep hover:underline transition-colors block text-right w-full"
+                    className="text-sm font-riso-body text-carbon hover:text-riso-pink-deep underline decoration-2 decoration-carbon hover:decoration-riso-pink-deep underline-offset-4 transition-colors block text-right w-full"
                   >
                     Şifremi unuttum
                   </button>
@@ -486,13 +499,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <RetroButton
                   type="submit"
+                  variant="primary"
                   disabled={isLoading}
                   data-testid="auth-submit-button"
-                  className="w-full mt-4 normal-case text-lg font-riso-display tracking-widest disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full mt-2"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-carbon border-t-transparent rounded-full animate-spin" />
                       {isForgotPasswordMode
                         ? 'Bağlantı gönderiliyor...'
                         : mode === 'login'
@@ -512,21 +526,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </RetroButton>
               </form>
 
-              <div className="space-y-2">
+              <div className="space-y-2 text-center">
                 {mode === 'login' && !isForgotPasswordMode && (
-                  <p className="text-center text-carbon-muted text-sm">
+                  <p className="text-sm font-riso-body text-carbon-soft">
                     Hesabınız yok mu?{' '}
                     <button
                       type="button"
                       onClick={() => switchMode('register')}
-                      className="text-riso-pink-deep hover:text-carbon-soft transition-colors font-semibold"
+                      className="text-riso-pink-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
                     >
                       Kayıt olun
                     </button>
                   </p>
                 )}
+                {mode === 'register' && !isForgotPasswordMode && (
+                  <p className="text-sm font-riso-body text-carbon-soft">
+                    Zaten hesabınız var mı?{' '}
+                    <button
+                      type="button"
+                      onClick={() => switchMode('login')}
+                      className="text-riso-pink-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
+                    >
+                      Giriş yapın
+                    </button>
+                  </p>
+                )}
                 {mode === 'login' && isForgotPasswordMode && (
-                  <p className="text-center text-carbon-muted text-sm">
+                  <p className="text-sm font-riso-body text-carbon-soft">
                     Şifrenizi hatırladınız mı?{' '}
                     <button
                       type="button"
@@ -534,15 +560,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         setIsForgotPasswordMode(false);
                         setError('');
                       }}
-                      className="text-riso-pink-deep hover:text-carbon-soft transition-colors font-semibold"
+                      className="text-riso-pink-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
                     >
                       Giriş ekranına dön
                     </button>
                   </p>
                 )}
-                <p className="text-center text-[11px] text-carbon-muted">
-                  Giriş sonrası hesabınızın rolüne göre otomatik olarak uygun panele
-                  yönlendirilirsiniz.
+                <p className="text-[11px] text-carbon-muted font-riso-mono uppercase tracking-wider">
+                  Giriş sonrası rolünüze göre yönlendirilirsiniz.
                 </p>
               </div>
             </div>
