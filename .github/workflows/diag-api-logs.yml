@@ -85,3 +85,15 @@ jobs:
             cat raw-logs.txt | tail -c 60000
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Echo logs to step output (so gh run view --log shows them)
+        run: |
+          echo "=== BEGIN raw-logs.txt ==="
+          cat raw-logs.txt
+          echo "=== END raw-logs.txt ==="
+
+      - name: Upload raw logs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-logs
+          path: raw-logs.txt
