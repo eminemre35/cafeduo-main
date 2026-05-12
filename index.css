@@ -1184,18 +1184,18 @@ body::after {
   color: #faf7f0;
 }
 
-/* ── Chess check pulse (RetroChess king-in-check indicator) ── */
+/* ── Chess check pulse (RetroChess king-in-check indicator, Riso redox) ── */
 @keyframes check-pulse {
   0%,
   100% {
-    background-color: rgba(239, 68, 68, 0.45);
-    box-shadow: inset 0 0 30px rgba(239, 68, 68, 0.4);
+    background-color: rgba(224, 59, 30, 0.35);
+    box-shadow: inset 0 0 0 2px #141413;
   }
   50% {
-    background-color: rgba(239, 68, 68, 0.7);
+    background-color: rgba(224, 59, 30, 0.6);
     box-shadow:
-      inset 0 0 40px rgba(239, 68, 68, 0.75),
-      0 0 18px rgba(239, 68, 68, 0.6);
+      inset 0 0 0 2px #141413,
+      0 0 12px rgba(224, 59, 30, 0.45);
   }
 }
 

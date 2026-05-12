@@ -3,11 +3,11 @@ import { Chess, Move, Square } from 'chess.js';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
-import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { ChessBoardOverlay, type ChessBoardOverlayHandle } from './games/ChessBoardOverlay';
+import { ChessPieceIcon, PIECE_LABEL_TR } from './games/ChessPieceIcons';
 import {
   FILES,
   RANKS,
@@ -91,34 +91,6 @@ interface GameStateUpdatedPayload {
   };
   action?: string;
 }
-
-const PIECE_SYMBOL: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
-  w: {
-    p: '♙',
-    n: '♘',
-    b: '♗',
-    r: '♖',
-    q: '♕',
-    k: '♔',
-  },
-  b: {
-    p: '♟',
-    n: '♞',
-    b: '♝',
-    r: '♜',
-    q: '♛',
-    k: '♚',
-  },
-};
-
-const PIECE_LABEL: Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string> = {
-  p: 'Piyon',
-  n: 'At',
-  b: 'Fil',
-  r: 'Kale',
-  q: 'Vezir',
-  k: 'Şah',
-};
 
 export const RetroChess: React.FC<RetroChessProps> = ({
   currentUser,
@@ -859,15 +831,18 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     <>
       <ConnectionOverlay gameId={gameId} />
       <div
-        className="max-w-4xl mx-auto border-2 border-carbon bg-paper riso-shadow-sm  p-4 sm:p-6 text-white relative overflow-hidden"
+        className="max-w-4xl mx-auto border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6 text-carbon relative overflow-hidden"
         data-testid="retro-chess"
-        style={{
-          backgroundImage: `linear-gradient(165deg, rgba(3, 16, 40, 0.94), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.strategyChess}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
       >
-        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
+        {/* Decorative riso confetti accents */}
+        <div
+          aria-hidden="true"
+          className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] hidden sm:block pointer-events-none"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute top-6 right-16 h-2 w-6 bg-riso-pink rotate-[6deg] hidden sm:block pointer-events-none"
+        />
 
         <div className="relative z-10">
           <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
@@ -879,7 +854,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </h2>
             <button
               onClick={handleLeave}
-              className="text-riso-pink-deep hover:text-rose-100 text-xs px-3 py-2 border border-riso-pink/45 bg-riso-pink/15 hover:bg-riso-pink/24 transition-colors uppercase tracking-[0.16em]"
+              className="riso-focus riso-press font-riso-display text-xs sm:text-sm px-3 py-2 border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm transition-all uppercase tracking-[0.16em]"
             >
               Oyundan Çık
             </button>
@@ -930,10 +905,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </p>
           )}
 
-          <div className="w-full max-w-[620px] mx-auto border border-carbon p-2 sm:p-3 bg-[#FBF7EE]/85 riso-shadow-sm">
+          <div className="w-full max-w-[620px] mx-auto border-2 border-carbon p-2 sm:p-3 bg-paper riso-shadow-md">
             <div
               ref={boardGridRef}
-              className="relative grid grid-cols-8 gap-1.5 sm:gap-2"
+              className="relative grid grid-cols-8 gap-0"
               data-testid="retro-chess-board"
             >
               {/* PixiJS overlay — absolutely positioned, fills the grid, captures/check effects */}
@@ -954,28 +929,18 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   const isInCheck =
                     chess.isCheck() && piece?.type === 'k' && piece.color === chess.turn();
 
-                  const baseClass = isLight
-                    ? 'bg-[linear-gradient(145deg,#4d88bf,#2f679f)]'
-                    : 'bg-[linear-gradient(145deg,#102b4f,#0a1f39)]';
+                  // Alternating paper tones — light = paper (cream), dark = paper-deep (warm beige)
+                  const baseClass = isLight ? 'bg-paper' : 'bg-paper-deep';
 
-                  // Add pattern overlay to squares
-                  const patternClass = isLight
-                    ? 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08),transparent_50%)] before:pointer-events-none'
-                    : 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_70%_70%,rgba(0,0,0,0.15),transparent_50%)] before:pointer-events-none';
-
+                  // Ink border on every square; selection/check/last-move recolour the border + ring
                   const selectedClass = isSelected
-                    ? 'border-carbon ring-2 ring-cyan-200/85 z-10 scale-[1.08] shadow-[0_8px_24px_rgba(34,211,238,0.4)]'
-                    : 'border-carbon-muted';
+                    ? 'ring-4 ring-riso-mustard z-10 scale-[1.04]'
+                    : '';
                   const legalClass = isLegal
-                    ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)] before:z-10'
+                    ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-riso-pink before:border-2 before:border-carbon before:z-10'
                     : '';
-                  const lastMoveClass =
-                    isLastMoveFrom || isLastMoveTo
-                      ? 'border-riso-mustard/80 shadow-[inset_0_0_20px_rgba(251,191,36,0.35),0_0_12px_rgba(251,191,36,0.25)]'
-                      : '';
-                  const checkClass = isInCheck
-                    ? 'animate-check-pulse bg-[rgba(239,68,68,0.45)] shadow-[inset_0_0_30px_rgba(239,68,68,0.4)]'
-                    : '';
+                  const lastMoveClass = isLastMoveFrom || isLastMoveTo ? 'bg-riso-mustard/35' : '';
+                  const checkClass = isInCheck ? 'animate-check-pulse bg-riso-redox/40' : '';
 
                   return (
                     <button
@@ -985,29 +950,21 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                       aria-label={`Kare ${square}`}
                       onClick={() => handleSquareClick(square)}
                       disabled={loading || submitting || serverStatus === 'finished'}
-                      className={`relative aspect-square border transition-all duration-300 ease-out ${baseClass} ${patternClass} ${selectedClass} ${legalClass} ${lastMoveClass} ${checkClass} disabled:cursor-not-allowed`}
+                      className={`relative aspect-square border border-carbon transition-all duration-200 ease-out ${baseClass} ${selectedClass} ${legalClass} ${lastMoveClass} ${checkClass} disabled:cursor-not-allowed`}
                     >
                       {piece && (
                         <span
-                          aria-label={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${PIECE_LABEL[piece.type]}`}
-                          className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none transition-all duration-300 ease-out ${
-                            piece.color === 'w' ? 'text-white' : 'text-[#1a1a2e]'
-                          } ${isSelected ? 'scale-110' : 'scale-100'}`}
-                          style={{
-                            fontSize: 'clamp(1.4rem, 5.2vw, 2.3rem)',
-                            fontFamily: 'serif',
-                            lineHeight: 1,
-                            filter:
-                              piece.color === 'w'
-                                ? `drop-shadow(0 2px 4px rgba(0,0,0,0.8)) drop-shadow(0 0 ${isSelected ? '12px' : '6px'} rgba(165,243,252,${isSelected ? '0.6' : '0.35'}))`
-                                : `drop-shadow(0 2px 2px rgba(200,230,255,0.6)) drop-shadow(0 0 ${isSelected ? '10px' : '4px'} rgba(34,211,238,${isSelected ? '0.4' : '0.2'}))`,
-                            WebkitTextStroke:
-                              piece.color === 'w'
-                                ? '0.8px rgba(6,18,40,0.9)'
-                                : '0.6px rgba(140,200,240,0.55)',
-                          }}
+                          aria-label={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${PIECE_LABEL_TR[piece.type]}`}
+                          className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none transition-transform duration-200 ease-out ${
+                            isSelected ? 'scale-110' : 'scale-100'
+                          }`}
                         >
-                          {PIECE_SYMBOL[piece.color][piece.type]}
+                          <ChessPieceIcon
+                            type={piece.type}
+                            color={piece.color}
+                            size={36}
+                            className="w-[78%] h-[78%]"
+                          />
                         </span>
                       )}
                     </button>
@@ -1069,20 +1026,20 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </RetroButton>
           </div>
 
-          <div className="mt-5 border-2 border-carbon bg-paper-deep p-3 max-h-56 overflow-y-auto custom-scrollbar">
-            <h3 className="font-riso-display text-sm text-white mb-2 tracking-wide">
+          <div className="mt-5 border-2 border-carbon bg-paper-deep p-3 max-h-56 overflow-y-auto custom-scrollbar riso-shadow-sm">
+            <h3 className="font-riso-display text-sm text-carbon mb-2 tracking-widest uppercase">
               HAMLE GEÇMİŞİ
             </h3>
             {moveLog.length === 0 ? (
               <p className="text-xs text-carbon-muted">Henüz hamle yapılmadı.</p>
             ) : (
-              <ol className="space-y-1 text-xs">
+              <ol className="space-y-1 text-xs font-riso-mono">
                 {moveLog.map((entry, index) => (
                   <li
                     key={`${entry.ts}-${index}`}
-                    className="flex items-center justify-between gap-2 border-b border-cyan-400/10 pb-1"
+                    className="flex items-center justify-between gap-2 border-b border-carbon-muted pb-1"
                   >
-                    <span className="text-carbon-soft">
+                    <span className="text-carbon">
                       {index + 1}. {entry.san} ({entry.from}→{entry.to})
                     </span>
                     <span className="text-carbon-muted">
