@@ -16,6 +16,17 @@ jest.mock('../lib/socket', () => ({
   },
 }));
 
+// PixiJS overlay requires WebGL; mock as inert canvas in tests so the
+// dynamic import + app.init() don't fire in jsdom.
+jest.mock('./games/AimBattleStageCanvas', () => ({
+  AimBattleStageCanvas: React.forwardRef(function MockAimBattleStageCanvas(
+    _props: { className?: string },
+    _ref: React.Ref<unknown>
+  ) {
+    return <canvas data-testid="aim-battle-pixi-canvas" />;
+  }),
+}));
+
 describe('ArenaBattle', () => {
   const mockUser: User = {
     id: 1,
@@ -61,7 +72,8 @@ describe('ArenaBattle', () => {
     expect(screen.getByTestId('arena-fire-button')).toBeInTheDocument();
     expect(screen.getByText('Nişancı Düellosu')).toBeInTheDocument();
 
-    const renderToText = (window as Window & { render_game_to_text?: () => string }).render_game_to_text;
+    const renderToText = (window as Window & { render_game_to_text?: () => string })
+      .render_game_to_text;
     expect(renderToText).toBeInstanceOf(Function);
     expect(renderToText?.()).toContain('"gameType":"Nişancı Düellosu"');
     expect(renderToText?.()).toContain('"name":"emin"');

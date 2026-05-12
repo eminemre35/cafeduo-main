@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Crosshair, RadioTower, Target, Trophy } from 'lucide-react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { useLiveScoreGame } from '../hooks/useLiveScoreGame';
+import { AimBattleStageCanvas, type AimBattleStageHandle } from './games/AimBattleStageCanvas';
+import type { HitTier } from '../lib/pixi/aimBattleStage';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -42,6 +44,13 @@ export const shotLabel = (shot: number): string => {
   return 'Iska';
 };
 
+const tierFromPoints = (points: number): HitTier => {
+  if (points >= 3) return 'hit3';
+  if (points === 2) return 'hit2';
+  if (points === 1) return 'hit1';
+  return 'miss';
+};
+
 const randomGaugeStart = () => 15 + Math.random() * 70;
 
 export const ArenaBattle: React.FC<ArenaBattleProps> = ({
@@ -72,6 +81,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   const directionRef = useRef<1 | -1>(1);
   const nextRoundTimeoutRef = useRef<number | null>(null);
+  const pixiStageRef = useRef<AimBattleStageHandle | null>(null);
 
   const target = useMemo(() => (isBot ? 'BOT' : opponentName || 'Rakip'), [isBot, opponentName]);
 
@@ -109,6 +119,18 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
     return () => window.clearInterval(interval);
   }, [live.done, live.resolvingMatch, round]);
+
+  // Push the bouncing gauge value into the PixiJS overlay each tick so the
+  // animated reticle stays in sync with the underlying state.
+  useEffect(() => {
+    pixiStageRef.current?.setReticleX(gauge);
+  }, [gauge]);
+
+  // Pause the PixiJS overlay's animation loop on match end so we're not
+  // burning frames on a finished battle waiting for the user to leave.
+  useEffect(() => {
+    pixiStageRef.current?.setActive(!live.done);
+  }, [live.done]);
 
   // Surface a friendly status message when the snapshot tells us who joined.
   useEffect(() => {
@@ -178,6 +200,14 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     setPlayerShot(shot);
     live.setPlayerScore(nextPlayerScore);
     playGameSfx(gainedPoints > 0 ? 'success' : 'fail', gainedPoints > 0 ? 0.24 : 0.2);
+
+    // PixiJS visual feedback at the reticle position
+    const tier = tierFromPoints(gainedPoints);
+    pixiStageRef.current?.flash(tier);
+    pixiStageRef.current?.showScorePopup(
+      gainedPoints > 0 ? `+${gainedPoints} ${shotLabel(shot)}` : shotLabel(shot),
+      tier
+    );
 
     if (isBot) {
       const botShot = clampGauge(50 + (Math.random() * 2 - 1) * 42);
@@ -265,17 +295,21 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
           </div>
         </div>
 
-        <div className="cd-reticle-stage mb-5">
-          <div className="cd-reticle-grid" />
-          <div className="cd-reticle-center" />
+        <div className="cd-reticle-stage relative mb-5 overflow-hidden">
+          {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
+          <AimBattleStageCanvas ref={pixiStageRef} className="absolute inset-0 h-full w-full" />
+          {/* CSS reticle kept as a11y/test fallback and for environments without WebGL */}
+          <div className="cd-reticle-grid pointer-events-none" />
+          <div className="cd-reticle-center pointer-events-none" />
           <div
-            className="cd-reticle-sight"
+            className="cd-reticle-sight pointer-events-none opacity-0"
             style={{ left: `${gauge}%` }}
             data-testid="arena-reticle"
+            aria-hidden="true"
           >
             <Crosshair size={42} />
           </div>
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-[#A5ADB8]">
+          <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-[#A5ADB8]">
             <span>0</span>
             <span className="text-[#39FF6A]">MERKEZ 50</span>
             <span>100</span>
