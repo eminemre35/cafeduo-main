@@ -22,7 +22,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onOpenProfile,
 }) => {
   return (
-    <div className="border-2 border-carbon bg-paper border-carbon-muted rounded-xl p-4 md:p-5 mb-6">
+    <div className="border-2 border-carbon bg-paper riso-shadow-sm p-4 md:p-5 mb-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
@@ -31,20 +31,18 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             onClick={onOpenProfile}
             aria-label="Profilini aç"
           >
-            <div className="w-11 h-11 rounded-full bg-[#0a2d52] border border-cyan-300/35 flex items-center justify-center text-carbon font-semibold text-base shadow-[0_8px_20px_rgba(0,0,0,0.28)]">
+            <div className="w-11 h-11 border-2 border-carbon bg-riso-blue flex items-center justify-center text-paper font-riso-display font-bold text-base">
               {user.username.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h3 className="text-white font-semibold truncate">{user.username}</h3>
+              <h3 className="text-carbon font-riso-display text-base truncate">{user.username}</h3>
               <p className="text-carbon-muted text-sm truncate">{user.department || 'Öğrenci'}</p>
             </div>
           </button>
 
           <div
-            className={`inline-flex items-center gap-2 self-start sm:self-auto rounded-full px-3 py-1.5 border ${
-              isMatched
-                ? 'border-riso-spring/35 bg-emerald-500/10 text-riso-spring'
-                : 'border-riso-blue/28 bg-paper-deep/25 text-carbon-muted'
+            className={`inline-flex items-center gap-2 self-start sm:self-auto border-2 border-carbon px-3 py-1.5 ${
+              isMatched ? 'bg-riso-spring/25 text-carbon' : 'bg-paper-deep text-carbon-muted'
             }`}
             data-testid="table-status"
           >
@@ -56,32 +54,41 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </div>
 
         <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-          <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-points">
+          <div
+            className="border-2 border-carbon bg-paper-deep p-2.5 sm:p-3"
+            data-testid="user-points"
+          >
             <div className="flex items-center gap-1.5 text-riso-mustard mb-1">
               <Star size={15} />
               <span className="text-[10px] uppercase tracking-[0.1em]">Puan</span>
             </div>
-            <div className="text-white text-lg sm:text-xl font-semibold leading-none">
+            <div className="text-carbon text-lg sm:text-xl font-riso-display leading-none">
               {user.points}
             </div>
           </div>
 
-          <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-wins">
+          <div
+            className="border-2 border-carbon bg-paper-deep p-2.5 sm:p-3"
+            data-testid="user-wins"
+          >
             <div className="flex items-center gap-1.5 text-riso-blue mb-1">
               <Trophy size={15} />
               <span className="text-[10px] uppercase tracking-[0.1em]">Galibiyet</span>
             </div>
-            <div className="text-white text-lg sm:text-xl font-semibold leading-none">
+            <div className="text-carbon text-lg sm:text-xl font-riso-display leading-none">
               {user.wins}
             </div>
           </div>
 
-          <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-games">
+          <div
+            className="border-2 border-carbon bg-paper-deep p-2.5 sm:p-3"
+            data-testid="user-games"
+          >
             <div className="flex items-center gap-1.5 text-carbon-soft mb-1">
               <Gamepad2 size={15} />
               <span className="text-[10px] uppercase tracking-[0.1em]">Oyun</span>
             </div>
-            <div className="text-white text-lg sm:text-xl font-semibold leading-none">
+            <div className="text-carbon text-lg sm:text-xl font-riso-display leading-none">
               {user.gamesPlayed}
             </div>
           </div>

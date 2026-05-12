@@ -1,60 +1,45 @@
 /**
- * RewardSection Component
+ * RewardSection — Riso Kantin redesign (PR #26).
  *
- * @description Mağaza ve envanter yönetimi
+ * Shop + Inventory tabs for the dashboard. All data-testid attributes are
+ * preserved (`shop-tab`, `inventory-tab`, `shop-buy-button`, plus
+ * `skeleton-grid`, `empty-state`, `empty-state-action` from the mocked
+ * subcomponents). Tab "active" indicator class is `bg-riso-pink` (updated
+ * from the legacy `bg-[#0e355f]` — test file follows the same rename).
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Package, Gift } from 'lucide-react';
 import { Reward, RedeemedReward, User } from '../../types';
-import {
-  Coffee,
-  Percent,
-  Cookie,
-  Gamepad2,
-  ShoppingBag,
-  Ticket,
-  Package,
-  Gift,
-} from 'lucide-react';
-import { RetroButton } from '../RetroButton';
-import { SkeletonGrid, SkeletonCard } from '../Skeleton';
+import { Button } from '../ui';
+import { SkeletonGrid } from '../Skeleton';
 import { EmptyState } from '../EmptyState';
 
 interface RewardSectionProps {
-  // Kullanıcı
   currentUser: User;
-
-  // Mağaza
   rewards: Reward[];
   rewardsLoading: boolean;
-
-  // Envanter
   inventory: RedeemedReward[];
   inventoryLoading: boolean;
-
-  // Tab state
   activeTab: 'shop' | 'inventory';
   onTabChange: (tab: 'shop' | 'inventory') => void;
-
-  // İşlemler
   onBuyReward: (reward: Reward) => Promise<void>;
 }
 
-// Ödül ikonları
-const getRewardIcon = (icon: string) => {
-  const iconClass = 'w-6 h-6';
+const getRewardIcon = (icon: string): React.ReactNode => {
+  const cls = 'w-5 h-5';
   switch (icon) {
     case 'coffee':
-      return <Coffee className={iconClass} />;
+      return <Coffee className={cls} strokeWidth={2.4} />;
     case 'discount':
-      return <Percent className={iconClass} />;
+      return <Percent className={cls} strokeWidth={2.4} />;
     case 'dessert':
-      return <Cookie className={iconClass} />;
+      return <Cookie className={cls} strokeWidth={2.4} />;
     case 'game':
-      return <Gamepad2 className={iconClass} />;
+      return <Gamepad2 className={cls} strokeWidth={2.4} />;
     default:
-      return <Coffee className={iconClass} />;
+      return <Coffee className={cls} strokeWidth={2.4} />;
   }
 };
 
@@ -68,120 +53,118 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   onTabChange,
   onBuyReward,
 }) => {
-  const canAfford = (cost: number) => (currentUser?.points ?? 0) >= cost;
+  const canAfford = (cost: number): boolean => (currentUser?.points ?? 0) >= cost;
 
   return (
-    <div className="border-2 border-carbon bg-paper riso-shadow-md border-carbon-muted rounded-xl p-4 sm:p-6">
-      {/* Tab Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <div className="flex items-center gap-2 bg-[#08152f] p-1 rounded-lg border border-carbon-muted self-start">
+    <div className="border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6">
+      {/* Tab + balance header */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex border-2 border-carbon self-start">
           <button
+            type="button"
             onClick={() => onTabChange('shop')}
             data-testid="shop-tab"
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all transition-colors ${
+            className={`riso-focus px-4 py-2 font-riso-body text-sm font-bold tracking-wide transition-colors ${
               activeTab === 'shop'
-                ? 'bg-[#0e355f] text-cyan-50 border border-cyan-300/35'
-                : 'text-carbon-muted hover:text-white'
+                ? 'bg-riso-pink text-carbon'
+                : 'bg-paper text-carbon hover:bg-paper-deep'
             }`}
           >
             Mağaza
           </button>
           <button
+            type="button"
             onClick={() => onTabChange('inventory')}
             data-testid="inventory-tab"
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all transition-colors ${
+            className={`riso-focus border-l-2 border-carbon px-4 py-2 font-riso-body text-sm font-bold tracking-wide transition-colors ${
               activeTab === 'inventory'
-                ? 'bg-[#0e355f] text-cyan-50 border border-cyan-300/35'
-                : 'text-carbon-muted hover:text-white'
+                ? 'bg-riso-pink text-carbon'
+                : 'bg-paper text-carbon hover:bg-paper-deep'
             }`}
           >
             Envanter ({inventory?.length ?? 0})
           </button>
         </div>
 
-        <div className="text-left sm:text-right">
-          <span className="text-carbon-muted text-sm">Bakiye:</span>
-          <span className="text-riso-mustard font-bold text-xl ml-2">
+        <div className="inline-flex items-baseline gap-2 border-2 border-carbon bg-riso-mustard px-3 py-1.5 self-start sm:self-auto">
+          <span className="font-riso-mono text-[0.7rem] font-bold uppercase tracking-wider text-carbon">
+            Bakiye:
+          </span>
+          <span className="font-riso-display text-lg text-carbon">
             {currentUser?.points ?? 0} puan
           </span>
         </div>
       </div>
 
-      {/* Mağaza Tab */}
+      {/* SHOP TAB */}
       {activeTab === 'shop' && (
         <div>
           {rewardsLoading ? (
             <SkeletonGrid count={3} columns={1} />
           ) : (rewards?.length ?? 0) > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-4">
-              {rewards.map((reward) => {
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              {rewards.map((reward, idx) => {
                 const affordable = canAfford(reward.cost);
+                const rotate = idx % 2 === 0 ? -0.8 : 0.8;
 
                 return (
                   <motion.div
                     key={reward.id}
-                    className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[205px] cursor-pointer ${
-                      affordable ? 'border-carbon-muted' : 'border-carbon-muted/45 opacity-60'
-                    }`}
-                    whileHover={
-                      affordable
-                        ? {
-                            y: -6,
-                            boxShadow: '0 16px 34px rgba(0, 0, 0, 0.35)',
-                            borderColor: 'rgba(10, 215, 255, 0.4)',
-                          }
-                        : {}
-                    }
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: idx * 0.04 }}
+                    style={{ transform: `rotate(${rotate}deg)` }}
                   >
-                    <div>
-                      <div className="flex justify-between items-start mb-3">
-                        <div
-                          className={`p-2 rounded-lg ${
-                            affordable
-                              ? 'bg-riso-blue/18 text-riso-blue'
-                              : 'bg-paper-deep/45 text-carbon-muted'
-                          }`}
-                        >
-                          {getRewardIcon(reward.icon)}
+                    <div
+                      className={`relative flex min-h-[200px] flex-col justify-between border-2 border-carbon p-4 sm:p-5 transition-colors ${
+                        affordable ? 'bg-paper riso-shadow-sm' : 'bg-paper-deep opacity-65'
+                      }`}
+                    >
+                      <div>
+                        <div className="mb-3 flex items-start justify-between">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center border-2 border-carbon ${
+                              affordable
+                                ? 'bg-riso-blue text-paper'
+                                : 'bg-paper-dim text-carbon-muted'
+                            }`}
+                          >
+                            {getRewardIcon(reward.icon)}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+                              Fiyat
+                            </p>
+                            <span className="font-riso-display text-xl text-carbon">
+                              {reward.cost}
+                            </span>
+                          </div>
                         </div>
-                        <span
-                          className={`font-bold text-xl ${
-                            affordable ? 'text-white' : 'text-carbon-muted'
-                          }`}
-                        >
-                          {reward.cost}
-                        </span>
+
+                        <h4 className="font-riso-display text-lg text-carbon break-words">
+                          {reward.title}
+                        </h4>
+                        <p className="mt-1 font-riso-body text-xs leading-5 text-carbon-soft break-words">
+                          {reward.description}
+                        </p>
                       </div>
 
-                      <h4 className="text-base sm:text-lg font-bold text-white mb-1 break-words">
-                        {reward.title}
-                      </h4>
-                      <p className="text-xs text-carbon-muted mb-4 break-words">
-                        {reward.description}
-                      </p>
+                      <div className="mt-4">
+                        <Button
+                          tone={affordable ? 'pink' : 'paper'}
+                          size="md"
+                          block
+                          disabled={!affordable}
+                          onClick={() => void onBuyReward(reward)}
+                          data-testid="shop-buy-button"
+                          leadingIcon={
+                            affordable ? <ShoppingBag size={16} strokeWidth={2.5} /> : undefined
+                          }
+                        >
+                          {affordable ? 'Satın Al' : 'Yetersiz Puan'}
+                        </Button>
+                      </div>
                     </div>
-
-                    <motion.div
-                      whileHover={affordable ? { scale: 1.02 } : {}}
-                      whileTap={affordable ? { scale: 0.98 } : {}}
-                    >
-                      <RetroButton
-                        onClick={() => onBuyReward(reward)}
-                        disabled={!affordable}
-                        variant={affordable ? 'primary' : 'secondary'}
-                        data-testid="shop-buy-button"
-                        className="w-full text-sm"
-                      >
-                        {affordable ? (
-                          <>
-                            <ShoppingBag size={16} /> Satın Al
-                          </>
-                        ) : (
-                          'Yetersiz Puan'
-                        )}
-                      </RetroButton>
-                    </motion.div>
                   </motion.div>
                 );
               })}
@@ -197,79 +180,82 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
         </div>
       )}
 
-      {/* Envanter Tab */}
+      {/* INVENTORY TAB */}
       {activeTab === 'inventory' && (
         <div>
           {inventoryLoading ? (
             <SkeletonGrid count={4} columns={1} />
           ) : (inventory?.length ?? 0) > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {inventory.map((item) => {
                 const expirationDate = new Date(
                   new Date(item.redeemedAt).getTime() + 5 * 24 * 60 * 60 * 1000
                 );
                 const isExpired = new Date() > expirationDate;
                 const isUsed = item.isUsed;
+                const dead = isUsed || isExpired;
 
                 return (
                   <motion.div
                     key={item.redeemId}
-                    className={`relative overflow-hidden font-mono shadow-lg ${
-                      isUsed || isExpired ? 'grayscale opacity-70' : ''
-                    }`}
-                    whileHover={
-                      !isUsed && !isExpired
-                        ? {
-                            rotate: [0, -1, 1, 0],
-                            transition: { duration: 0.3 },
-                          }
-                        : {}
-                    }
-                    whileTap={!isUsed && !isExpired ? { scale: 0.98 } : {}}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className={`relative overflow-hidden ${dead ? 'opacity-65' : ''}`}
                   >
-                    <div className="bg-[#fff8dc] text-black p-4 rounded h-full flex flex-col justify-between">
-                      {/* Delikler */}
-                      <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#08152f] rounded-full" />
-                      <div className="absolute right-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-[#08152f] rounded-full" />
+                    {/* Ticket — paper tone, ink border, perforated edges via small carbon dots */}
+                    <div className="relative bg-riso-mustard/20 border-2 border-carbon p-4 riso-shadow-sm">
+                      {/* Perforation dots — top-bottom punch holes */}
+                      <span
+                        aria-hidden="true"
+                        className="absolute -left-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="absolute -right-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
+                      />
 
-                      <div className="border-2 border-black border-dashed p-3 h-full flex flex-col justify-between relative">
-                        {isUsed && (
-                          <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <div className="bg-red-600 text-white font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-white shadow-xl">
-                              KULLANILDI
-                            </div>
-                          </div>
-                        )}
-                        {isExpired && !isUsed && (
-                          <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <div className="bg-paper-deep text-carbon font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-carbon-muted shadow-xl">
-                              SÜRESİ DOLDU
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="text-center border-b-2 border-black pb-2 mb-2">
-                          <h4 className="font-bold text-lg uppercase">{item.title}</h4>
-                          <span className="text-xs">CAFE DUO KUPONU</span>
-                        </div>
-
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="w-16 h-16 bg-carbon text-white flex items-center justify-center text-[8px] p-1 text-center">
-                            QR KOD
-                          </div>
-                          <div className="text-right">
-                            <span className="block text-xl font-bold tracking-widest">
-                              {item.code}
-                            </span>
-                            <span className="text-[10px] block">
-                              SKT: {expirationDate.toLocaleDateString()}
-                            </span>
+                      {/* Used / Expired stamp overlay */}
+                      {isUsed && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                          <div className="rotate-[-12deg] border-4 border-riso-redox bg-paper px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-riso-redox shadow-md">
+                            KULLANILDI
                           </div>
                         </div>
-
-                        <div className="bg-carbon text-white text-center py-1 text-xs font-bold uppercase">
-                          KASADA GÖSTERİN
+                      )}
+                      {isExpired && !isUsed && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                          <div className="rotate-[-12deg] border-4 border-carbon bg-paper-deep px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-carbon shadow-md">
+                            SÜRESİ DOLDU
+                          </div>
                         </div>
+                      )}
+
+                      <div className="border-b-2 border-dashed border-carbon pb-2 mb-3 text-center">
+                        <h4 className="font-riso-display text-lg text-carbon uppercase">
+                          {item.title}
+                        </h4>
+                        <span className="font-riso-mono text-[0.65rem] uppercase tracking-[0.2em] text-carbon-soft">
+                          CafeDuo Kuponu
+                        </span>
+                      </div>
+
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex h-14 w-14 items-center justify-center border-2 border-carbon bg-carbon text-paper text-[8px] font-bold uppercase">
+                          QR
+                        </div>
+                        <div className="text-right">
+                          <span className="block font-riso-mono text-lg font-bold tracking-widest text-carbon">
+                            {item.code}
+                          </span>
+                          <span className="block font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-soft">
+                            SKT: {expirationDate.toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="border-2 border-carbon bg-carbon px-2 py-1 text-center font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-paper">
+                        Kasada Gösterin
                       </div>
                     </div>
                   </motion.div>

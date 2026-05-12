@@ -241,7 +241,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'w-full min-h-12 bg-carbon/40 border-2 text-cyan-50 font-riso-body text-base leading-6 group-[.is-error]:text-red-100 outline-none transition-colors duration-200 placeholder:text-carbon-muted/60 pl-11 pr-12 cursor-text';
+    'w-full min-h-12 bg-paper border-2 border-carbon text-carbon font-riso-body text-base leading-6 group-[.is-error]:text-riso-redox outline-none transition-colors duration-200 placeholder:text-carbon-muted pl-11 pr-12 cursor-text riso-focus';
   const inputBorderClass =
     'border-carbon-muted/40 focus:border-riso-pink focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
   const inputErrorClass =
@@ -261,7 +261,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         {/* Backdrop */}
         <motion.div
-          className="cd-auth-backdrop absolute inset-0 bg-[#020304]/95 "
+          className="absolute inset-0 bg-carbon/80"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -279,12 +279,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           >
             {/* Drag handle for mobile */}
             <div className="sm:hidden w-full pt-3 pb-1 flex justify-center" onClick={onClose}>
-              <div className="w-12 h-1.5 bg-cyan-900/50 rounded-none skew-x-[-20deg]" />
+              <div className="w-12 h-1.5 bg-paper-dim" />
             </div>
 
             {/* Header Bar */}
             <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b-2 border-carbon-muted/50 flex-shrink-0 bg-carbon/40 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-[1px] from-cyan-400 to-transparent opacity-50"></div>
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-riso-pink opacity-50"></div>
               <div>
                 <p className="font-riso-body text-riso-pink-deep tracking-widest text-xs uppercase font-bold relative inline-block">
                   Güvenli Erişim
@@ -299,7 +299,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <motion.button
                 onClick={onClose}
-                className="w-10 h-10 border-2 border-carbon-muted/50 text-riso-pink-deep bg-black/50 hover:border-riso-pink hover:text-riso-pink-deep flex items-center justify-center transition-colors group"
+                className="w-10 h-10 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

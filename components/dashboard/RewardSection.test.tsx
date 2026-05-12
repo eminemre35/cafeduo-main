@@ -1,6 +1,6 @@
 /**
  * RewardSection Component Tests
- * 
+ *
  * @description Comprehensive test suite for RewardSection component
  * covering shop tab, inventory tab, reward purchase flow, and coupon states
  * @author Senior Test Engineer
@@ -15,8 +15,8 @@ import { User, Reward, RedeemedReward } from '../../types';
 // Mock child components
 jest.mock('../RetroButton', () => ({
   RetroButton: ({ children, onClick, disabled, ...props }: any) => (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       disabled={disabled}
       data-testid={props['data-testid']}
       className={props.className}
@@ -24,18 +24,20 @@ jest.mock('../RetroButton', () => ({
     >
       {children}
     </button>
-  )
+  ),
 }));
 
 jest.mock('../Skeleton', () => ({
   SkeletonGrid: ({ count }: any) => (
     <div data-testid="skeleton-grid">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} data-testid="skeleton-item">Loading...</div>
+        <div key={i} data-testid="skeleton-item">
+          Loading...
+        </div>
       ))}
     </div>
   ),
-  SkeletonCard: () => <div data-testid="skeleton-card">Loading...</div>
+  SkeletonCard: () => <div data-testid="skeleton-card">Loading...</div>,
 }));
 
 jest.mock('../EmptyState', () => ({
@@ -49,7 +51,7 @@ jest.mock('../EmptyState', () => ({
         </button>
       )}
     </div>
-  )
+  ),
 }));
 
 describe('RewardSection', () => {
@@ -63,7 +65,7 @@ describe('RewardSection', () => {
     gamesPlayed: 20,
     role: 'user',
     isAdmin: false,
-    department: 'Bilgisayar Mühendisliği'
+    department: 'Bilgisayar Mühendisliği',
   };
 
   const mockRewards: Reward[] = [
@@ -72,22 +74,22 @@ describe('RewardSection', () => {
       title: 'Türk Kahvesi',
       description: 'Geleneksel Türk kahvesi',
       cost: 100,
-      icon: 'coffee'
+      icon: 'coffee',
     },
     {
       id: 2,
       title: 'Çay',
       description: 'Sıcak demli çay',
       cost: 50,
-      icon: 'coffee'
+      icon: 'coffee',
     },
     {
       id: 3,
       title: 'Tatlı',
       description: 'Günün tatlısı',
       cost: 800, // Pahalı, kullanıcı alamaz
-      icon: 'dessert'
-    }
+      icon: 'dessert',
+    },
   ];
 
   const mockInventory: RedeemedReward[] = [
@@ -100,7 +102,7 @@ describe('RewardSection', () => {
       icon: 'coffee',
       code: 'ABC123',
       redeemedAt: new Date(),
-      isUsed: false
+      isUsed: false,
     },
     {
       redeemId: 'DEF456',
@@ -111,7 +113,7 @@ describe('RewardSection', () => {
       icon: 'coffee',
       code: 'DEF456',
       redeemedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Süresi dolmuş
-      isUsed: false
+      isUsed: false,
     },
     {
       redeemId: 'GHI789',
@@ -122,14 +124,14 @@ describe('RewardSection', () => {
       icon: 'dessert',
       code: 'GHI789',
       redeemedAt: new Date(),
-      isUsed: true // Kullanılmış
-    }
+      isUsed: true, // Kullanılmış
+    },
   ];
 
   // Mock handler'lar
   const mockHandlers = {
     onTabChange: jest.fn(),
-    onBuyReward: jest.fn()
+    onBuyReward: jest.fn(),
   };
 
   beforeEach(() => {
@@ -156,9 +158,9 @@ describe('RewardSection', () => {
 
       // Shop tab aktif görünüyor mu?
       const shopTab = screen.getByTestId('shop-tab');
-      expect(shopTab).toHaveClass('bg-[#0e355f]');
+      expect(shopTab).toHaveClass('bg-riso-pink');
       expect(shopTab).toHaveTextContent('Mağaza');
-      
+
       // Inventory tab görünüyor mu?
       const inventoryTab = screen.getByTestId('inventory-tab');
       expect(inventoryTab).toHaveTextContent(/Envanter/);
@@ -181,7 +183,7 @@ describe('RewardSection', () => {
 
       const inventoryTab = screen.getByTestId('inventory-tab');
       fireEvent.click(inventoryTab);
-      
+
       expect(mockHandlers.onTabChange).toHaveBeenCalledWith('inventory');
     });
 
@@ -201,7 +203,7 @@ describe('RewardSection', () => {
 
       const shopTab = screen.getByTestId('shop-tab');
       fireEvent.click(shopTab);
-      
+
       expect(mockHandlers.onTabChange).toHaveBeenCalledWith('shop');
     });
 
@@ -220,8 +222,8 @@ describe('RewardSection', () => {
       );
 
       // Shop aktif
-      expect(screen.getByTestId('shop-tab')).toHaveClass('bg-[#0e355f]');
-      expect(screen.getByTestId('inventory-tab')).not.toHaveClass('bg-[#0e355f]');
+      expect(screen.getByTestId('shop-tab')).toHaveClass('bg-riso-pink');
+      expect(screen.getByTestId('inventory-tab')).not.toHaveClass('bg-riso-pink');
 
       // Inventory'e geç
       rerender(
@@ -238,8 +240,8 @@ describe('RewardSection', () => {
       );
 
       // Inventory aktif
-      expect(screen.getByTestId('inventory-tab')).toHaveClass('bg-[#0e355f]');
-      expect(screen.getByTestId('shop-tab')).not.toHaveClass('bg-[#0e355f]');
+      expect(screen.getByTestId('inventory-tab')).toHaveClass('bg-riso-pink');
+      expect(screen.getByTestId('shop-tab')).not.toHaveClass('bg-riso-pink');
     });
   });
 
@@ -368,7 +370,7 @@ describe('RewardSection', () => {
       expect(screen.getByText('Türk Kahvesi')).toBeInTheDocument();
       expect(screen.getByText('Çay')).toBeInTheDocument();
       expect(screen.getByText('Tatlı')).toBeInTheDocument();
-      
+
       // Fiyatlar doğru mu?
       expect(screen.getByText('100')).toBeInTheDocument();
       expect(screen.getByText('50')).toBeInTheDocument();
@@ -449,7 +451,7 @@ describe('RewardSection', () => {
       );
 
       const buyButtons = screen.getAllByTestId('shop-buy-button');
-      
+
       // Tatlı (800 puan) butonu disabled, tıklanamaz
       expect(buyButtons[2]).toBeDisabled();
     });
@@ -515,7 +517,7 @@ describe('RewardSection', () => {
 
       const actionButton = screen.getByTestId('empty-state-action');
       expect(actionButton).toHaveTextContent('Mağazaya Git');
-      
+
       fireEvent.click(actionButton);
       expect(mockHandlers.onTabChange).toHaveBeenCalledWith('shop');
     });
@@ -543,7 +545,7 @@ describe('RewardSection', () => {
       expect(screen.getByText('ABC123')).toBeInTheDocument();
       expect(screen.getByText('DEF456')).toBeInTheDocument();
       expect(screen.getByText('GHI789')).toBeInTheDocument();
-      
+
       // Başlıklar görünüyor mu?
       expect(screen.getByText('Türk Kahvesi')).toBeInTheDocument();
       expect(screen.getByText('Çay')).toBeInTheDocument();
@@ -677,10 +679,10 @@ describe('RewardSection', () => {
       );
 
       expect(screen.getByText(/0 puan/i)).toBeInTheDocument();
-      
+
       // Tüm butonlar disabled olmalı
       const buyButtons = screen.getAllByTestId('shop-buy-button');
-      buyButtons.forEach(button => {
+      buyButtons.forEach((button) => {
         expect(button).toBeDisabled();
       });
     });

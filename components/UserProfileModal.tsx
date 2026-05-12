@@ -1,5 +1,22 @@
+/**
+ * UserProfileModal — Riso Kantin redesign (PR #26).
+ *
+ * Player ID card modal. Surface is paper + ink border + double-offset shadow
+ * (Risograph misregistration), avatar is a solid riso-blue tile (no
+ * rounded-full), level progress is a flat ink track with a riso-pink fill
+ * (no gradient).
+ *
+ * Test contract preserved exactly:
+ *   - first <button> is the close X (so `getAllByRole('button')[0]` triggers onClose)
+ *   - backdrop is `<div class="absolute inset-0">` (matches `.absolute.inset-0` querySelector)
+ *   - department empty-state literal: "Bölüm Girilmedi"
+ *   - <select> rendered when editing (combobox role)
+ *   - save button keeps `text-riso-spring` class (test grep matches it)
+ *   - stats render literal numbers: wins, gamesPlayed, ratio %
+ *   - level label format: "LEVEL N" / "LEVEL N+1"
+ */
 import React, { useEffect, useState } from 'react';
-import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase } from 'lucide-react';
+import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase, Package } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
@@ -44,24 +61,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         })
         .catch((err) => console.error('Inventory fetch error', err));
     }
-    // user?.id + user?.department capture every field the effect actually
-    // reads. Including the raw `user` object as lint suggests would re-fire
-    // whenever the parent passes a fresh reference (which it does on every
-    // refresh), thrashing the inventory call.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.department, isOpen]);
 
   if (!isOpen || !user) return null;
 
-  // Level calculation based on points (simple logic for demo)
+  // Simple level math (1 level per 500 points)
   const level = Math.floor(user.points / 500) + 1;
   const nextLevelProgress = ((user.points % 500) / 500) * 100;
 
-  // Mock history
+  // Mock activity feed — actual feed will come from useGames in a later pass
   const recentHistory = [
-    { result: 'WIN', game: 'Nişancı Düellosu', points: '+50', time: '10dk önce' },
-    { result: 'LOSS', game: 'Bilgi Yarışı', points: '-20', time: '25dk önce' },
-    { result: 'WIN', game: 'Retro Satranç', points: '+100', time: '1sa önce' },
+    { result: 'WIN' as const, game: 'Nişancı Düellosu', points: '+50', time: '10dk önce' },
+    { result: 'LOSS' as const, game: 'Bilgi Yarışı', points: '-20', time: '25dk önce' },
+    { result: 'WIN' as const, game: 'Retro Satranç', points: '+100', time: '1sa önce' },
   ];
 
   const handleSave = async () => {
@@ -81,212 +94,249 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[115] flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-[#FBF7EE]/85  " onClick={onClose}></div>
+    <div className="riso-kantin fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
+      {/* Backdrop — keep as <div> with `.absolute.inset-0` so the existing
+       *  click-outside test (querySelector('.absolute.inset-0')) still matches. */}
+      <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-md bg-[#050a19] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.8)] sm:rounded-none overflow-hidden flex flex-col ">
-        {/* Cyber ID Card Header */}
-        <div className="from-cyan-500 via-purple-500 to-pink-500 p-[2px]">
-          <div className="bg-[#050a19] p-5 flex justify-between items-start relative overflow-hidden">
-            {/* Background Lines */}
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage:
-                  'repeating-linear-gradient(45deg, #00f3ff 0, #00f3ff 2px, transparent 2px, transparent 10px)',
-              }}
-            ></div>
+      <div className="relative z-10 w-full max-w-md bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col max-h-[calc(100vh-3rem)]">
+        {/* Header — ID card */}
+        <div className="relative bg-paper border-b-2 border-carbon p-5">
+          {/* Halftone overlay */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-multiply"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+              backgroundSize: '5px 5px',
+            }}
+          />
+          <div className="relative flex items-start gap-4">
+            {/* Avatar tile — solid riso-blue, no rounded */}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center border-2 border-carbon bg-riso-blue text-paper">
+              <span className="font-riso-display text-2xl font-bold tracking-tight">
+                {(user.username || '?').substring(0, 2).toUpperCase()}
+              </span>
+            </div>
 
-            <div className="flex gap-4 relative z-10 w-full">
-              <div className="w-20 h-20 bg-carbon border-2 border-cyan-400  overflow-hidden flex items-center justify-center shadow-[4px_4px_0_rgba(255,0,234,0.3)] shrink-0">
-                <span className="font-riso-display text-4xl text-riso-pink-deep ">
-                  {(user.username || '?').substring(0, 2).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2
-                  className="font-riso-display text-2xl text-white tracking-widest truncate uppercase glitch-text"
-                  data-text={user.username}
-                >
-                  {user.username}
-                </h2>
-                <span className="text-xs font-riso-body text-riso-pink-deep block mt-1 tracking-widest">
-                  ID: #{user.id.toString().padStart(6, '0')}
-                </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-riso-display text-2xl text-carbon truncate">{user.username}</h2>
+              <span className="block mt-0.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-muted">
+                ID: #{user.id.toString().padStart(6, '0')}
+              </span>
 
-                {/* Department Section */}
-                <div className="mt-2 flex items-center gap-2">
-                  {isEditable && isEditing ? (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        className="bg-carbon border border-carbon-muted/50 text-cyan-50 font-riso-body text-xs px-2 py-1 outline-none w-48"
-                      >
-                        <option value="">Bölüm Seçiniz</option>
-                        {PAU_DEPARTMENTS.map((dept) => (
-                          <option key={dept} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="text-riso-spring hover:text-riso-spring transition-colors"
-                      >
-                        <Save size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      className={`flex items-center gap-2 ${isEditable ? 'group cursor-pointer' : ''}`}
-                      onClick={() => {
-                        if (!isEditable) return;
-                        setDepartment(user.department || '');
-                        setIsEditing(true);
-                      }}
+              {/* Department row */}
+              <div className="mt-2">
+                {isEditable && isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className="riso-focus bg-paper border-2 border-carbon px-2 py-1 font-riso-body text-xs text-carbon w-48"
                     >
-                      <Briefcase size={12} className="text-carbon-muted" />
-                      <span className="text-riso-blue text-xs font-riso-body tracking-wider">
-                        {user.department || 'Bölüm Girilmedi'}
-                      </span>
-                      {isEditable && (
-                        <Edit2
-                          size={10}
-                          className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
-                        />
-                      )}
-                    </div>
-                  )}
-                </div>
+                      <option value="">Bölüm Seçiniz</option>
+                      {PAU_DEPARTMENTS.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={loading}
+                      aria-label="Bölümü kaydet"
+                      className="riso-focus inline-flex h-7 w-7 items-center justify-center border-2 border-carbon bg-paper text-riso-spring hover:bg-riso-spring hover:text-carbon transition-colors"
+                    >
+                      <Save size={14} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={`inline-flex items-center gap-1.5 border-2 border-carbon bg-paper-deep px-2 py-0.5 ${
+                      isEditable ? 'group cursor-pointer hover:bg-riso-mustard/40' : ''
+                    }`}
+                    onClick={() => {
+                      if (!isEditable) return;
+                      setDepartment(user.department || '');
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Briefcase size={11} strokeWidth={2.4} className="text-carbon-muted" />
+                    <span className="font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
+                      {user.department || 'Bölüm Girilmedi'}
+                    </span>
+                    {isEditable && (
+                      <Edit2
+                        size={10}
+                        strokeWidth={2.5}
+                        className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+
             <button
+              type="button"
               onClick={onClose}
-              className="relative z-10 w-8 h-8 flex items-center justify-center border border-riso-blue/30 text-riso-pink-deep hover:text-riso-pink-deep hover:bg-paper shrink-0 ml-2 transition-colors  group"
+              aria-label="Profili kapat"
+              className="riso-focus shrink-0 border-2 border-carbon bg-paper p-1.5 text-carbon hover:bg-riso-redox hover:text-paper transition-colors"
             >
-              <X size={18} className=" group-hover:skew-x-0" />
+              <X size={16} strokeWidth={2.5} />
             </button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-px bg-cyan-900/30 border-b-2 border-carbon-muted/50">
-          <div className="bg-[#050a19] p-4 text-center hover:bg-paper transition-colors group">
-            <Trophy
-              className="mx-auto text-riso-mustard-deep mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)] group-hover:scale-110 transition-transform"
-              size={20}
-            />
-            <span className="block text-3xl font-riso-display text-white">{user.wins}</span>
-            <span className="text-[10px] font-riso-body text-carbon-muted/80 uppercase tracking-widest">
-              Galibiyet
-            </span>
-          </div>
-          <div className="bg-[#050a19] p-4 text-center hover:bg-paper transition-colors group">
-            <Gamepad2
-              className="mx-auto text-riso-pink-deep mb-2 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] group-hover:scale-110 transition-transform"
-              size={20}
-            />
-            <span className="block text-3xl font-riso-display text-white">{user.gamesPlayed}</span>
-            <span className="text-[10px] font-riso-body text-carbon-muted/80 uppercase tracking-widest">
-              Oyun
-            </span>
-          </div>
-          <div className="bg-[#050a19] p-4 text-center hover:bg-paper transition-colors group">
-            <Star
-              className="mx-auto text-riso-pink-deep mb-2 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)] group-hover:scale-110 transition-transform"
-              size={20}
-            />
-            <span className="block text-3xl font-riso-display text-white">
-              {user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%
-            </span>
-            <span className="text-[10px] font-riso-body text-carbon-muted/80 uppercase tracking-widest">
-              Oran
-            </span>
-          </div>
+        {/* Stats grid */}
+        <div className="grid grid-cols-3 border-b-2 border-carbon">
+          <StatCell
+            icon={<Trophy size={18} strokeWidth={2.5} />}
+            label="Galibiyet"
+            value={String(user.wins)}
+            tone="mustard"
+          />
+          <StatCell
+            icon={<Gamepad2 size={18} strokeWidth={2.5} />}
+            label="Oyun"
+            value={String(user.gamesPlayed)}
+            tone="blue"
+            borderLeft
+          />
+          <StatCell
+            icon={<Star size={18} strokeWidth={2.5} />}
+            label="Oran"
+            value={`${user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%`}
+            tone="pink"
+            borderLeft
+          />
         </div>
 
-        {/* Level Progress */}
-        <div className="p-5 border-b-2 border-carbon-muted/50 bg-[#050a19] relative overflow-hidden">
-          <div className="flex justify-between text-xs font-riso-display tracking-widest text-riso-pink-deep mb-2">
-            <span>LEVEL {level}</span>
-            <span className="text-riso-pink-deep">LEVEL {level + 1}</span>
+        {/* Level progress */}
+        <div className="p-5 border-b-2 border-carbon bg-paper">
+          <div className="flex items-baseline justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-2">
+            <span className="text-carbon">LEVEL {level}</span>
+            <span className="text-carbon-muted">LEVEL {level + 1}</span>
           </div>
-          <div className="h-4 bg-carbon border-2 border-carbon-muted/50  overflow-hidden relative">
+          <div className="relative h-4 border-2 border-carbon bg-paper-deep overflow-hidden">
             <div
-              className="h-full from-cyan-500 to-pink-500 transition-all duration-1000 relative"
+              className="h-full bg-riso-pink transition-[width] duration-500"
               style={{ width: `${nextLevelProgress}%` }}
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:1rem_1rem] animate-[stripes_1s_linear_infinite]"></div>
-            </div>
+            />
+            {/* Diagonal stripe sticker pattern over the fill */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 opacity-25"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(135deg, transparent 0 4px, var(--ink) 4px 5px)',
+                width: `${nextLevelProgress}%`,
+              }}
+            />
           </div>
+          <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+            {user.points} CP
+          </p>
         </div>
 
-        {/* Inventory / Equipment */}
+        {/* Inventory */}
         {inventory.length > 0 && (
-          <div className="p-5 border-b-2 border-carbon-muted/50 bg-[#050a19]">
-            <h3 className="font-riso-body text-[10px] tracking-widest text-riso-spring mb-3 flex items-center gap-2 uppercase">
-              <Star size={12} className="text-riso-spring" />
-              LİSANSLI EKİPMANLAR // ENVANTER
+          <div className="p-5 border-b-2 border-carbon bg-paper-deep">
+            <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
+              <Package size={11} strokeWidth={2.5} />
+              Envanter
             </h3>
-            <div className="flex flex-wrap gap-2 relative z-10">
+            <div className="flex flex-wrap gap-2">
               {inventory.map((item) => (
-                <div
+                <span
                   key={item.id}
-                  className="px-2 py-1 bg-paper-deep/40 border border-riso-blue/30 text-[10px] font-riso-display text-riso-blue uppercase tracking-widest flex items-center gap-1"
+                  className="inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon"
                 >
-                  <span className="w-1.5 h-1.5 bg-emerald-400 animate-pulse"></span>
+                  <span className="h-1.5 w-1.5 bg-riso-spring" />
                   {item.item_title}
-                </div>
+                </span>
               ))}
             </div>
           </div>
         )}
 
-        {/* Recent Activity */}
-        <div className="p-5 bg-carbon/40">
-          <h3 className="font-riso-body text-[10px] tracking-widest text-carbon-muted/80 mb-3 flex items-center gap-2 uppercase">
-            <Clock size={12} className="text-riso-pink-deep" />
-            Son Aktiviteler // Sistem Logu
+        {/* Recent activity */}
+        <div className="p-5 bg-paper overflow-y-auto">
+          <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
+            <Clock size={11} strokeWidth={2.5} />
+            Son Aktivite
           </h3>
-          <div className="space-y-2 relative z-10">
-            {recentHistory.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-2.5 bg-[#050a19] border-l-2 border border-carbon-muted/30 text-sm hover:border-cyan-400 transition-colors group"
-                style={{ borderLeftColor: item.result === 'WIN' ? '#00f3ff' : '#ff00ea' }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-1.5 h-1.5 animate-pulse ${item.result === 'WIN' ? 'bg-riso-blue shadow-[0_0_5px_#00f3ff]' : 'bg-riso-pink shadow-[0_0_5px_#ff00ea]'}`}
-                  ></div>
-                  <span className="text-carbon font-riso-body text-xs tracking-wider">
-                    {item.game}
-                  </span>
+          <div className="space-y-2">
+            {recentHistory.map((item, idx) => {
+              const win = item.result === 'WIN';
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center justify-between border-2 border-carbon p-2.5 ${
+                    win ? 'bg-riso-spring/15' : 'bg-riso-pink/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`h-2 w-2 shrink-0 ${win ? 'bg-riso-spring' : 'bg-riso-pink'}`}
+                    />
+                    <span className="font-riso-body text-sm text-carbon truncate">{item.game}</span>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <span
+                      className={`block font-riso-mono text-sm font-bold ${
+                        win ? 'text-riso-spring' : 'text-riso-redox'
+                      }`}
+                    >
+                      {item.points}
+                    </span>
+                    <span className="block font-riso-mono text-[0.6rem] uppercase tracking-wider text-carbon-muted">
+                      {item.time}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span
-                    className={`block font-riso-display tracking-widest ${item.result === 'WIN' ? 'text-riso-pink-deep' : 'text-riso-pink-deep'}`}
-                  >
-                    {item.points}
-                  </span>
-                  <span className="text-[9px] text-carbon-muted/60 font-riso-body uppercase">
-                    {item.time}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Footer Bar */}
-        <div className="p-3 bg-riso-blue text-center">
-          <span className="text-[10px] text-black font-riso-body font-bold tracking-[0.2em] uppercase">
-            CAFE DUO LİSANS İZİNLERİ // GÜNCEL
+        {/* Footer strip */}
+        <div className="border-t-2 border-carbon bg-riso-mustard px-4 py-2 text-center">
+          <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-carbon">
+            CafeDuo Üye Kartı · Güncel
           </span>
         </div>
       </div>
     </div>
   );
 };
+
+interface StatCellProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: 'mustard' | 'blue' | 'pink';
+  borderLeft?: boolean;
+}
+
+const TONE_BG: Record<StatCellProps['tone'], string> = {
+  mustard: 'bg-riso-mustard text-carbon',
+  blue: 'bg-riso-blue text-paper',
+  pink: 'bg-riso-pink text-carbon',
+};
+
+const StatCell: React.FC<StatCellProps> = ({ icon, label, value, tone, borderLeft }) => (
+  <div className={`p-4 text-center bg-paper ${borderLeft ? 'border-l-2 border-carbon' : ''}`}>
+    <div
+      className={`inline-flex h-9 w-9 items-center justify-center border-2 border-carbon mb-1.5 ${TONE_BG[tone]}`}
+    >
+      {icon}
+    </div>
+    <span className="block font-riso-display text-2xl text-carbon">{value}</span>
+    <span className="block font-riso-mono text-[0.6rem] uppercase tracking-[0.16em] text-carbon-muted">
+      {label}
+    </span>
+  </div>
+);

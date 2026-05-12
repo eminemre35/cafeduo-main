@@ -195,9 +195,10 @@ export const GameSection: React.FC<GameSectionProps> = ({
               DEVAM EDEN SAVAŞ!
             </h3>
             <p className="font-sans font-bold text-lg">
-              Sistem uyarısı: <span className="text-white underline">{opponentLabel}</span> ile olan
-              <span className="text-white"> {serverActiveGame.gameType}</span> karşılaşması
-              beklemede.
+              Sistem uyarısı:{' '}
+              <span className="text-carbon font-bold underline">{opponentLabel}</span> ile olan
+              <span className="text-carbon font-bold"> {serverActiveGame.gameType}</span>{' '}
+              karşılaşması beklemede.
             </p>
           </div>
           <button
@@ -260,9 +261,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
                   key={item.id}
                   className="bg-paper border-l-4 border-y border-r border-carbon p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-transform hover:translate-x-2"
                   style={{
-                    borderLeftColor: item.didWin
-                      ? 'var(--color-neon-blue)'
-                      : 'var(--color-neon-pink)',
+                    borderLeftColor: item.didWin ? '#5BC25A' : '#FF3E94',
                   }}
                 >
                   <div className="flex-1 min-w-0">
@@ -270,8 +269,8 @@ export const GameSection: React.FC<GameSectionProps> = ({
                       {item.gameType}
                     </p>
                     <p className="font-sans text-sm text-ink-300 font-bold uppercase tracking-wide">
-                      Rakip: <span className="text-white">{item.opponentName}</span> // Masa{' '}
-                      {item.table}
+                      Rakip: <span className="text-carbon font-semibold">{item.opponentName}</span>{' '}
+                      // Masa {item.table}
                     </p>
                     {item.gameType === 'Retro Satranç' && (
                       <p className="text-xs text-riso-blue font-sans mt-2">
@@ -300,7 +299,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => void openHistoryDetail(item)}
-                        className="text-xs font-sans font-bold text-riso-blue hover:text-white transition-colors uppercase tracking-widest underline decoration-neon-blue decoration-2 underline-offset-4"
+                        className="text-xs font-riso-body font-bold text-riso-blue hover:text-riso-pink-deep transition-colors uppercase tracking-widest underline decoration-riso-blue decoration-2 underline-offset-4"
                       >
                         LOGLARI GÖSTER &rarr;
                       </button>
