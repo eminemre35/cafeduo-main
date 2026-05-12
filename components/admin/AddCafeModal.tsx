@@ -4,6 +4,7 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { AddCafeModalProps } from './types';
+import { MapLocationPicker } from '../shared/MapLocationPicker';
 
 export const AddCafeModal: React.FC<AddCafeModalProps> = ({
   isOpen,
@@ -54,6 +55,23 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             ...formData,
             total_tables: Number.parseInt(e.target.value || '0', 10),
           })
+        }
+      />
+
+      <MapLocationPicker
+        primaryLatitude={formData.latitude}
+        primaryLongitude={formData.longitude}
+        primaryRadius={Number(formData.radius) || 150}
+        secondaryLatitude={formData.secondaryLatitude}
+        secondaryLongitude={formData.secondaryLongitude}
+        secondaryRadius={Number(formData.secondaryRadius) || 150}
+        onPrimaryLatitudeChange={(value) => onFormChange({ ...formData, latitude: value })}
+        onPrimaryLongitudeChange={(value) => onFormChange({ ...formData, longitude: value })}
+        onSecondaryLatitudeChange={(value) =>
+          onFormChange({ ...formData, secondaryLatitude: value })
+        }
+        onSecondaryLongitudeChange={(value) =>
+          onFormChange({ ...formData, secondaryLongitude: value })
         }
       />
 

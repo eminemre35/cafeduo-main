@@ -23,6 +23,7 @@ import { api } from '../lib/api';
 import { AddUserModal } from './admin/AddUserModal';
 import { AddCafeModal } from './admin/AddCafeModal';
 import { AssignCafeAdminModal } from './admin/AssignCafeAdminModal';
+import { MapLocationPicker } from './shared/MapLocationPicker';
 import { Button } from './admin/ui/Button';
 import { Input } from './admin/ui/Input';
 import { Card } from './admin/ui/Card';
@@ -775,6 +776,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             ...editCafeData,
                             total_tables: Number.parseInt(e.target.value || '0', 10),
                           })
+                        }
+                      />
+
+                      <MapLocationPicker
+                        primaryLatitude={editCafeData.latitude}
+                        primaryLongitude={editCafeData.longitude}
+                        primaryRadius={Number(editCafeData.radius) || 150}
+                        secondaryLatitude={editCafeData.secondaryLatitude}
+                        secondaryLongitude={editCafeData.secondaryLongitude}
+                        secondaryRadius={Number(editCafeData.secondaryRadius) || 150}
+                        onPrimaryLatitudeChange={(value) =>
+                          setEditCafeData({ ...editCafeData, latitude: value })
+                        }
+                        onPrimaryLongitudeChange={(value) =>
+                          setEditCafeData({ ...editCafeData, longitude: value })
+                        }
+                        onSecondaryLatitudeChange={(value) =>
+                          setEditCafeData({ ...editCafeData, secondaryLatitude: value })
+                        }
+                        onSecondaryLongitudeChange={(value) =>
+                          setEditCafeData({ ...editCafeData, secondaryLongitude: value })
                         }
                       />
 

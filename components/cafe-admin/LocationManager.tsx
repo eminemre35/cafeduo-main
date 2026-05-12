@@ -1,31 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import { CheckCircle, LocateFixed, MapPin, Navigation, Ruler, XCircle } from 'lucide-react';
 import type { CafeLocationStatus } from './types';
-
-interface LeafletBundle {
-  MapContainer: React.ComponentType<any>;
-  TileLayer: React.ComponentType<any>;
-  Marker: React.ComponentType<any>;
-  Circle: React.ComponentType<any>;
-  useMapEvents: (handlers: {
-    click?: (event: { latlng?: { lat?: number; lng?: number } }) => void;
-  }) => unknown;
-}
-
-const MapClickHandler: React.FC<{
-  onPick: (lat: number, lng: number) => void;
-  useMapEvents: LeafletBundle['useMapEvents'];
-}> = ({ onPick, useMapEvents }) => {
-  useMapEvents({
-    click: (event) => {
-      const lat = Number(event?.latlng?.lat);
-      const lng = Number(event?.latlng?.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      onPick(lat, lng);
-    },
-  });
-  return null;
-};
+import { MapLocationPicker } from '../shared/MapLocationPicker';
 
 interface LocationManagerProps {
   latitude: string;
@@ -66,95 +42,6 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
   message,
   loading,
 }) => {
-  const [mapTarget, setMapTarget] = useState<'primary' | 'secondary'>('primary');
-  const [leafletBundle, setLeafletBundle] = useState<LeafletBundle | null>(null);
-  const [mapLoadError, setMapLoadError] = useState<string | null>(null);
-
-  const primaryLat = Number(latitude);
-  const primaryLng = Number(longitude);
-  const secondaryLat = Number(secondaryLatitude);
-  const secondaryLng = Number(secondaryLongitude);
-
-  const primaryCoords = useMemo<[number, number] | null>(() => {
-    if (!Number.isFinite(primaryLat) || !Number.isFinite(primaryLng)) return null;
-    if (primaryLat < -90 || primaryLat > 90 || primaryLng < -180 || primaryLng > 180) return null;
-    return [primaryLat, primaryLng];
-  }, [primaryLat, primaryLng]);
-
-  const secondaryCoords = useMemo<[number, number] | null>(() => {
-    if (!Number.isFinite(secondaryLat) || !Number.isFinite(secondaryLng)) return null;
-    if (secondaryLat < -90 || secondaryLat > 90 || secondaryLng < -180 || secondaryLng > 180)
-      return null;
-    return [secondaryLat, secondaryLng];
-  }, [secondaryLat, secondaryLng]);
-
-  const mapCenter = useMemo<[number, number]>(() => {
-    if (primaryCoords) return primaryCoords;
-    if (secondaryCoords) return secondaryCoords;
-    return [37.741, 29.101];
-  }, [primaryCoords, secondaryCoords]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const userAgent = String(navigator?.userAgent || '').toLowerCase();
-    if (userAgent.includes('jsdom')) return;
-
-    const existingCss = document.getElementById('leaflet-style-cafeduo');
-    if (!existingCss) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-style-cafeduo';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-
-    let isMounted = true;
-    void Promise.all([import('react-leaflet'), import('leaflet')])
-      .then(([reactLeaflet, leafletModule]) => {
-        if (!isMounted) return;
-
-        const Leaflet = (leafletModule as { default?: any }).default || leafletModule;
-        const defaultIcon = Leaflet.icon({
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-        });
-        Leaflet.Marker.prototype.options.icon = defaultIcon;
-
-        setLeafletBundle({
-          MapContainer: reactLeaflet.MapContainer,
-          TileLayer: reactLeaflet.TileLayer,
-          Marker: reactLeaflet.Marker,
-          Circle: reactLeaflet.Circle,
-          useMapEvents: reactLeaflet.useMapEvents,
-        });
-      })
-      .catch((error) => {
-        console.error('Leaflet map load failed', error);
-        if (isMounted) {
-          setMapLoadError('Harita yüklenemedi. Koordinat alanlarıyla devam edebilirsiniz.');
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleMapPick = (lat: number, lng: number) => {
-    if (mapTarget === 'secondary') {
-      onSecondaryLatitudeChange(lat.toFixed(6));
-      onSecondaryLongitudeChange(lng.toFixed(6));
-      return;
-    }
-    onLatitudeChange(lat.toFixed(6));
-    onLongitudeChange(lng.toFixed(6));
-  };
-
-  const leafletMap = leafletBundle;
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await onSubmit();
@@ -171,83 +58,19 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           Konum Doğrulama Ayarları
         </h2>
 
-        <div className="mb-5 border-2 border-carbon bg-paper-deep p-3 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-carbon-soft uppercase tracking-[0.12em] font-bold font-riso-body">
-              Haritadan Nokta Seç
-            </p>
-            <div className="inline-flex border-2 border-carbon bg-paper">
-              <button
-                type="button"
-                onClick={() => setMapTarget('primary')}
-                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display ${
-                  mapTarget === 'primary'
-                    ? 'bg-riso-blue text-paper font-bold'
-                    : 'text-carbon hover:bg-riso-blue/15'
-                }`}
-              >
-                Ana Konum
-              </button>
-              <button
-                type="button"
-                onClick={() => setMapTarget('secondary')}
-                className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display border-l-2 border-carbon ${
-                  mapTarget === 'secondary'
-                    ? 'bg-riso-blue text-paper font-bold'
-                    : 'text-carbon hover:bg-riso-blue/15'
-                }`}
-              >
-                İkinci Konum
-              </button>
-            </div>
-          </div>
-
-          {leafletMap ? (
-            <div className="h-[260px] sm:h-[300px] overflow-hidden border border-carbon-muted">
-              <leafletMap.MapContainer
-                key={`${mapCenter[0].toFixed(4)}-${mapCenter[1].toFixed(4)}`}
-                center={mapCenter}
-                zoom={15}
-                scrollWheelZoom
-                className="h-full w-full"
-              >
-                <leafletMap.TileLayer
-                  attribution="&copy; OpenStreetMap"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <MapClickHandler onPick={handleMapPick} useMapEvents={leafletMap.useMapEvents} />
-                {primaryCoords && (
-                  <>
-                    <leafletMap.Marker position={primaryCoords} />
-                    <leafletMap.Circle
-                      center={primaryCoords}
-                      radius={Math.max(10, Number(radius) || 150)}
-                      pathOptions={{ color: '#1D4ED8', fillColor: '#1D4ED8', fillOpacity: 0.15 }}
-                    />
-                  </>
-                )}
-                {secondaryCoords && (
-                  <>
-                    <leafletMap.Marker position={secondaryCoords} />
-                    <leafletMap.Circle
-                      center={secondaryCoords}
-                      radius={Math.max(10, Number(secondaryRadius) || 150)}
-                      pathOptions={{ color: '#FF3E94', fillColor: '#FF3E94', fillOpacity: 0.15 }}
-                    />
-                  </>
-                )}
-              </leafletMap.MapContainer>
-            </div>
-          ) : (
-            <div className="h-[130px] border border-riso-blue/25 bg-paper-deep/20 flex items-center justify-center text-sm text-carbon-soft/80 px-4 text-center">
-              {mapLoadError || 'Harita yükleniyor...'}
-            </div>
-          )}
-
-          <p className="text-xs text-carbon-muted">
-            Haritada tıkladığınız nokta, seçili hedefe (
-            {mapTarget === 'primary' ? 'ana konum' : 'ikinci konum'}) otomatik yazılır.
-          </p>
+        <div className="mb-5">
+          <MapLocationPicker
+            primaryLatitude={latitude}
+            primaryLongitude={longitude}
+            primaryRadius={Number(radius) || 150}
+            secondaryLatitude={secondaryLatitude}
+            secondaryLongitude={secondaryLongitude}
+            secondaryRadius={Number(secondaryRadius) || 150}
+            onPrimaryLatitudeChange={onLatitudeChange}
+            onPrimaryLongitudeChange={onLongitudeChange}
+            onSecondaryLatitudeChange={onSecondaryLatitudeChange}
+            onSecondaryLongitudeChange={onSecondaryLongitudeChange}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
