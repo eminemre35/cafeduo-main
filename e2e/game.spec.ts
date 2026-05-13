@@ -49,7 +49,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     const session = await provisionUser(request, root, 'checkin_guard');
 
     await bootstrapAuthenticatedPage(page, root, session, { checkedIn: false });
-    await expect(page.getByText('Kafe Giriş')).toBeVisible();
+    await expect(page.getByText('Kafeye Giriş')).toBeVisible();
   });
 
   test('@smoke shows dashboard + stats after authenticated check-in', async ({ page, request, baseURL }) => {

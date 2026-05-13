@@ -80,14 +80,26 @@ const createCreateGameHandler = (deps) => {
         // — soft-failing keeps users from being blocked while we diag.
         // Default behavior on failure: skip the daily-cap check entirely.
         if (!adminActor && actorCafeId) {
+          // SAVEPOINT pattern: if the limit-lookup throws, just the
+          // savepoint rolls back and the outer transaction stays usable.
+          // Without this, a failed SELECT here aborts the transaction
+          // and every subsequent query (including the INSERT) bails with
+          // 25P02 'current transaction is aborted'.
           let limit = 0;
           try {
+            await client.query('SAVEPOINT daily_limit_lookup');
             const limitRes = await client.query(
               `SELECT daily_game_limit FROM cafes WHERE id = $1`,
               [actorCafeId]
             );
             limit = Number(limitRes.rows[0]?.daily_game_limit ?? 10);
+            await client.query('RELEASE SAVEPOINT daily_limit_lookup');
           } catch (limitErr) {
+            try {
+              await client.query('ROLLBACK TO SAVEPOINT daily_limit_lookup');
+            } catch {
+              /* savepoint already gone */
+            }
             logger.warn('Daily game limit lookup failed (soft-fail)', {
               cafeId: actorCafeId,
               message: limitErr?.message,
@@ -97,6 +109,7 @@ const createCreateGameHandler = (deps) => {
           }
           if (Number.isFinite(limit) && limit > 0) {
             try {
+              await client.query('SAVEPOINT daily_count_lookup');
               const countRes = await client.query(
                 `SELECT COUNT(*)::int AS count FROM games
                    WHERE LOWER(host_name) = LOWER($1)
@@ -106,6 +119,7 @@ const createCreateGameHandler = (deps) => {
                        = (NOW() AT TIME ZONE 'Europe/Istanbul')::date`,
                 [hostName, actorCafeId]
               );
+              await client.query('RELEASE SAVEPOINT daily_count_lookup');
               const todaysGames = Number(countRes.rows[0]?.count ?? 0);
               if (todaysGames >= limit) {
                 await client.query('ROLLBACK');
@@ -117,6 +131,11 @@ const createCreateGameHandler = (deps) => {
                 });
               }
             } catch (countErr) {
+              try {
+                await client.query('ROLLBACK TO SAVEPOINT daily_count_lookup');
+              } catch {
+                /* savepoint already gone */
+              }
               logger.warn('Daily game count lookup failed (soft-fail)', {
                 cafeId: actorCafeId,
                 message: countErr?.message,

@@ -70,15 +70,41 @@ const createCommerceHandlers = ({
   getMemoryUsers = () => [],
   setMemoryUsers = () => {},
 }) => {
-  // Baseline rewards used to auto-seed when the rewards table was empty,
-  // inserted with cafe_id=NULL so they showed up for every cafe ("house
-  // rewards"). That polluted cafe-scoped isolation: an Ev-cafe user could
-  // see rewards another admin never created. Auto-seed removed — each
-  // cafe admin defines its own catalog from scratch. If a cafe has no
-  // rewards yet, the user sees an empty state ("Bu kafede henüz ödül yok").
-  const ensureActiveRewardsDb = async () => {
-    // No-op kept for backward call sites — left here so adding a future
-    // cafe-aware seed (per-cafe defaults) is a one-line change.
+  // Per-cafe baseline seed. When a cafe has zero active rewards, drop in
+  // four default offerings OWNED BY THAT CAFE (cafe_id = <this cafe>) so
+  // every new cafe starts with a usable catalog. This still satisfies the
+  // strict cafe-scope rule the user asked for — these rows live in the
+  // target cafe only; the Ev admin's rewards never leak to PAÜ İİBF and
+  // vice versa. Cafe admins can edit / delete / extend from this baseline.
+  const ensureActiveRewardsDb = async (cafeId) => {
+    if (!cafeId) return;
+    const cafeIdNum = Number(cafeId);
+    if (!Number.isFinite(cafeIdNum) || cafeIdNum <= 0) return;
+    try {
+      const countRes = await pool.query(
+        'SELECT COUNT(*)::int AS count FROM rewards WHERE is_active = true AND cafe_id = $1',
+        [cafeIdNum]
+      );
+      if (Number(countRes.rows?.[0]?.count || 0) > 0) {
+        return;
+      }
+      await pool.query(
+        `INSERT INTO rewards (title, cost, description, icon, cafe_id, is_active)
+         VALUES
+           ('Bedava Filtre Kahve', 500, 'Günün yorgunluğunu at.', 'coffee', $1, true),
+           ('%20 Hesap İndirimi', 850, 'Tüm masada geçerli.', 'discount', $1, true),
+           ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', $1, true),
+           ('Oyun Jetonu x5', 100, 'Ekstra oyun hakkı.', 'game', $1, true)`,
+        [cafeIdNum]
+      );
+      logger.info('Baseline rewards seeded for cafe', { cafeId: cafeIdNum });
+    } catch (err) {
+      logger.warn('Baseline rewards seed failed (soft-fail)', {
+        cafeId: cafeIdNum,
+        message: err?.message,
+        code: err?.code,
+      });
+    }
   };
 
   const createReward = async (req, res) => {
@@ -130,6 +156,10 @@ const createCommerceHandlers = ({
           if (!cafeId) {
             return res.json([]);
           }
+          // Auto-seed this cafe's baseline catalog on first read if the
+          // cafe admin hasn't added anything yet. Idempotent — does
+          // nothing once the cafe has any active reward.
+          await ensureActiveRewardsDb(cafeId);
           const result = await pool.query(
             `SELECT id, title, description, cost, icon, cafe_id, is_active, created_at
                FROM rewards

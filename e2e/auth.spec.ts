@@ -99,7 +99,7 @@ test.describe('Authentication Flow', () => {
 
     if (hasAuthCookie) {
       await page.goto(`${root}/dashboard`);
-      await expect(page.getByRole('heading', { name: 'Kafe Giriş' })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: 'Kafeye Giriş' })).toBeVisible({ timeout: 10000 });
       return;
     }
 
@@ -116,7 +116,7 @@ test.describe('Authentication Flow', () => {
     await page.locator('[data-testid="auth-password-input"]').fill(session.credentials.password);
     await page.locator('[data-testid="auth-submit-button"], form button[type=\"submit\"]').first().click({ force: true });
 
-    const checkInHeadingInitial = page.getByText('Kafe Giriş');
+    const checkInHeadingInitial = page.getByText('Kafeye Giriş');
     const dashboardTabInitial = page.locator('[data-testid="dashboard-tab-games"]').first();
     const landedOnCheckIn = await checkInHeadingInitial.isVisible().catch(() => false);
     const landedOnDashboard = await dashboardTabInitial.isVisible().catch(() => false);
@@ -146,7 +146,7 @@ test.describe('Authentication Flow', () => {
       await page.reload();
     }
 
-    const checkInHeading = page.getByRole('heading', { name: 'Kafe Giriş' }).first();
+    const checkInHeading = page.getByRole('heading', { name: 'Kafeye Giriş' }).first();
     const checkInSubmit = page.locator('[data-testid="checkin-submit-button"]').first();
     const tableInput = page.locator('[data-testid="checkin-table-input"]').first();
     const verificationInput = page.locator('#checkin-verification-code').first();
