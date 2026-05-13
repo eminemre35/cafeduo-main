@@ -1,9 +1,11 @@
 name: Diag Wheel Call
 
-# Manual diagnostic — logs in with the smoke account, calls /api/wheel/X
-# and dumps the raw response body to the job output. Lets us see the
-# actual JSON the backend returns (status, code, details) without needing
-# to coordinate a browser test with the user.
+# Manual diagnostic — SSHs into the VPS and calls /api/wheel/X from
+# inside the box (talking to the api container directly via the public
+# nginx on localhost). This avoids the Cloudflare/GH-Actions DNS mismatch
+# that made the previous "log in from runner" version land on a wrong
+# upstream and 404. Dumps full response (status + body + any pg error
+# details surfaced by EXPOSE_API_ERRORS=true).
 
 on:
   workflow_dispatch:
@@ -17,33 +19,63 @@ jobs:
   call:
     runs-on: ubuntu-latest
     steps:
-      - name: Login + call /api/wheel
+      - name: Setup SSH
         env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Login + call /api/wheel via VPS-local curl
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           SMOKE_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
           SMOKE_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
           CAFE_ID: ${{ inputs.cafeId }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "SMOKE_EMAIL='${SMOKE_EMAIL}' SMOKE_PASSWORD='${SMOKE_PASSWORD}' CAFE_ID='${CAFE_ID}' bash -s" <<'REMOTE'
+            set +e
+            # Pick base URL: prefer 127.0.0.1 (works whether nginx is the
+            # public-port reverse proxy or the api container is mapped to
+            # 3001). Fall back to the public domain on failure.
+            BASE="http://127.0.0.1"
+            COOKIES=/tmp/diag-wheel-cookies.txt
+            rm -f "$COOKIES"
 
-          BASE=https://cafeduotr.com
+            echo "=== Probe ${BASE}/api/health ==="
+            curl -sS -i --max-time 6 "$BASE/api/health" | head -20
+            echo ""
 
-          # Login: capture both the JWT cookie and the response body
-          echo "=== POST /api/auth/login ==="
-          LOGIN_RES=$(curl -sS -i -c /tmp/cookies.txt \
-            -H "Content-Type: application/json" \
-            -d "{\"email\":\"$SMOKE_EMAIL\",\"password\":\"$SMOKE_PASSWORD\"}" \
-            "$BASE/api/auth/login" || true)
-          echo "$LOGIN_RES" | head -20
-          echo ""
+            echo "=== POST ${BASE}/api/auth/login ==="
+            LOGIN_RES=$(curl -sS -i -c "$COOKIES" --max-time 10 \
+              -H "Content-Type: application/json" \
+              -d "{\"email\":\"$SMOKE_EMAIL\",\"password\":\"$SMOKE_PASSWORD\"}" \
+              "$BASE/api/auth/login")
+            echo "$LOGIN_RES" | head -30
+            echo ""
 
-          # Extract csrf token (set as cookie by login)
-          CSRF=$(grep csrf_token /tmp/cookies.txt | awk '{print $7}' | tail -1)
-          echo "csrf_token=$CSRF"
-          echo ""
+            # CSRF + JWT are both in cookies after a successful login. Read
+            # cookies.txt: each line is "host TRUE / FALSE expiry name value".
+            CSRF=""
+            if [ -f "$COOKIES" ]; then
+              CSRF=$(awk '$6 == "csrf_token" {print $7}' "$COOKIES" | tail -1)
+            fi
+            echo "csrf_token=${CSRF:-<missing>}"
+            echo ""
 
-          echo "=== GET /api/wheel/$CAFE_ID ==="
-          curl -sS -i -b /tmp/cookies.txt \
-            -H "X-CSRF-Token: $CSRF" \
-            "$BASE/api/wheel/$CAFE_ID" | head -40
-          echo ""
-          echo "=== End ==="
+            echo "=== GET ${BASE}/api/wheel/$CAFE_ID ==="
+            curl -sS -i -b "$COOKIES" --max-time 10 \
+              -H "X-CSRF-Token: ${CSRF:-x}" \
+              "$BASE/api/wheel/$CAFE_ID" | head -60
+            echo ""
+            echo "=== End ==="
+          REMOTE
