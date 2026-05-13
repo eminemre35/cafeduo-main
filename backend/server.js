@@ -591,6 +591,29 @@ const initDb = async () => {
         );
       `);
 
+      // Defensive ALTER TABLEs — production has been throwing 42703
+      // 'column X does not exist' even though the corresponding migration
+      // shows as applied in pgmigrations. Suspected cause: the migration
+      // ran against a DB that was later replaced (Docker volume issue,
+      // legacy container, whatever). Belt-and-braces approach: every API
+      // boot, idempotently add the columns we know we need. IF NOT EXISTS
+      // makes this a no-op when the schema is already right.
+      await pool.query(`
+        ALTER TABLE games ADD COLUMN IF NOT EXISTS cafe_id INTEGER REFERENCES cafes(id) ON DELETE SET NULL;
+      `);
+      await pool.query(`
+        ALTER TABLE cafes ADD COLUMN IF NOT EXISTS daily_game_limit INTEGER NOT NULL DEFAULT 10;
+      `);
+      await pool.query(`
+        ALTER TABLE cafes ADD COLUMN IF NOT EXISTS daily_reward_wheel JSONB NOT NULL DEFAULT '[]'::jsonb;
+      `);
+      await pool.query(`
+        ALTER TABLE user_items ADD COLUMN IF NOT EXISTS cafe_id INTEGER REFERENCES cafes(id) ON DELETE SET NULL;
+      `);
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_games_cafe_created ON games(cafe_id, created_at);
+      `);
+
       // 4. User Items Table
       await pool.query(`
         CREATE TABLE IF NOT EXISTS user_items (

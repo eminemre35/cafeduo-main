@@ -117,8 +117,14 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
     const { hostName, gameType, points, table, gameState, cafeId } = params;
     // PR #36 — `cafe_id` recorded on every new game so per-cafe daily limits
     // and isolation queries don't need an extra join through users.
-    const result = await client.query(
-      `
+    //
+    // Defensive fallback: production has been throwing 42703 'column
+    // cafe_id of relation games does not exist' even though the column
+    // is present in the schema dump. If the WITH cafe_id INSERT trips
+    // 42703, retry without cafe_id. A SAVEPOINT around the first try
+    // keeps the outer tx alive when the wrapped query fails — without
+    // this, the very next query in the transaction dies with 25P02.
+    const fullInsert = `
         INSERT INTO games (host_name, game_type, points, table_code, status, game_state, cafe_id)
         VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)
         RETURNING
@@ -132,11 +138,54 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           game_state as "gameState",
           cafe_id as "cafeId",
           created_at as "createdAt"
-      `,
-      [hostName, gameType, points, table, JSON.stringify(gameState || {}), cafeId ?? null]
-    );
-
-    return result.rows[0] || null;
+      `;
+    const fallbackInsert = `
+        INSERT INTO games (host_name, game_type, points, table_code, status, game_state)
+        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb)
+        RETURNING
+          id,
+          host_name as "hostName",
+          game_type as "gameType",
+          points,
+          table_code as "table",
+          status,
+          guest_name as "guestName",
+          game_state as "gameState",
+          NULL::int as "cafeId",
+          created_at as "createdAt"
+      `;
+    try {
+      await client.query('SAVEPOINT game_insert_with_cafe');
+      const result = await client.query(fullInsert, [
+        hostName,
+        gameType,
+        points,
+        table,
+        JSON.stringify(gameState || {}),
+        cafeId ?? null,
+      ]);
+      await client.query('RELEASE SAVEPOINT game_insert_with_cafe');
+      return result.rows[0] || null;
+    } catch (err) {
+      // 42703 = undefined_column. The savepoint rolls back, but the
+      // transaction itself stays alive thanks to the SAVEPOINT we set.
+      try {
+        await client.query('ROLLBACK TO SAVEPOINT game_insert_with_cafe');
+      } catch {
+        /* savepoint already gone */
+      }
+      if (!err || err.code !== '42703') {
+        throw err;
+      }
+      const fallback = await client.query(fallbackInsert, [
+        hostName,
+        gameType,
+        points,
+        table,
+        JSON.stringify(gameState || {}),
+      ]);
+      return fallback.rows[0] || null;
+    }
   };
 
   const findGameByIdForUpdate = async (client, id) => {

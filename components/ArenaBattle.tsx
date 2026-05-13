@@ -26,8 +26,27 @@ interface ArenaWindow extends Window {
 
 export const AIM_GAME_TYPE = 'Nişancı Düellosu';
 const MAX_ROUNDS = 5;
-const GAUGE_STEP = 4;
-const GAUGE_TICK_MS = 46;
+
+// Difficulty knobs. Original (desktop) values were 4 / 46. The user
+// reported the game is way too easy on mobile — touch devices have
+// less precise inputs but a smaller travel area, so a tap usually
+// lands within the perfect window almost by accident. To keep desktop
+// feel intact while raising the mobile bar, we detect touch hardware
+// at component mount and pick a harder pair of values.
+//
+// `pointer: coarse` covers phones + tablets (and most game-controller
+// touchpads); desktops with a mouse get `pointer: fine`. Falling back
+// to the desktop pair on the server / SSR / non-DOM environments.
+const detectTouchDifficulty = () => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return { step: 4, tickMs: 46 };
+  }
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  if (coarse) {
+    return { step: 7, tickMs: 32 };
+  }
+  return { step: 4, tickMs: 46 };
+};
 
 export const clampGauge = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -75,6 +94,14 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     logName: 'ArenaBattle',
     onGameEnd,
   });
+
+  // Pick difficulty once at mount; React picks this up via useMemo so we
+  // don't re-detect on every render. Tests can still run in JSDOM where
+  // window.matchMedia is shim'd; detectTouchDifficulty returns the
+  // desktop pair there, keeping unit-test behaviour stable.
+  const difficulty = useMemo(() => detectTouchDifficulty(), []);
+  const GAUGE_STEP = difficulty.step;
+  const GAUGE_TICK_MS = difficulty.tickMs;
 
   const [round, setRound] = useState(1);
   const [gauge, setGauge] = useState(50);
