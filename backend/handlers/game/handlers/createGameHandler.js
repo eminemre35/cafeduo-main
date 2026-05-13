@@ -139,8 +139,35 @@ const createCreateGameHandler = (deps) => {
         return res.status(201).json(createdGame);
       } catch (err) {
         await client.query('ROLLBACK');
-        logger.error('Create game error', err);
-        return res.status(500).json({ error: 'Oyun kurulamadı.' });
+        // Force-log the full pg error metadata so the diag-api-logs
+        // workflow surfaces it. createGame returning a generic 500 with
+        // "Oyun kurulamadı" hid the real cause for too long.
+        logger.error('Create game error', {
+          message: err?.message,
+          code: err?.code,
+          detail: err?.detail,
+          hint: err?.hint,
+          position: err?.position,
+          table: err?.table,
+          column: err?.column,
+          routine: err?.routine,
+          stack: err?.stack,
+        });
+        const body = { error: 'Oyun kurulamadı.' };
+        // While EXPOSE_API_ERRORS is on (debug switch in production .env),
+        // ship the cause back so DevTools Network tab shows the failure
+        // without VPS shell access. Strip these fields once the bug is found.
+        if (String(process.env.EXPOSE_API_ERRORS || '').toLowerCase() === 'true') {
+          body.details = {
+            message: err?.message || null,
+            code: err?.code || null,
+            detail: err?.detail || null,
+            column: err?.column || null,
+            table: err?.table || null,
+            routine: err?.routine || null,
+          };
+        }
+        return res.status(500).json(body);
       } finally {
         client.release();
       }
