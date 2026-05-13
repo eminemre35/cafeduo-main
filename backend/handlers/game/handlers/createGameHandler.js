@@ -139,9 +139,11 @@ const createCreateGameHandler = (deps) => {
         return res.status(201).json(createdGame);
       } catch (err) {
         await client.query('ROLLBACK');
-        // Force-log the full pg error metadata so the diag-api-logs
-        // workflow surfaces it. createGame returning a generic 500 with
-        // "Oyun kurulamadı" hid the real cause for too long.
+        // TEMPORARY DEBUG (unconditionally exposes pg error details).
+        // The previous EXPOSE_API_ERRORS gate didn't fire in prod —
+        // env var didn't reach the container — so we lost the stack
+        // trace and the user kept seeing a generic 500. This block
+        // MUST be stripped once the bug is identified and fixed.
         logger.error('Create game error', {
           message: err?.message,
           code: err?.code,
@@ -153,21 +155,19 @@ const createCreateGameHandler = (deps) => {
           routine: err?.routine,
           stack: err?.stack,
         });
-        const body = { error: 'Oyun kurulamadı.' };
-        // While EXPOSE_API_ERRORS is on (debug switch in production .env),
-        // ship the cause back so DevTools Network tab shows the failure
-        // without VPS shell access. Strip these fields once the bug is found.
-        if (String(process.env.EXPOSE_API_ERRORS || '').toLowerCase() === 'true') {
-          body.details = {
+        return res.status(500).json({
+          error: 'Oyun kurulamadı.',
+          debug: {
             message: err?.message || null,
             code: err?.code || null,
             detail: err?.detail || null,
+            hint: err?.hint || null,
             column: err?.column || null,
             table: err?.table || null,
             routine: err?.routine || null,
-          };
-        }
-        return res.status(500).json(body);
+            position: err?.position || null,
+          },
+        });
       } finally {
         client.release();
       }
