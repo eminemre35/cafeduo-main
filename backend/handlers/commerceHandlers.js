@@ -596,11 +596,12 @@ const createCommerceHandlers = ({
     }
     return executeDataMode(isDbConnected, {
       db: async () => {
+        // STEP 1 — cafe name lookup. Soft-fail: if the lookup throws, we
+        // still want the user to see the wheel. Only a clean empty result
+        // (i.e. cafe doesn't exist) returns 404. Anything else we treat as
+        // "we don't know the name but the cafe is probably real".
+        let cafeName = null;
         try {
-          // Cafe lookup just to surface the cafe name in the UI header.
-          // We no longer read daily_reward_wheel from cafes — the wheel is
-          // global now. If the column was missing or malformed before, that's
-          // what was causing the 500.
           const cafeRes = await pool.query(`SELECT name FROM cafes WHERE id = $1`, [cafeId]);
           if (cafeRes.rows.length === 0) {
             return sendApiProblem(res, {
@@ -609,6 +610,25 @@ const createCommerceHandlers = ({
               message: 'Kafe bulunamadı.',
             });
           }
+          cafeName = cafeRes.rows[0].name;
+        } catch (cafeErr) {
+          logger.error('Get wheel: cafe lookup failed (soft-fail)', {
+            userId,
+            cafeId,
+            message: cafeErr?.message,
+            code: cafeErr?.code,
+          });
+          // Continue with cafeName=null; user still gets a usable wheel.
+        }
+
+        // STEP 2 — "already spun today" lookup. If this fails (timezone
+        // not loaded, table missing, whatever), we degrade to "not spun
+        // yet" rather than blocking the wheel render. Worst case the user
+        // tries to spin and the unique index on user_daily_spins catches
+        // a duplicate; spinDailyWheel handles 23505 cleanly.
+        let alreadySpunToday = false;
+        let lastSpin = null;
+        try {
           const spinRes = await pool.query(
             `SELECT id, points_won, spun_at FROM user_daily_spins
                WHERE user_id = $1 AND cafe_id = $2
@@ -617,23 +637,26 @@ const createCommerceHandlers = ({
                ORDER BY spun_at DESC LIMIT 1`,
             [userId, cafeId]
           );
-          return res.json({
-            cafeId,
-            cafeName: cafeRes.rows[0].name,
-            wheel: exposedWheelSlices(),
-            alreadySpunToday: spinRes.rows.length > 0,
-            lastSpin: spinRes.rows[0] || null,
-          });
-        } catch (err) {
-          logger.error('Get wheel SQL failure', {
+          alreadySpunToday = spinRes.rows.length > 0;
+          lastSpin = spinRes.rows[0] || null;
+        } catch (spinErr) {
+          logger.error('Get wheel: spin-lookup failed (soft-fail)', {
             userId,
             cafeId,
-            message: err?.message,
-            code: err?.code,
-            stack: err?.stack,
+            message: spinErr?.message,
+            code: spinErr?.code,
           });
-          return sendApiError(res, logger, 'Get wheel error', err, 'Çark yüklenemedi.');
+          // Stay with alreadySpunToday=false; spinDailyWheel enforces
+          // uniqueness server-side anyway.
         }
+
+        return res.json({
+          cafeId,
+          cafeName,
+          wheel: exposedWheelSlices(),
+          alreadySpunToday,
+          lastSpin,
+        });
       },
       memory: async () =>
         res.json({
