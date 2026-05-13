@@ -70,23 +70,15 @@ const createCommerceHandlers = ({
   getMemoryUsers = () => [],
   setMemoryUsers = () => {},
 }) => {
+  // Baseline rewards used to auto-seed when the rewards table was empty,
+  // inserted with cafe_id=NULL so they showed up for every cafe ("house
+  // rewards"). That polluted cafe-scoped isolation: an Ev-cafe user could
+  // see rewards another admin never created. Auto-seed removed — each
+  // cafe admin defines its own catalog from scratch. If a cafe has no
+  // rewards yet, the user sees an empty state ("Bu kafede henüz ödül yok").
   const ensureActiveRewardsDb = async () => {
-    const activeRewardsResult = await pool.query(
-      'SELECT COUNT(*) FROM rewards WHERE is_active = true'
-    );
-    if (Number(activeRewardsResult.rows?.[0]?.count || 0) > 0) {
-      return;
-    }
-
-    await pool.query(`
-      INSERT INTO rewards (title, cost, description, icon, is_active)
-      VALUES
-        ('Bedava Filtre Kahve', 500, 'Günün yorgunluğunu at.', 'coffee', true),
-        ('%20 Hesap İndirimi', 850, 'Tüm masada geçerli.', 'discount', true),
-        ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
-        ('Oyun Jetonu x5', 100, 'Ekstra oyun hakkı.', 'game', true)
-    `);
-    logger.warn('No active rewards remained. Baseline rewards were re-seeded.');
+    // No-op kept for backward call sites — left here so adding a future
+    // cafe-aware seed (per-cafe defaults) is a one-line change.
   };
 
   const createReward = async (req, res) => {
@@ -124,35 +116,41 @@ const createCommerceHandlers = ({
   };
 
   const getRewards = async (req, res) => {
+    // Rewards are STRICTLY cafe-scoped. The frontend must pass cafeId
+    // (typically the logged-in user's cafe_id). Without it we return an
+    // empty list rather than dumping every cafe's catalog — that's the
+    // "every cafe is its own loyalty universe" guarantee the project is
+    // built around. Old `cafe_id IS NULL` house-reward fallback removed
+    // alongside the auto-seed.
     const { cafeId } = req.query;
 
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          await ensureActiveRewardsDb();
-
-          let query =
-            'SELECT id, title, description, cost, icon, cafe_id, is_active, created_at FROM rewards WHERE is_active = true';
-          const params = [];
-
-          if (cafeId) {
-            query += ' AND (cafe_id = $1 OR cafe_id IS NULL)';
-            params.push(cafeId);
+          if (!cafeId) {
+            return res.json([]);
           }
-          query += ' ORDER BY cost ASC LIMIT 100';
-
-          const result = await pool.query(query, params);
+          const result = await pool.query(
+            `SELECT id, title, description, cost, icon, cafe_id, is_active, created_at
+               FROM rewards
+              WHERE is_active = true AND cafe_id = $1
+              ORDER BY cost ASC
+              LIMIT 100`,
+            [cafeId]
+          );
           return res.json(result.rows);
         } catch (err) {
           return sendApiError(res, logger, 'Error fetching rewards', err, 'Ödüller yüklenemedi.');
         }
       },
       memory: async () => {
-        const rewards =
-          Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
-            ? getMemoryRewards()
-            : BASELINE_REWARDS;
-        return res.json(rewards);
+        if (!cafeId) {
+          return res.json([]);
+        }
+        const targetCafeId = Number(cafeId);
+        const all = Array.isArray(getMemoryRewards()) ? getMemoryRewards() : [];
+        const filtered = all.filter((reward) => Number(reward?.cafe_id) === targetCafeId);
+        return res.json(filtered);
       },
     });
   };
