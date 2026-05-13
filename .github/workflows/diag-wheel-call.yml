@@ -1,0 +1,49 @@
+name: Diag Wheel Call
+
+# Manual diagnostic — logs in with the smoke account, calls /api/wheel/X
+# and dumps the raw response body to the job output. Lets us see the
+# actual JSON the backend returns (status, code, details) without needing
+# to coordinate a browser test with the user.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cafeId:
+        description: Cafe ID to query (default 1 — PAÜ İİBF Kantin)
+        required: false
+        default: '1'
+
+jobs:
+  call:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login + call /api/wheel
+        env:
+          SMOKE_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
+          CAFE_ID: ${{ inputs.cafeId }}
+        run: |
+          set -uo pipefail
+
+          BASE=https://cafeduotr.com
+
+          # Login: capture both the JWT cookie and the response body
+          echo "=== POST /api/auth/login ==="
+          LOGIN_RES=$(curl -sS -i -c /tmp/cookies.txt \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$SMOKE_EMAIL\",\"password\":\"$SMOKE_PASSWORD\"}" \
+            "$BASE/api/auth/login" || true)
+          echo "$LOGIN_RES" | head -20
+          echo ""
+
+          # Extract csrf token (set as cookie by login)
+          CSRF=$(grep csrf_token /tmp/cookies.txt | awk '{print $7}' | tail -1)
+          echo "csrf_token=$CSRF"
+          echo ""
+
+          echo "=== GET /api/wheel/$CAFE_ID ==="
+          curl -sS -i -b /tmp/cookies.txt \
+            -H "X-CSRF-Token: $CSRF" \
+            "$BASE/api/wheel/$CAFE_ID" | head -40
+          echo ""
+          echo "=== End ==="
