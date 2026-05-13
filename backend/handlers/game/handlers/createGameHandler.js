@@ -72,30 +72,57 @@ const createCreateGameHandler = (deps) => {
         // games per Turkish calendar day in that cafe. Super-admins are
         // exempt (`adminActor`). Cafe admins acting in their own panel
         // skip the check too — they manage, they don't compete.
+        //
+        // Soft-fail wrapper: production has been hitting "column
+        // daily_game_limit does not exist" (42703) on this SELECT even
+        // though the schema dump confirms the column is there. Cause
+        // still unclear (cache? shadow table? old prepared statement?)
+        // — soft-failing keeps users from being blocked while we diag.
+        // Default behavior on failure: skip the daily-cap check entirely.
         if (!adminActor && actorCafeId) {
-          const limitRes = await client.query(`SELECT daily_game_limit FROM cafes WHERE id = $1`, [
-            actorCafeId,
-          ]);
-          const limit = Number(limitRes.rows[0]?.daily_game_limit ?? 10);
-          if (Number.isFinite(limit) && limit > 0) {
-            const countRes = await client.query(
-              `SELECT COUNT(*)::int AS count FROM games
-                 WHERE LOWER(host_name) = LOWER($1)
-                   AND cafe_id = $2
-                   AND status IN ('active', 'finished')
-                   AND (created_at AT TIME ZONE 'Europe/Istanbul')::date
-                     = (NOW() AT TIME ZONE 'Europe/Istanbul')::date`,
-              [hostName, actorCafeId]
+          let limit = 0;
+          try {
+            const limitRes = await client.query(
+              `SELECT daily_game_limit FROM cafes WHERE id = $1`,
+              [actorCafeId]
             );
-            const todaysGames = Number(countRes.rows[0]?.count ?? 0);
-            if (todaysGames >= limit) {
-              await client.query('ROLLBACK');
-              return res.status(429).json({
-                error: `Bu kafede günlük oyun sınırına (${limit}) ulaştın. Yarın tekrar dene.`,
-                code: 'DAILY_GAME_LIMIT_REACHED',
-                limit,
-                played: todaysGames,
+            limit = Number(limitRes.rows[0]?.daily_game_limit ?? 10);
+          } catch (limitErr) {
+            logger.warn('Daily game limit lookup failed (soft-fail)', {
+              cafeId: actorCafeId,
+              message: limitErr?.message,
+              code: limitErr?.code,
+            });
+            limit = 0; // disable cap if we can't read it
+          }
+          if (Number.isFinite(limit) && limit > 0) {
+            try {
+              const countRes = await client.query(
+                `SELECT COUNT(*)::int AS count FROM games
+                   WHERE LOWER(host_name) = LOWER($1)
+                     AND cafe_id = $2
+                     AND status IN ('active', 'finished')
+                     AND (created_at AT TIME ZONE 'Europe/Istanbul')::date
+                       = (NOW() AT TIME ZONE 'Europe/Istanbul')::date`,
+                [hostName, actorCafeId]
+              );
+              const todaysGames = Number(countRes.rows[0]?.count ?? 0);
+              if (todaysGames >= limit) {
+                await client.query('ROLLBACK');
+                return res.status(429).json({
+                  error: `Bu kafede günlük oyun sınırına (${limit}) ulaştın. Yarın tekrar dene.`,
+                  code: 'DAILY_GAME_LIMIT_REACHED',
+                  limit,
+                  played: todaysGames,
+                });
+              }
+            } catch (countErr) {
+              logger.warn('Daily game count lookup failed (soft-fail)', {
+                cafeId: actorCafeId,
+                message: countErr?.message,
+                code: countErr?.code,
               });
+              // continue without enforcing the cap
             }
           }
         }
