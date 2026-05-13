@@ -13,6 +13,29 @@ const generateCouponCode = () => {
   const hex = crypto.randomBytes(6).toString('hex').toUpperCase();
   return `CD-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}`;
 };
+
+/**
+ * Daily reward wheel — global, identical for every cafe (cafe admins can
+ * no longer tune their own wheel; the user dropped that per-cafe knob
+ * after the editor surfaced a 500 we couldn't diagnose fast enough).
+ *
+ * Slices (weights are relative — backend normalizes against the running
+ * total so they don't need to sum to 100):
+ *   - 15 puan,  75 weight  (≈%71)
+ *   - 50 puan,  25 weight  (≈%24)
+ *   - 250 puan, 4 weight   (≈%4)
+ *   - Bedava Kahve gift, 1 weight (≈%1) — issues a coupon row, no points
+ */
+const DAILY_WHEEL_SLICES = Object.freeze([
+  { points: 15, weight: 75 },
+  { points: 50, weight: 20 },
+  { points: 250, weight: 4 },
+  {
+    points: 0,
+    weight: 1,
+    gift: { label: 'Bedava Kahve', itemTitle: 'Bedava Kahve (Çarktan)' },
+  },
+]);
 const BASELINE_REWARDS = [
   {
     id: 9001,
@@ -548,6 +571,19 @@ const createCommerceHandlers = ({
    * now: declare, then return.
    */
 
+  /**
+   * Wheel slices that the frontend renders. Weights are kept as-is so the
+   * client can compute % chips for display; the backend uses the same
+   * numbers when picking. `gift` is sent when a slice gives a coupon
+   * instead of points.
+   */
+  const exposedWheelSlices = () =>
+    DAILY_WHEEL_SLICES.map((slice) => ({
+      points: slice.points,
+      weight: slice.weight,
+      gift: slice.gift ? { label: slice.gift.label } : null,
+    }));
+
   const getDailyWheel = async (req, res) => {
     const userId = Number(req.user?.id);
     const cafeId = Number(req.params?.cafeId ?? req.user?.cafe_id ?? 0);
@@ -561,11 +597,12 @@ const createCommerceHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          const wheelRes = await pool.query(
-            `SELECT daily_reward_wheel, name FROM cafes WHERE id = $1`,
-            [cafeId]
-          );
-          if (wheelRes.rows.length === 0) {
+          // Cafe lookup just to surface the cafe name in the UI header.
+          // We no longer read daily_reward_wheel from cafes — the wheel is
+          // global now. If the column was missing or malformed before, that's
+          // what was causing the 500.
+          const cafeRes = await pool.query(`SELECT name FROM cafes WHERE id = $1`, [cafeId]);
+          if (cafeRes.rows.length === 0) {
             return sendApiProblem(res, {
               status: 404,
               code: 'CAFE_NOT_FOUND',
@@ -582,14 +619,12 @@ const createCommerceHandlers = ({
           );
           return res.json({
             cafeId,
-            cafeName: wheelRes.rows[0].name,
-            wheel: wheelRes.rows[0].daily_reward_wheel || [],
+            cafeName: cafeRes.rows[0].name,
+            wheel: exposedWheelSlices(),
             alreadySpunToday: spinRes.rows.length > 0,
             lastSpin: spinRes.rows[0] || null,
           });
         } catch (err) {
-          // Extra detail in the log so the user-facing 500 has context
-          // when we tail the API container later.
           logger.error('Get wheel SQL failure', {
             userId,
             cafeId,
@@ -600,7 +635,13 @@ const createCommerceHandlers = ({
           return sendApiError(res, logger, 'Get wheel error', err, 'Çark yüklenemedi.');
         }
       },
-      memory: async () => res.json({ cafeId, wheel: [], alreadySpunToday: false, lastSpin: null }),
+      memory: async () =>
+        res.json({
+          cafeId,
+          wheel: exposedWheelSlices(),
+          alreadySpunToday: false,
+          lastSpin: null,
+        }),
     });
   };
 
@@ -624,11 +665,10 @@ const createCommerceHandlers = ({
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const wheelRes = await client.query(
-        `SELECT daily_reward_wheel FROM cafes WHERE id = $1 FOR UPDATE`,
-        [cafeId]
-      );
-      if (wheelRes.rows.length === 0) {
+
+      // Confirm the cafe exists before we burn a daily-spin slot for it.
+      const cafeRes = await client.query(`SELECT id FROM cafes WHERE id = $1`, [cafeId]);
+      if (cafeRes.rows.length === 0) {
         await client.query('ROLLBACK');
         return sendApiProblem(res, {
           status: 404,
@@ -636,24 +676,11 @@ const createCommerceHandlers = ({
           message: 'Kafe bulunamadı.',
         });
       }
-      const wheel = Array.isArray(wheelRes.rows[0].daily_reward_wheel)
-        ? wheelRes.rows[0].daily_reward_wheel
-        : [];
-      const slices = wheel
-        .map((slice) => ({
-          points: Math.max(0, Math.floor(Number(slice?.points ?? 0))),
-          weight: Math.max(0, Number(slice?.weight ?? 0)),
-        }))
-        .filter((slice) => slice.weight > 0);
-      if (slices.length === 0) {
-        await client.query('ROLLBACK');
-        return sendApiProblem(res, {
-          status: 503,
-          code: 'WHEEL_NOT_CONFIGURED',
-          message: 'Bu kafenin çarkı henüz ayarlanmamış.',
-        });
-      }
-      // Weighted random pick (normalized in-place — weights need not sum to 1)
+
+      // Weighted random pick from the global DAILY_WHEEL_SLICES. Weights
+      // are relative — we sum the weights then map a random point to the
+      // first slice whose running total covers it.
+      const slices = DAILY_WHEEL_SLICES;
       const totalWeight = slices.reduce((sum, s) => sum + s.weight, 0);
       let r = Math.random() * totalWeight;
       let picked = slices[0];
@@ -666,22 +693,56 @@ const createCommerceHandlers = ({
           break;
         }
       }
+
       try {
+        // Always record the spin in user_daily_spins. points_won is 0 for
+        // gift slices — the actual prize for them is a coupon row.
         const spinRes = await client.query(
           `INSERT INTO user_daily_spins (user_id, cafe_id, points_won)
              VALUES ($1, $2, $3)
              RETURNING id, points_won, spun_at`,
-          [userId, cafeId, picked.points]
+          [userId, cafeId, picked.points || 0]
         );
-        await client.query(`UPDATE users SET points = points + $1 WHERE id = $2`, [
-          picked.points,
-          userId,
-        ]);
+
+        let coupon = null;
+        if (picked.gift) {
+          // Gift slices issue a coupon (e.g. "Bedava Kahve") instead of
+          // adding to the user's point balance. Coupon code is the same
+          // CD-XXXX-XXXX-XXXX format every other reward uses, so the
+          // cafe-admin scanner picks it up via the existing flow. We retry
+          // up to 3 times on a unique_violation in case the freak collision
+          // hits.
+          let attempt = 0;
+          while (attempt < 3 && !coupon) {
+            attempt += 1;
+            try {
+              const couponRes = await client.query(
+                `INSERT INTO user_items (user_id, item_id, item_title, code, cafe_id)
+                   VALUES ($1, $2, $3, $4, $5)
+                   RETURNING id, code, item_title, cafe_id, redeemed_at`,
+                [userId, 0, picked.gift.itemTitle, generateCouponCode(), cafeId]
+              );
+              coupon = couponRes.rows[0];
+            } catch (insertErr) {
+              if (insertErr && insertErr.code === '23505' && attempt < 3) {
+                continue;
+              }
+              throw insertErr;
+            }
+          }
+        } else if (picked.points > 0) {
+          await client.query(`UPDATE users SET points = points + $1 WHERE id = $2`, [
+            picked.points,
+            userId,
+          ]);
+        }
+
         await client.query('COMMIT');
         return res.json({
           success: true,
-          pointsWon: picked.points,
+          pointsWon: picked.points || 0,
           pickedIndex,
+          gift: picked.gift ? { label: picked.gift.label, coupon } : null,
           spin: spinRes.rows[0],
         });
       } catch (err) {
@@ -707,67 +768,18 @@ const createCommerceHandlers = ({
     }
   };
 
-  /** Cafe admin endpoint — overwrite this cafe's wheel slices. */
-  const setCafeWheel = async (req, res) => {
-    const adminCafeId = Number(req.user?.cafe_id ?? 0);
-    const isSuper = String(req.user?.role || '') === 'admin';
-    const targetCafeId = Number(req.params?.cafeId ?? adminCafeId);
-    if (!isSuper && (!adminCafeId || adminCafeId !== targetCafeId)) {
-      return sendApiProblem(res, {
-        status: 403,
-        code: 'FORBIDDEN',
-        message: 'Sadece kendi kafenin çarkını düzenleyebilirsin.',
-      });
-    }
-    const slices = Array.isArray(req.body?.wheel) ? req.body.wheel : null;
-    if (!slices || slices.length === 0 || slices.length > 12) {
-      return sendApiProblem(res, {
-        status: 400,
-        code: 'VALIDATION_ERROR',
-        message: 'wheel 1 ile 12 dilim arası olmalıdır.',
-      });
-    }
-    const sanitized = slices.map((slice) => ({
-      points: Math.max(0, Math.floor(Number(slice?.points ?? 0))),
-      weight: Math.max(0, Math.floor(Number(slice?.weight ?? 1))),
-    }));
-    if (sanitized.every((s) => s.weight === 0)) {
-      return sendApiProblem(res, {
-        status: 400,
-        code: 'VALIDATION_ERROR',
-        message: 'En az bir dilim için weight > 0 olmalıdır.',
-      });
-    }
-    if (!(await isDbConnected())) {
-      return sendApiProblem(res, {
-        status: 501,
-        code: 'NOT_IMPLEMENTED',
-        message: 'Demo modda çark düzenlenemez.',
-      });
-    }
-    try {
-      const result = await pool.query(
-        `UPDATE cafes SET daily_reward_wheel = $1::jsonb
-           WHERE id = $2
-           RETURNING id, daily_reward_wheel`,
-        [JSON.stringify(sanitized), targetCafeId]
-      );
-      if (result.rows.length === 0) {
-        return sendApiProblem(res, {
-          status: 404,
-          code: 'CAFE_NOT_FOUND',
-          message: 'Kafe bulunamadı.',
-        });
-      }
-      return res.json({
-        success: true,
-        cafeId: targetCafeId,
-        wheel: result.rows[0].daily_reward_wheel,
-      });
-    } catch (err) {
-      return sendApiError(res, logger, 'Set wheel error', err, 'Çark güncellenemedi.');
-    }
-  };
+  /**
+   * Cafe admin endpoint — used to overwrite the cafe's wheel slices.
+   * Wheel is global now (DAILY_WHEEL_SLICES constant), so this endpoint
+   * returns 410 Gone for any old admin client still trying to PUT to it.
+   * The route + handler will be removed in a later cleanup pass.
+   */
+  const setCafeWheel = async (_req, res) =>
+    sendApiProblem(res, {
+      status: 410,
+      code: 'WHEEL_NOT_EDITABLE',
+      message: 'Çark artık tüm kafelerde sabit; düzenlenemez.',
+    });
 
   return {
     createReward,

@@ -539,6 +539,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       });
                       void refetch();
                     }}
+                    onGiftWon={() => {
+                      // Gift slice (e.g. Bedava Kahve) — backend minted a
+                      // coupon row; refetch so the new ticket shows up in
+                      // the inventory tab immediately.
+                      void refetch();
+                    }}
                   />
 
                   <RewardSection

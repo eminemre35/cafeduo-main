@@ -250,7 +250,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         secondary_longitude: hasSecondaryInput ? secondaryLongitude : null,
         secondary_radius: hasSecondaryInput ? secondaryRadius : null,
         dailyGameLimit: editCafeData.dailyGameLimit,
-        dailyRewardWheel: editCafeData.dailyRewardWheel,
+        // dailyRewardWheel removed in PR #37 — wheel is now global, see
+        // backend DAILY_WHEEL_SLICES constant.
       });
       alert('Kafe bilgileri güncellendi!');
       loadData();
@@ -930,7 +931,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         </div>
                       </Card>
 
-                      {/* PR #36 — per-cafe rules */}
+                      {/* PR #36 — per-cafe rules (wheel editor removed in PR #37 —
+                          wheel is now global/sabit, see commerceHandlers.js
+                          DAILY_WHEEL_SLICES). Daily game limit stays
+                          configurable per cafe. */}
                       <Card variant="muted" className="p-5">
                         <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-blue mb-3">
                           Bu Kafenin Kuralları
@@ -949,103 +953,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           }
                           helper="Her kullanıcı bu kafede günde bu kadar oyun kurabilir. Süper-adminler hariç."
                         />
-
-                        <div className="mt-5">
-                          <p className="text-sm font-bold text-carbon font-riso-body uppercase tracking-[0.06em] mb-2">
-                            Günlük Çark Dilimleri
-                          </p>
-                          <p className="text-xs text-carbon-muted mb-3 font-riso-body">
-                            Her dilim için puan miktarı + ağırlık (yüksek ağırlık = daha sık çıkar).
-                            En az 1 dilim, en fazla 12 dilim. Ağırlıklar otomatik normalize edilir.
-                          </p>
-                          <div className="space-y-2">
-                            {(editCafeData.dailyRewardWheel || []).map((slice, idx) => {
-                              const totalW = (editCafeData.dailyRewardWheel || []).reduce(
-                                (acc, s) => acc + Math.max(0, Number(s.weight) || 0),
-                                0
-                              );
-                              const pct =
-                                totalW > 0
-                                  ? Math.round(
-                                      (Math.max(0, Number(slice.weight) || 0) / totalW) * 100
-                                    )
-                                  : 0;
-                              return (
-                                <div
-                                  key={idx}
-                                  className="grid grid-cols-[1fr_1fr_60px_auto] gap-2 items-center"
-                                >
-                                  <Input
-                                    label={idx === 0 ? 'Puan' : undefined}
-                                    type="number"
-                                    min={0}
-                                    max={5000}
-                                    value={slice.points}
-                                    onChange={(e) => {
-                                      const next = [...(editCafeData.dailyRewardWheel || [])];
-                                      next[idx] = {
-                                        ...next[idx],
-                                        points: Math.max(0, Number(e.target.value) || 0),
-                                      };
-                                      setEditCafeData({ ...editCafeData, dailyRewardWheel: next });
-                                    }}
-                                    className="cc-mono"
-                                  />
-                                  <Input
-                                    label={idx === 0 ? 'Ağırlık' : undefined}
-                                    type="number"
-                                    min={0}
-                                    max={1000}
-                                    value={slice.weight}
-                                    onChange={(e) => {
-                                      const next = [...(editCafeData.dailyRewardWheel || [])];
-                                      next[idx] = {
-                                        ...next[idx],
-                                        weight: Math.max(0, Number(e.target.value) || 0),
-                                      };
-                                      setEditCafeData({ ...editCafeData, dailyRewardWheel: next });
-                                    }}
-                                    className="cc-mono"
-                                  />
-                                  <div
-                                    className={`text-center font-riso-mono text-xs font-bold ${idx === 0 ? 'pt-6' : ''}`}
-                                  >
-                                    %{pct}
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const next = (editCafeData.dailyRewardWheel || []).filter(
-                                        (_, i) => i !== idx
-                                      );
-                                      setEditCafeData({ ...editCafeData, dailyRewardWheel: next });
-                                    }}
-                                    disabled={(editCafeData.dailyRewardWheel || []).length <= 1}
-                                    className={`riso-focus border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper w-9 h-9 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${idx === 0 ? 'mt-6' : ''}`}
-                                    aria-label={`Dilim ${idx + 1} sil`}
-                                    title="Dilimi sil"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = [
-                                ...(editCafeData.dailyRewardWheel || []),
-                                { points: 10, weight: 10 },
-                              ];
-                              setEditCafeData({ ...editCafeData, dailyRewardWheel: next });
-                            }}
-                            disabled={(editCafeData.dailyRewardWheel || []).length >= 12}
-                            className="riso-focus mt-3 border-2 border-carbon bg-riso-blue text-paper px-3 py-1.5 text-xs font-riso-display uppercase tracking-wider hover:-translate-y-[1px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            + Dilim Ekle
-                          </button>
-                        </div>
                       </Card>
 
                       <div className="flex justify-end pt-2">

@@ -24,6 +24,10 @@ import { api } from '../../lib/api';
 interface WheelSlice {
   points: number;
   weight: number;
+  /** When set, this slice gives a coupon (e.g. "Bedava Kahve") instead of
+   *  points. Backend mints a user_items row with the gift's item_title +
+   *  a fresh CD-XXXX-XXXX-XXXX code. */
+  gift?: { label: string } | null;
 }
 
 interface WheelStatus {
@@ -38,6 +42,9 @@ interface DailyRewardWheelProps {
   /** Cafe id accepts string | number for compatibility with User.cafe_id */
   cafeId: string | number | null | undefined;
   onPointsWon?: (points: number) => void;
+  /** Fires when the spin resolves to a gift coupon (e.g. Bedava Kahve).
+   *  Dashboard refetches inventory so the new ticket appears immediately. */
+  onGiftWon?: (gift: { label: string }) => void;
 }
 
 const SLICE_COLORS = [
@@ -49,11 +56,20 @@ const SLICE_COLORS = [
   'bg-paper-deep text-carbon',
 ];
 
-export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPointsWon }) => {
+export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
+  cafeId,
+  onPointsWon,
+  onGiftWon,
+}) => {
   const [status, setStatus] = useState<WheelStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
+  /** When the spin resolves to a points slice, holds the points count
+   *  for the overlay. */
   const [justWon, setJustWon] = useState<number | null>(null);
+  /** When the spin resolves to a gift slice, holds the gift label so the
+   *  overlay shows "🎁 BEDAVA KAHVE!" instead of a points badge. */
+  const [justGift, setJustGift] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const justWonTimer = useRef<number | null>(null);
 
@@ -104,8 +120,15 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPo
         api.wheel.spin(cafeId),
         new Promise((resolve) => window.setTimeout(resolve, 2200)),
       ]);
-      setJustWon(resp.pointsWon);
-      onPointsWon?.(resp.pointsWon);
+      if (resp.gift) {
+        // Gift slice — Bedava Kahve etc. Show the gift overlay and tell
+        // the parent so it refetches inventory.
+        setJustGift(resp.gift.label);
+        onGiftWon?.(resp.gift);
+      } else {
+        setJustWon(resp.pointsWon);
+        onPointsWon?.(resp.pointsWon);
+      }
       setStatus((prev) =>
         prev
           ? {
@@ -115,7 +138,10 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPo
             }
           : prev
       );
-      justWonTimer.current = window.setTimeout(() => setJustWon(null), 4500);
+      justWonTimer.current = window.setTimeout(() => {
+        setJustWon(null);
+        setJustGift(null);
+      }, 4500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Çark çevrilemedi.';
       setError(message);
@@ -208,7 +234,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPo
                       }}
                     >
                       <div
-                        className="absolute font-riso-display font-bold text-xs sm:text-sm"
+                        className="absolute font-riso-display font-bold text-xs sm:text-sm whitespace-nowrap"
                         style={{
                           top: '50%',
                           left: '50%',
@@ -216,7 +242,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPo
                           transformOrigin: '0 0',
                         }}
                       >
-                        +{slice.points}
+                        {slice.gift ? '🎁' : `+${slice.points}`}
                       </div>
                     </div>
                   );
@@ -239,20 +265,36 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPo
             />
 
             <AnimatePresence>
-              {justWon !== null && (
+              {(justWon !== null || justGift !== null) && (
                 <motion.div
                   initial={{ scale: 0.3, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ opacity: 0, scale: 0.7 }}
                   className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 >
-                  <div className="border-4 border-carbon bg-riso-spring text-carbon px-4 py-2 font-riso-display text-2xl font-bold riso-shadow-md rotate-[-4deg]">
-                    +{justWon} PUAN
-                  </div>
+                  {justGift !== null ? (
+                    <div className="border-4 border-carbon bg-riso-mustard text-carbon px-4 py-2 font-riso-display text-lg sm:text-xl font-bold riso-shadow-md rotate-[-4deg] text-center">
+                      🎁 {justGift.toUpperCase()}!
+                    </div>
+                  ) : (
+                    <div className="border-4 border-carbon bg-riso-spring text-carbon px-4 py-2 font-riso-display text-2xl font-bold riso-shadow-md rotate-[-4deg]">
+                      +{justWon} PUAN
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
+
+          {/* Gift confirmation banner — shows the inventory-redirect hint
+              when the user just won a coupon, since the points balance
+              didn't change. */}
+          {justGift && (
+            <div className="mb-3 border-2 border-carbon border-l-[6px] border-l-riso-mustard bg-riso-mustard/20 p-3 text-xs text-carbon font-riso-body">
+              <strong>🎉 Tebrikler!</strong> {justGift} kuponun envanterine eklendi. Kasada QR kodu
+              okutarak teslim alabilirsin.
+            </div>
+          )}
 
           {/* CTA */}
           <button
@@ -266,7 +308,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({ cafeId, onPo
             {spinning
               ? 'Çevriliyor...'
               : status.alreadySpunToday
-                ? status.lastSpin
+                ? status.lastSpin && status.lastSpin.points_won > 0
                   ? `Bugün +${status.lastSpin.points_won} aldın`
                   : 'Bugün çevirdin'
                 : 'ÇEVİR'}

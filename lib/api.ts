@@ -660,6 +660,10 @@ export const api = {
       success: true;
       pointsWon: number;
       pickedIndex: number;
+      gift: {
+        label: string;
+        coupon: { id: number; code: string; item_title: string } | null;
+      } | null;
       spin: { id: number; points_won: number; spun_at: string };
     }> => {
       return await fetchAPI(`/wheel/${cafeId}/spin`, { method: 'POST' });
