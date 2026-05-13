@@ -502,19 +502,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </>
                 )}
 
-                {mode === 'login' && !isForgotPasswordMode && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsForgotPasswordMode(true);
-                      setError('');
-                      setForgotMessage('');
-                    }}
-                    className="text-sm font-riso-body text-carbon hover:text-riso-pink-deep underline decoration-2 decoration-carbon hover:decoration-riso-pink-deep underline-offset-4 transition-colors block text-right w-full"
-                  >
-                    Şifremi unuttum
-                  </button>
-                )}
+                {/* "Şifremi unuttum" linki geçici olarak kaldırıldı —
+                    Resend entegrasyonu production'da mail gönderemediği
+                    için kullanıcıya çalışır görünür ama mail asla gelmiyor.
+                    Backend forgotPassword endpoint'i + state hâlâ kodda
+                    duruyor; mail teslimatı düzeltildiğinde bu butonu geri
+                    aç. */}
 
                 <RetroButton
                   type="submit"

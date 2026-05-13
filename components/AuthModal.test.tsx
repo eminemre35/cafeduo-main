@@ -254,31 +254,8 @@ describe('AuthModal', () => {
     });
   });
 
-  it('submits forgot-password flow with email', async () => {
-    const { api } = await import('../lib/api');
-    (api.auth.forgotPassword as jest.Mock).mockResolvedValue({
-      success: true,
-      message: 'Sıfırlama bağlantısı gönderildi.',
-    });
-
-    const { container } = render(
-      <AuthModal
-        isOpen={true}
-        onClose={mockOnClose}
-        initialMode="login"
-        onLoginSuccess={mockOnLoginSuccess}
-      />
-    );
-
-    fireEvent.click(screen.getByText('Şifremi unuttum'));
-    fireEvent.change(screen.getByTestId('auth-email-input'), {
-      target: { value: 'emin3619@gmail.com' },
-    });
-    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
-
-    await waitFor(() => {
-      expect(api.auth.forgotPassword).toHaveBeenCalledWith('emin3619@gmail.com');
-      expect(screen.getByText('Sıfırlama bağlantısı gönderildi.')).toBeInTheDocument();
-    });
-  });
+  // Forgot-password flow temporarily disabled — UI link removed (Resend
+  // delivery was unreliable in prod). When the email path is fixed we'll
+  // restore both the button and this test. Backend endpoint + AuthModal
+  // handler logic remain in place; only the trigger is hidden.
 });
