@@ -76,13 +76,14 @@ const isRetryableSmtpError = (error) => {
   return ['ETIMEDOUT', 'ECONNECTION', 'ECONNRESET', 'ESOCKET', 'EAI_AGAIN'].includes(code);
 };
 
-const sendWithTimeout = async ({ transporter, from, to, subject, text, timeoutMs }) =>
+const sendWithTimeout = async ({ transporter, from, to, subject, text, html, timeoutMs }) =>
   Promise.race([
     transporter.sendMail({
       from,
       to,
       subject,
       text,
+      ...(html ? { html } : {}),
     }),
     new Promise((_, reject) => {
       setTimeout(() => reject(new Error(`SMTP send timeout after ${timeoutMs}ms`)), timeoutMs);
@@ -98,7 +99,7 @@ const sendWithTimeout = async ({ transporter, from, to, subject, text, timeoutMs
  * Resend free tier: 100 emails/day, 3000/month — plenty for password
  * reset traffic.
  */
-const sendViaResend = async ({ from, to, subject, text }) => {
+const sendViaResend = async ({ from, to, subject, text, html }) => {
   const apiKey = String(process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) return null;
   const response = await fetch('https://api.resend.com/emails', {
@@ -107,7 +108,7 @@ const sendViaResend = async ({ from, to, subject, text }) => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ from, to, subject, text }),
+    body: JSON.stringify({ from, to, subject, text, html }),
   });
   if (!response.ok) {
     const body = await response.text().catch(() => '');
@@ -115,6 +116,171 @@ const sendViaResend = async ({ from, to, subject, text }) => {
   }
   const data = await response.json().catch(() => ({}));
   return data?.id || 'resend-ok';
+};
+
+/**
+ * Build a CafeDuo-branded HTML password-reset email.
+ *
+ * Email-client constraints kept in mind:
+ *   - Table-based layout (no flexbox/grid — Outlook on Windows still
+ *     doesn't render those)
+ *   - Inline `style` attributes only — no external <style> blocks
+ *   - System-safe font stack (no @font-face web fonts; mail clients
+ *     either ignore or fall back ugly)
+ *   - Single big CTA button, plus a plain `<a>` fallback in case the
+ *     button gets stripped by aggressive sanitizers
+ *
+ * Visual: cream paper background, ink type, riso-pink accent stripe at
+ * the top, ink-bordered CTA button with offset shadow — matches the
+ * Riso Kantin in-app theme so the email feels like the same brand.
+ */
+const buildPasswordResetHtml = ({ displayName, resetUrl, ttl }) => {
+  const safeName = String(displayName || 'Oyuncu')
+    .replace(/[<>"']/g, '')
+    .slice(0, 60);
+  const safeUrl = String(resetUrl || '').replace(/"/g, '&quot;');
+  const safeTtl = Math.max(5, Number(ttl) || 30);
+  return `<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light only" />
+    <title>CafeDuo - Şifre Sıfırlama</title>
+  </head>
+  <body style="margin:0;padding:0;background:#ece3cc;font-family:'Familjen Grotesk',Helvetica,Arial,sans-serif;color:#141413;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ece3cc;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;width:100%;background:#fbf7ee;border:2px solid #141413;box-shadow:4px 4px 0 #1e3fb5,8px 8px 0 #ff3e94;">
+            <!-- Top stripe -->
+            <tr>
+              <td style="height:8px;background:#ff3e94;border-bottom:2px solid #141413;line-height:8px;font-size:0;">&nbsp;</td>
+            </tr>
+
+            <!-- Header -->
+            <tr>
+              <td style="padding:28px 32px 8px 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="background:#ff3e94;border:2px solid #141413;width:36px;height:36px;text-align:center;vertical-align:middle;font-weight:700;font-size:18px;line-height:1;color:#141413;">☕</td>
+                    <td style="padding-left:12px;font-family:'Familjen Grotesk',Helvetica,Arial,sans-serif;font-weight:700;font-size:22px;letter-spacing:0.04em;color:#141413;">
+                      Cafe<span style="color:#d8246f;">Duo</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Eyebrow + headline -->
+            <tr>
+              <td style="padding:8px 32px 0 32px;">
+                <p style="margin:0 0 6px 0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;font-weight:700;color:#6a6a66;">
+                  Şifre Sıfırlama
+                </p>
+                <h1 style="margin:0;font-family:'Familjen Grotesk',Helvetica,Arial,sans-serif;font-size:26px;line-height:1.2;letter-spacing:0.02em;text-transform:uppercase;color:#141413;">
+                  Yeni şifreni belirle
+                </h1>
+              </td>
+            </tr>
+
+            <!-- Greeting + intro -->
+            <tr>
+              <td style="padding:20px 32px 0 32px;">
+                <p style="margin:0 0 14px 0;font-size:15px;line-height:1.55;color:#141413;">
+                  Merhaba <strong>${safeName}</strong>,
+                </p>
+                <p style="margin:0 0 14px 0;font-size:15px;line-height:1.55;color:#141413;">
+                  CafeDuo hesabın için şifre sıfırlama talebi aldık. Aşağıdaki butona tıklayarak
+                  <strong style="color:#d8246f;">${safeTtl} dakika</strong> içinde yeni şifreni belirleyebilirsin.
+                </p>
+              </td>
+            </tr>
+
+            <!-- CTA button -->
+            <tr>
+              <td align="center" style="padding:18px 32px 8px 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="background:#ff3e94;border:2px solid #141413;box-shadow:4px 4px 0 #141413;">
+                      <a href="${safeUrl}"
+                         style="display:inline-block;padding:14px 32px;font-family:'Familjen Grotesk',Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:0.14em;text-transform:uppercase;color:#141413;text-decoration:none;">
+                        Şifremi Sıfırla &nbsp;→
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Plain link fallback -->
+            <tr>
+              <td style="padding:18px 32px 0 32px;">
+                <p style="margin:0 0 6px 0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;color:#6a6a66;">
+                  Buton çalışmıyorsa
+                </p>
+                <p style="margin:0;font-size:13px;line-height:1.5;color:#2a2a28;word-break:break-all;">
+                  Tarayıcına şu bağlantıyı kopyala: <br/>
+                  <a href="${safeUrl}" style="color:#1e3fb5;text-decoration:underline;">${safeUrl}</a>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Security note -->
+            <tr>
+              <td style="padding:24px 32px 0 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f1b41e;border:2px solid #141413;">
+                  <tr>
+                    <td style="padding:14px 18px;font-size:13px;line-height:1.5;color:#141413;">
+                      <strong>Bu talebi sen yapmadıysan</strong> bu e-postayı yok sayabilirsin —
+                      şifren değişmeyecek. Bağlantı ${safeTtl} dakika sonra otomatik geçersiz olur.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Divider -->
+            <tr>
+              <td style="padding:28px 32px 0 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="border-top:2px dashed #6a6a66;height:1px;line-height:1px;font-size:0;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:18px 32px 32px 32px;text-align:center;">
+                <p style="margin:0 0 4px 0;font-family:'Familjen Grotesk',Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.04em;color:#141413;">
+                  CafeDuo
+                </p>
+                <p style="margin:0 0 12px 0;font-size:12px;line-height:1.5;color:#6a6a66;">
+                  Üniversite kafelerinde 2 kişilik oyunlar, puanlar, kafe ödülleri.
+                </p>
+                <p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#6a6a66;">
+                  cafeduotr.com · destek@cafeduotr.com
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Below-card disclaimer -->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;width:100%;margin-top:14px;">
+            <tr>
+              <td style="padding:0 16px;text-align:center;font-size:11px;line-height:1.5;color:#6a6a66;">
+                Bu e-posta CafeDuo hesap güvenliği için otomatik olarak gönderildi.
+                Yanıtlama gerekmez.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 };
 
 const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes }) => {
@@ -129,26 +295,38 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
     String(process.env.SMTP_USER || '').trim() ||
     'CafeDuo <noreply@cafeduotr.com>';
   const ttl = Math.max(5, Number(expiresInMinutes) || 30);
-  const subject = 'CafeDuo - Şifre Sıfırlama';
+  const subject = 'CafeDuo · Şifreni sıfırla';
   const displayName = String(username || 'Oyuncu').trim() || 'Oyuncu';
+  // Plain-text fallback — used by mail clients that strip HTML and as the
+  // text/plain MIME part. Keep it humanly readable, not just a URL dump.
   const text = [
     `Merhaba ${displayName},`,
     '',
-    'Şifre sıfırlama talebiniz alındı.',
-    `Bağlantı (${ttl} dakika geçerli):`,
+    'CafeDuo hesabın için bir şifre sıfırlama talebi aldık.',
+    `Aşağıdaki bağlantıya tıklayarak ${ttl} dakika içinde yeni şifreni belirleyebilirsin:`,
+    '',
     resetUrl,
     '',
-    'Eğer bu talebi siz yapmadıysanız bu e-postayı yok sayabilirsiniz.',
+    'Bu talebi sen yapmadıysan bu e-postayı yok sayman yeterli — şifren değişmeyecek.',
+    `Bağlantı ${ttl} dakika sonra otomatik geçersiz olur.`,
     '',
-    'CafeDuo Güvenlik',
+    '— CafeDuo Güvenlik',
+    'cafeduotr.com',
   ].join('\n');
+  const html = buildPasswordResetHtml({ displayName, resetUrl, ttl });
 
   // Try Resend first if RESEND_API_KEY is set — single-env-var setup,
   // no SMTP servers to manage. Falls through to nodemailer SMTP on error
   // or when the key isn't configured.
   if (String(process.env.RESEND_API_KEY || '').trim()) {
     try {
-      const messageId = await sendViaResend({ from: fromAddress, to: safeTo, subject, text });
+      const messageId = await sendViaResend({
+        from: fromAddress,
+        to: safeTo,
+        subject,
+        text,
+        html,
+      });
       logger.info('Password reset e-mail sent', {
         to: safeTo,
         mode: 'resend',
@@ -188,6 +366,7 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
         to: safeTo,
         subject,
         text,
+        html,
         timeoutMs: sendTimeoutMs,
       });
 
