@@ -36,46 +36,56 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           SMOKE_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
           SMOKE_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
           CAFE_ID: ${{ inputs.cafeId }}
         run: |
           set -euo pipefail
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "SMOKE_EMAIL='${SMOKE_EMAIL}' SMOKE_PASSWORD='${SMOKE_PASSWORD}' CAFE_ID='${CAFE_ID}' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='${DEPLOY_PATH}' SMOKE_EMAIL='${SMOKE_EMAIL}' SMOKE_PASSWORD='${SMOKE_PASSWORD}' CAFE_ID='${CAFE_ID}' bash -s" <<'REMOTE'
             set +e
-            # Pick base URL: prefer 127.0.0.1 (works whether nginx is the
-            # public-port reverse proxy or the api container is mapped to
-            # 3001). Fall back to the public domain on failure.
-            BASE="http://127.0.0.1"
+            cd "$DEPLOY_PATH"
+
+            # docker compose vs docker-compose detection (same as deploy)
+            if docker compose version >/dev/null 2>&1; then
+              compose() { docker compose "$@"; }
+            else
+              compose() { docker-compose "$@"; }
+            fi
+
+            # We curl from INSIDE the api container — that bypasses the host
+            # nginx / Cloudflare / whatever else might sit in front. The api
+            # process listens on :3001 directly so the call is unambiguous.
+            CTR_EXEC="compose -f deploy/docker-compose.prod.yml --env-file .env exec -T api"
+            BASE="http://127.0.0.1:3001"
             COOKIES=/tmp/diag-wheel-cookies.txt
-            rm -f "$COOKIES"
+
+            # Install curl in the container if missing (Alpine-based images
+            # often don't ship it). Quiet failure is fine; the next curl
+            # call will surface the real error.
+            $CTR_EXEC sh -lc 'command -v curl >/dev/null || (apk add --no-cache curl 2>/dev/null || apt-get update -qq && apt-get install -y -qq curl) >/dev/null 2>&1; rm -f /tmp/diag-wheel-cookies.txt' || true
 
             echo "=== Probe ${BASE}/api/health ==="
-            curl -sS -i --max-time 6 "$BASE/api/health" | head -20
+            $CTR_EXEC sh -lc "curl -sS -i --max-time 6 '${BASE}/api/health'" | head -20
             echo ""
 
             echo "=== POST ${BASE}/api/auth/login ==="
-            LOGIN_RES=$(curl -sS -i -c "$COOKIES" --max-time 10 \
-              -H "Content-Type: application/json" \
-              -d "{\"email\":\"$SMOKE_EMAIL\",\"password\":\"$SMOKE_PASSWORD\"}" \
-              "$BASE/api/auth/login")
-            echo "$LOGIN_RES" | head -30
+            $CTR_EXEC sh -lc "curl -sS -i -c ${COOKIES} --max-time 10 \
+              -H 'Content-Type: application/json' \
+              -d '{\"email\":\"${SMOKE_EMAIL}\",\"password\":\"${SMOKE_PASSWORD}\"}' \
+              '${BASE}/api/auth/login'" | head -40
             echo ""
 
-            # CSRF + JWT are both in cookies after a successful login. Read
-            # cookies.txt: each line is "host TRUE / FALSE expiry name value".
-            CSRF=""
-            if [ -f "$COOKIES" ]; then
-              CSRF=$(awk '$6 == "csrf_token" {print $7}' "$COOKIES" | tail -1)
-            fi
-            echo "csrf_token=${CSRF:-<missing>}"
+            echo "=== Cookie jar ==="
+            $CTR_EXEC sh -lc "cat ${COOKIES} 2>/dev/null || echo '<no cookies>'"
             echo ""
 
-            echo "=== GET ${BASE}/api/wheel/$CAFE_ID ==="
-            curl -sS -i -b "$COOKIES" --max-time 10 \
-              -H "X-CSRF-Token: ${CSRF:-x}" \
-              "$BASE/api/wheel/$CAFE_ID" | head -60
+            echo "=== GET ${BASE}/api/wheel/${CAFE_ID} ==="
+            $CTR_EXEC sh -lc "CSRF=\$(awk '\$6 == \"csrf_token\" {print \$7}' ${COOKIES} 2>/dev/null | tail -1); \
+              curl -sS -i -b ${COOKIES} --max-time 10 \
+                -H \"X-CSRF-Token: \${CSRF:-x}\" \
+                '${BASE}/api/wheel/${CAFE_ID}'" | head -80
             echo ""
             echo "=== End ==="
           REMOTE
