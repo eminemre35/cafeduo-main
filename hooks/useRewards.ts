@@ -61,7 +61,10 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
   const fetchRewards = useCallback(async () => {
     try {
       setRewardsLoading(true);
-      const data = await api.rewards.list();
+      // Rewards are STRICTLY cafe-scoped server-side (commerceHandlers.getRewards).
+      // Without cafeId the API returns [] — that's why the shop was always empty
+      // before this fix. Pass the checked-in user's cafe_id so the catalog renders.
+      const data = await api.rewards.list(currentUser?.cafe_id ?? undefined);
       setRewards(Array.isArray(data) ? data : []);
       setRewardsError(null);
     } catch (err: unknown) {
@@ -71,7 +74,7 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
     } finally {
       setRewardsLoading(false);
     }
-  }, []);
+  }, [currentUser?.cafe_id]);
 
   /**
    * Kullanıcı envanterini çek
