@@ -180,6 +180,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
               {showVerificationField && (
                 <Input
+                  id="checkin-verification-code"
+                  data-testid="checkin-verification-input"
                   label="Masa Doğrulama Kodu"
                   type="text"
                   icon={<KeyRound size={16} />}
