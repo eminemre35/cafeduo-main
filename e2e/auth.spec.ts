@@ -192,6 +192,12 @@ test.describe('Authentication Flow', () => {
     if (surface === 'checkin') {
       await tableInput.fill('7');
       await expect(tableInput).toHaveValue('7');
+      // Reveal optional verification code field (hidden behind a toggle by default).
+      const showVerifBtn = page.locator('[data-testid="checkin-show-verification"]').first();
+      if (await showVerifBtn.isVisible().catch(() => false)) {
+        await showVerifBtn.click();
+      }
+      await expect(verificationInput).toBeVisible({ timeout: 3000 });
       await verificationInput.fill('1234-MASA07');
       await expect(verificationInput).toHaveValue('1234-MASA07');
       await expect(checkInSubmit).toBeEnabled({ timeout: 3000 });
