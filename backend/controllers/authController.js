@@ -606,8 +606,8 @@ const authController = {
     }
 
     try {
-      // Decode token to get expiry time (without verification, we just need the exp)
-      const decoded = jwt.decode(token);
+      // Verify token (signature already validated by authenticateToken middleware, but defensive verify per Aikido AIK_js_jwt_unsafe_decode)
+      const decoded = jwt.verify(token, JWT_SECRET);
 
       if (decoded && decoded.exp) {
         const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
