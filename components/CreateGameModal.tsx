@@ -267,7 +267,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
         </div>
 
         {/* Scrollable body — flex-1 + overflow-y-auto so mouse wheel reaches here */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-5 space-y-4 sm:space-y-5">
           {/* Points info — show the user's true wallet balance, not the
               per-match stake cap. Form validation uses the capped value
               (`maxPoints`) but the display shows what they actually have. */}
@@ -275,7 +275,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             <span className="font-riso-body text-sm font-semibold text-carbon">
               Mevcut Puanınız:
             </span>
-            <span className="font-riso-display text-xl text-carbon flex items-center gap-1.5">
+            <span className="font-riso-display text-lg sm:text-xl text-carbon flex items-center gap-1.5">
               <Trophy size={16} strokeWidth={2.5} />
               {maxPointsProp}
             </span>
@@ -287,7 +287,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               <label className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2">
                 OYUN TÜRÜ SEÇ
               </label>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {GAME_TYPES.map((game) => {
                   const active = gameType === game.name;
                   return (
@@ -296,7 +296,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                       type="button"
                       onClick={() => handleGameTypeChange(game.name)}
                       data-testid={`game-type-${game.id}`}
-                      className={`riso-focus relative w-full p-3 text-left border-2 transition-all ${
+                      className={`riso-focus relative w-full p-2 sm:p-3 text-left border-2 transition-all ${
                         active
                           ? `border-carbon ${TONE_ACTIVE_BG[game.tone]} ${TONE_ACTIVE_TEXT[game.tone]} riso-shadow-sm`
                           : 'border-carbon bg-paper text-carbon hover:bg-paper-deep'
@@ -305,23 +305,23 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                       <div className="flex h-full flex-col">
                         <div className="mb-2 flex items-start justify-between">
                           <span
-                            className={`inline-flex border-2 border-carbon px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.12em] ${TONE_BG[game.tone]}`}
+                            className={`inline-flex border-2 border-carbon px-1.5 py-0.5 font-riso-mono text-[0.55rem] sm:text-[0.65rem] font-bold uppercase tracking-[0.1em] sm:tracking-[0.12em] ${TONE_BG[game.tone]}`}
                           >
                             {game.category}
                           </span>
                           {active && <Check size={18} strokeWidth={2.6} className="text-carbon" />}
                         </div>
 
-                        <div className="font-riso-display text-base sm:text-lg leading-tight mb-1.5">
+                        <div className="font-riso-display text-xs sm:text-lg leading-tight mb-1 sm:mb-1.5">
                           {game.name}
                         </div>
 
-                        <div className="font-riso-body text-xs leading-snug flex-1 mb-2 text-carbon-soft">
+                        <div className="hidden sm:block font-riso-body text-xs leading-snug flex-1 mb-2 text-carbon-soft">
                           {game.description}
                         </div>
 
                         {game.minPoints > 0 && (
-                          <div className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] mt-auto pt-2 border-t-2 border-carbon">
+                          <div className="hidden sm:block font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] mt-auto pt-2 border-t-2 border-carbon">
                             MIN {game.minPoints} PUAN
                           </div>
                         )}
@@ -344,7 +344,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 <span className="text-riso-pink-deep">{`${points} / ${maxPoints}`}</span>
               </label>
 
-              <div className="border-2 border-carbon bg-paper-deep p-3">
+              <div className="border-2 border-carbon bg-paper-deep p-2.5 sm:p-3">
                 <input
                   type="range"
                   min={minPoints}
@@ -468,7 +468,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             </div>
             {activeTournament && (
               <label
-                className="riso-focus flex items-center justify-between gap-3 border-2 border-carbon bg-riso-mustard/40 p-3 cursor-pointer hover:bg-riso-mustard/60 transition-colors"
+                className="riso-focus flex items-center justify-between gap-2.5 sm:gap-3 border-2 border-carbon bg-riso-mustard/40 p-2.5 sm:p-3 cursor-pointer hover:bg-riso-mustard/60 transition-colors"
                 data-testid="create-game-tournament-toggle"
               >
                 <div className="flex items-center gap-3 min-w-0">
