@@ -676,14 +676,6 @@ const initDb = async () => {
       await addColumn('games', 'player2_move', 'VARCHAR(50)');
       await addColumn('games', 'game_state', 'JSONB');
       await addColumn('games', 'winner', 'VARCHAR(255)');
-      // PR — tournament opt-in. Games not enrolled in any tournament keep
-      // this NULL and the settlement hook skips them. Set explicitly at
-      // create time when the host toggles 'turnuvaya katıl'.
-      await addColumn(
-        'games',
-        'tournament_id',
-        'INTEGER REFERENCES tournaments(id) ON DELETE SET NULL'
-      );
 
       // Cafes Table Updates (Location System)
       await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
@@ -848,6 +840,15 @@ const initDb = async () => {
           UNIQUE (tournament_id, game_id, user_id)
         );
       `);
+      // games.tournament_id MUST come after the tournaments CREATE TABLE
+      // above — the FK reference would otherwise point at a not-yet-existing
+      // table on fresh DBs and the addColumn helper would swallow the error.
+      await addColumn(
+        'games',
+        'tournament_id',
+        'INTEGER REFERENCES tournaments(id) ON DELETE SET NULL'
+      );
+
       await createIndex(
         'idx_tournaments_cafe_window',
         'CREATE INDEX IF NOT EXISTS idx_tournaments_cafe_window ON tournaments(cafe_id, start_at, end_at, status)'
