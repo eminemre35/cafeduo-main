@@ -275,7 +275,7 @@ const createTournamentHandlers = ({ pool, isDbConnected, logger }) => {
 
           const boardRes = await pool.query(
             `SELECT u.id, u.username, u.avatar_url,
-                    SUM(tp.points)::INTEGER AS total_points,
+                    SUM(tp.points)::NUMERIC(8,2) AS total_points,
                     COUNT(tp.game_id)::INTEGER AS games_counted
              FROM tournament_points tp
              JOIN users u ON u.id = tp.user_id

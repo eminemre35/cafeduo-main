@@ -853,6 +853,24 @@ const initDb = async () => {
         'idx_tournaments_cafe_window',
         'CREATE INDEX IF NOT EXISTS idx_tournaments_cafe_window ON tournaments(cafe_id, start_at, end_at, status)'
       );
+      // Defensive migration for the `points` column type.
+      // The original schema declared it INTEGER; wins-based scoring needs
+      // NUMERIC(8,2) so half-point draws fit. Idempotent: only ALTERs when
+      // the column is still integer.
+      try {
+        const colInfo = await pool.query(
+          "SELECT data_type FROM information_schema.columns WHERE table_name='tournament_points' AND column_name='points'"
+        );
+        if (colInfo.rows[0]?.data_type === 'integer') {
+          await pool.query(
+            'ALTER TABLE tournament_points ALTER COLUMN points TYPE NUMERIC(8,2) USING points::NUMERIC(8,2)'
+          );
+          logger.info('Migrated tournament_points.points INTEGER -> NUMERIC(8,2)');
+        }
+      } catch (e) {
+        logger.warn('tournament_points type migration skipped: ' + e.message);
+      }
+
       await createIndex(
         'idx_tournament_points_lookup',
         'CREATE INDEX IF NOT EXISTS idx_tournament_points_lookup ON tournament_points(tournament_id, user_id)'

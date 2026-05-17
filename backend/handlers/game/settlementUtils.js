@@ -17,28 +17,23 @@ const isNonCompetitiveGameType = (gameType) =>
   NON_COMPETITIVE_GAME_TYPES.has(String(gameType || '').trim());
 
 /**
- * Credit the game winner's stake into the *one* tournament the host
- * explicitly opted into (`game.tournament_id`). Pre-opt-in behaviour
- * scanned every matching active tournament; we no longer do that — users
- * want to play freely without being silently enrolled.
+ * Credit tournament points for an opted-in game:
+ *   - Win  → 1.0 to the winner
+ *   - Draw → 0.5 to each of the two participants
+ *   - Loss → nothing (no row)
+ *
+ * Stake amount is ignored — this is a wins-based leaderboard. `points`
+ * is NUMERIC(8,2) so half-points fit cleanly.
  *
  * Idempotent (UNIQUE(tournament_id, game_id, user_id) + ON CONFLICT DO
- * NOTHING) and non-fatal: any error here is logged at warn level so the
- * parent game-finish transaction commits regardless.
+ * NOTHING). Failure is logged but never thrown — a tournament-credit hiccup
+ * must not roll back the parent game-finish.
  */
-const creditTournamentPoints = async ({ client, game, transferredPoints, logger }) => {
+const creditTournamentPoints = async ({ client, game, participants, winnerName, isDraw, logger }) => {
   try {
     const tournamentId = Number(game?.tournament_id || game?.tournamentId || 0);
     if (!Number.isInteger(tournamentId) || tournamentId <= 0) return;
-    // Allow 0-stake games: every win adds at least 1 tournament point so
-    // friendly matches still count toward the leaderboard. Higher stakes
-    // still weight the standings via Math.max below.
 
-    // Re-verify the tournament is still active. Between game create and
-    // game finish the admin could have cancelled it (`status='cancelled'`)
-    // or end_at could have passed. Either way we skip the credit so the
-    // finalizer (tournamentJobs.js) closes the books on what was scored
-    // before the change.
     const tournRes = await client.query(
       `SELECT id, status, cafe_id FROM tournaments WHERE id = $1`,
       [tournamentId]
@@ -48,20 +43,34 @@ const creditTournamentPoints = async ({ client, game, transferredPoints, logger 
     if (tourn.status !== 'active') return;
     if (game?.cafe_id && Number(tourn.cafe_id) !== Number(game.cafe_id)) return;
 
-    const winnerName = String(game?.winner || '').trim().toLowerCase();
-    if (!winnerName) return;
-    const winnerRes = await client.query(
-      `SELECT id FROM users WHERE LOWER(username) = $1 LIMIT 1`,
-      [winnerName]
-    );
-    if (winnerRes.rows.length === 0) return;
+    // Build the credit list: who gets what.
+    const credits = [];
+    const safeParticipants = Array.isArray(participants)
+      ? participants.map((n) => String(n || '').trim()).filter(Boolean)
+      : [];
+    if (isDraw && safeParticipants.length === 2) {
+      for (const name of safeParticipants) {
+        credits.push({ username: name, points: 0.5 });
+      }
+    } else if (!isDraw) {
+      const w = String(winnerName || '').trim();
+      if (w) credits.push({ username: w, points: 1 });
+    }
+    if (credits.length === 0) return;
 
-    await client.query(
-      `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
-      [tournamentId, winnerRes.rows[0].id, game.id, Math.max(1, Math.floor(Number(transferredPoints) || 0) + 1)]
-    );
+    for (const { username, points } of credits) {
+      const userRes = await client.query(
+        `SELECT id FROM users WHERE LOWER(username) = $1 LIMIT 1`,
+        [String(username).toLowerCase()]
+      );
+      if (userRes.rows.length === 0) continue;
+      await client.query(
+        `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
+        [tournamentId, userRes.rows[0].id, game.id, points]
+      );
+    }
   } catch (err) {
     if (logger?.warn) {
       logger.warn('Tournament credit failed (non-fatal)', {
@@ -164,15 +173,32 @@ const applyDbSettlement = async ({
         );
       }
 
+      // Tournament credit runs unconditionally at the bottom of
+      // applyDbSettlement now — it picks the right credit (win=1, draw=0.5)
+      // based on isDraw. Don't double-credit by calling here.
       await creditTournamentPoints({
         client,
         game,
-        transferredPoints: transferable,
+        participants,
+        winnerName: canonicalWinner,
+        isDraw,
         logger,
       });
       return { transferredPoints: transferable };
     }
   }
+
+  // Tournament credit for draws (and any non-competitive code path that
+  // didn't return earlier with a winner credit). Win path already credited
+  // above and returned, so we only reach here for draws / no-winner cases.
+  await creditTournamentPoints({
+    client,
+    game,
+    participants,
+    winnerName: canonicalWinner,
+    isDraw,
+    logger,
+  });
 
   for (const participantName of participants) {
     const user = byUsername.get(normalizeParticipantKey(participantName));

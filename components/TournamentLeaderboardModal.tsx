@@ -15,6 +15,17 @@ import type { Tournament, TournamentLeaderboardResponse } from '../types';
 
 const POLL_MS = 15_000;
 
+/**
+ * Format NUMERIC tournament points sent over the wire as string ("5.50",
+ * "1.00", "0.50"). Show integers without decimals, halves with one digit.
+ */
+const formatPoints = (raw: number | string | null | undefined): string => {
+  if (raw === null || raw === undefined) return '0';
+  const n = typeof raw === 'number' ? raw : parseFloat(String(raw));
+  if (!Number.isFinite(n)) return '0';
+  return n % 1 === 0 ? String(Math.trunc(n)) : n.toFixed(1);
+};
+
 interface TournamentLeaderboardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -169,7 +180,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                     </div>
                     <div className="text-right">
                       <p className="font-riso-mono text-base font-bold text-riso-mustard-deep">
-                        {row.total_points}
+                        {formatPoints(row.total_points)}
                       </p>
                       <p className="font-riso-mono text-[0.6rem] uppercase tracking-wider text-carbon-muted">
                         {row.games_counted} oyun

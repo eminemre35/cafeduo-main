@@ -63,7 +63,7 @@ const finalizeOneTournament = async ({ pool, logger, tournamentId, clearCache })
     const topN = prizeTiers.length;
     const standingsRes = await client.query(
       `SELECT u.id AS user_id, u.username,
-              SUM(tp.points)::INTEGER AS total_points
+              SUM(tp.points)::NUMERIC(8,2) AS total_points
        FROM tournament_points tp
        JOIN users u ON u.id = tp.user_id
        WHERE tp.tournament_id = $1
