@@ -203,13 +203,13 @@ const createProfileHandlers = ({
           const params = [nextPoints, nextWins, nextGamesPlayed, safeDepartment];
           if (avatarUrlProvided) {
             params.push(nextAvatarUrl);
-            setClauses.push(`avatar_url = ${params.length}`);
+            setClauses.push(`avatar_url = $${params.length}`);
           }
           params.push(id);
           const result = await pool.query(
             `UPDATE users
              SET ${setClauses.join(', ')}
-             WHERE id = ${params.length}
+             WHERE id = $${params.length}
              RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url`,
             params
           );
