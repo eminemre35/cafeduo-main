@@ -75,7 +75,7 @@ const createProfileHandlers = ({
           // operators (super-admin emin3619, cafe manager iibfkantin, etc.)
           // and shouldn't compete in the rankings.
           let query =
-            'SELECT id, username, points, wins, games_played as "gamesPlayed", department FROM users WHERE role = \'user\'';
+            'SELECT id, username, points, wins, games_played as "gamesPlayed", department, avatar_url FROM users WHERE role = \'user\'';
           const params = [];
 
           if (type === 'department' && department) {
@@ -148,7 +148,29 @@ const createProfileHandlers = ({
 
   const updateUserStats = async (req, res) => {
     const { id } = req.params;
-    const { points, wins, gamesPlayed } = req.body || {};
+    const { points, wins, gamesPlayed, avatar_url: rawAvatarUrl } = req.body || {};
+
+    // Avatar comes from a curated set of DiceBear v9 pixel-art seeds.
+    // The frontend builds these URLs via lib/avatars.ts. We accept null/empty
+    // (reset to initials) or an https://api.dicebear.com/9.x/pixel-art/svg?seed=…
+    // URL whose seed is alphanumeric / dash / underscore. Any other shape is
+    // rejected so a hostile client can't store an arbitrary src= on every user.
+    const AVATAR_URL_PATTERN = /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=[A-Za-z0-9_-]{1,32}$/;
+    const avatarUrlProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'avatar_url');
+    let nextAvatarUrl = null;
+    if (avatarUrlProvided) {
+      if (rawAvatarUrl === null || rawAvatarUrl === '') {
+        nextAvatarUrl = null;
+      } else if (typeof rawAvatarUrl === 'string' && AVATAR_URL_PATTERN.test(rawAvatarUrl)) {
+        nextAvatarUrl = rawAvatarUrl;
+      } else {
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_AVATAR_URL',
+          message: 'Avatar URL hatalı. Sadece curated DiceBear pixel-art avatarları kabul edilir.',
+        });
+      }
+    }
     const nextPoints = Math.floor(Number(points));
     const nextWins = Math.floor(Number(wins));
     const nextGamesPlayed = Math.floor(Number(gamesPlayed));
@@ -169,12 +191,27 @@ const createProfileHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
+          // Build SET clause dynamically so avatar_url only updates when supplied —
+          // otherwise calling PUT /users/:id from the stats path would clobber a
+          // user's avatar to NULL on every game finish.
+          const setClauses = [
+            'points = $1',
+            'wins = $2',
+            'games_played = $3',
+            'department = $4',
+          ];
+          const params = [nextPoints, nextWins, nextGamesPlayed, safeDepartment];
+          if (avatarUrlProvided) {
+            params.push(nextAvatarUrl);
+            setClauses.push(`avatar_url = ${params.length}`);
+          }
+          params.push(id);
           const result = await pool.query(
             `UPDATE users
-             SET points = $1, wins = $2, games_played = $3, department = $4
-             WHERE id = $5
+             SET ${setClauses.join(', ')}
+             WHERE id = ${params.length}
              RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url`,
-            [nextPoints, nextWins, nextGamesPlayed, safeDepartment, id]
+            params
           );
 
           if (result.rows.length === 0) {
@@ -228,6 +265,7 @@ const createProfileHandlers = ({
           wins: nextWins,
           gamesPlayed: nextGamesPlayed,
           department: safeDepartment,
+          ...(avatarUrlProvided ? { avatar_url: nextAvatarUrl } : {}),
         };
         setMemoryUsers(nextUsers);
 

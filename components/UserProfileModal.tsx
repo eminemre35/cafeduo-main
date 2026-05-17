@@ -16,10 +16,12 @@
  *   - level label format: "LEVEL N" / "LEVEL N+1"
  */
 import React, { useEffect, useState } from 'react';
-import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase, Package } from 'lucide-react';
+import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase, Package, ImageIcon } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
+import { getAvatarUrl, seedFromAvatarUrl, type AvatarSeed } from '../lib/avatars';
+import { AvatarPickerModal } from './AvatarPickerModal';
 
 interface UserInventoryItem {
   id: number;
@@ -49,9 +51,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [department, setDepartment] = useState(user?.department || '');
   const [loading, setLoading] = useState(false);
   const [inventory, setInventory] = useState<UserInventoryItem[]>([]);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar_url ?? null);
 
   useEffect(() => {
     setDepartment(user?.department || '');
+    setAvatarUrl(user?.avatar_url ?? null);
     setIsEditing(false);
     if (isOpen && user) {
       api.store
@@ -113,11 +119,33 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             }}
           />
           <div className="relative flex items-start gap-4">
-            {/* Avatar tile — solid riso-blue, no rounded */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center border-2 border-carbon bg-riso-blue text-paper">
-              <span className="font-riso-display text-2xl font-bold tracking-tight">
-                {(user.username || '?').substring(0, 2).toUpperCase()}
-              </span>
+            {/* Avatar tile — DiceBear pixel-art if picked, initials fallback otherwise */}
+            <div className="relative shrink-0">
+              <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                <span className="absolute inset-0 flex items-center justify-center font-riso-display text-2xl font-bold tracking-tight">
+                  {(user.username || '?').substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAvatarPickerOpen(true)}
+                aria-label="Avatar seç"
+                data-testid="open-avatar-picker"
+                className="riso-focus absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-pink hover:text-paper transition-colors"
+              >
+                <ImageIcon size={12} strokeWidth={2.5} />
+              </button>
             </div>
 
             <div className="min-w-0 flex-1">
@@ -309,6 +337,29 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </span>
         </div>
       </div>
+      <AvatarPickerModal
+        isOpen={avatarPickerOpen}
+        onClose={() => setAvatarPickerOpen(false)}
+        currentSeed={seedFromAvatarUrl(avatarUrl)}
+        saving={savingAvatar}
+        onPick={async (seed: AvatarSeed) => {
+          const nextUrl = getAvatarUrl(seed);
+          setSavingAvatar(true);
+          try {
+            // Optimistic update so the picker closes feeling instant.
+            setAvatarUrl(nextUrl);
+            await api.users.update({ ...user, avatar_url: nextUrl });
+            setAvatarPickerOpen(false);
+          } catch (err) {
+            // Roll back on failure and surface a generic warning — the
+            // backend rejects malformed URLs, so this is rare in normal flow.
+            setAvatarUrl(user.avatar_url ?? null);
+            alert('Avatar kaydedilemedi.');
+          } finally {
+            setSavingAvatar(false);
+          }
+        }}
+      />
     </div>
   );
 };

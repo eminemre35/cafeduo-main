@@ -7,6 +7,7 @@
 import React from 'react';
 import { User } from '../../types';
 import { Trophy, Star, Gamepad2, Wifi, MapPin } from 'lucide-react';
+import { getAvatarUrl } from '../../lib/avatars';
 
 interface StatusBarProps {
   user: User;
@@ -31,8 +32,22 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             onClick={onOpenProfile}
             aria-label="Profilini aç"
           >
-            <div className="w-11 h-11 border-2 border-carbon bg-riso-blue flex items-center justify-center text-paper font-riso-display font-bold text-base">
-              {user.username.charAt(0).toUpperCase()}
+            <div className="relative w-11 h-11 border-2 border-carbon bg-riso-blue flex items-center justify-center text-paper font-riso-display font-bold text-base overflow-hidden">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full object-contain"
+                  onError={(e) => {
+                    // DiceBear outage → hide the broken img so the initial behind it shows.
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : null}
+              <span aria-hidden={user.avatar_url ? 'true' : undefined}>
+                {user.username.charAt(0).toUpperCase()}
+              </span>
             </div>
             <div className="min-w-0">
               <h3 className="text-carbon font-riso-display text-base truncate">{user.username}</h3>

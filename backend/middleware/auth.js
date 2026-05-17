@@ -97,10 +97,10 @@ const authenticateToken = async (req, res, next) => {
         // Fetch fresh user data from database
         if (await isDbConnected()) {
             const result = await pool.query(
-                `SELECT id, username, email, role, is_admin as "isAdmin", 
+                `SELECT id, username, email, role, is_admin as "isAdmin",
                 cafe_id, points, wins, games_played as "gamesPlayed",
-                table_number, department
-         FROM users 
+                table_number, department, avatar_url
+         FROM users
          WHERE id = $1`,
                 [decoded.id]
             );

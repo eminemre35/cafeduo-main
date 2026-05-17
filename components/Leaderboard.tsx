@@ -16,6 +16,7 @@ interface LeaderboardUser {
   wins: number;
   gamesPlayed: number;
   department: string;
+  avatar_url?: string | null;
 }
 
 export const Leaderboard: React.FC = () => {
@@ -187,8 +188,19 @@ export const Leaderboard: React.FC = () => {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-blue font-riso-display text-xs font-bold text-paper">
-                        {user.username.substring(0, 2).toUpperCase()}
+                      <div className="relative flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-blue font-riso-display text-xs font-bold text-paper overflow-hidden">
+                        {user.avatar_url ? (
+                          <img
+                            src={user.avatar_url}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 h-full w-full object-contain"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        <span>{user.username.substring(0, 2).toUpperCase()}</span>
                       </div>
                       <span className="font-riso-body font-bold text-carbon">{user.username}</span>
                     </div>
