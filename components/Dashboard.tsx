@@ -575,14 +575,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onSaveProfile={handleSaveProfile}
         />
       </div>
+      {activeTournament && (
+        <TournamentLeaderboardModal
+          isOpen={tournamentLeaderboardOpen}
+          onClose={() => setTournamentLeaderboardOpen(false)}
+          tournament={activeTournament}
+        />
+      )}
     </div>
-    {activeTournament && (
-      <TournamentLeaderboardModal
-        isOpen={tournamentLeaderboardOpen}
-        onClose={() => setTournamentLeaderboardOpen(false)}
-        tournament={activeTournament}
-      />
-    )}
   );
 };
 
