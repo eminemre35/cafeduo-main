@@ -12,6 +12,8 @@ import type {
   AdminGameRow,
   BuildMeta,
   DeleteCafeResult,
+  Tournament,
+  TournamentLeaderboardResponse,
 } from '../types';
 import { getViteEnvVar } from './viteEnv';
 
