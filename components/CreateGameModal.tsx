@@ -16,6 +16,7 @@
  *     game-points-input, create-game-submit
  */
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Check, Trophy } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui';
@@ -127,6 +128,19 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Body scroll-lock + portal target. Same fix as TournamentLeaderboardModal —
+  // an ancestor on Dashboard has transform/filter that traps position:fixed,
+  // so the modal appears below the fold without createPortal(document.body).
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    if (!isOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
   const toast = useToast();
   const [joinTournament, setJoinTournament] = useState(false);
   React.useEffect(() => {
@@ -228,8 +242,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   ].filter((p) => p.value >= minPoints && p.value <= maxPoints);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div className="riso-kantin fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6">
       {/* Backdrop — covers whole viewport, click closes */}
       <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
@@ -511,5 +526,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
         </div>
       </div>
     </div>
+,
+    document.body
   );
 };

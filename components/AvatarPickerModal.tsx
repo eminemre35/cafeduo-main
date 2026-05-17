@@ -10,7 +10,8 @@
  * pass `currentSeed` (already parsed from `user.avatar_url`) and an
  * `onPick(seed)` callback that fires the PUT /users/:id request upstream.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { AVATAR_SEEDS, getAvatarUrl, type AvatarSeed } from '../lib/avatars';
 
@@ -29,11 +30,22 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   onPick,
   saving = false,
 }) => {
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    if (!isOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
-  return (
+  if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
-      className="riso-kantin fixed inset-0 z-[125] flex items-center justify-center px-4 py-6"
+      className="riso-kantin fixed inset-0 z-[125] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6"
       role="dialog"
       aria-modal="true"
       aria-label="Avatar seçimi"
@@ -59,7 +71,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           <p className="mb-3 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-soft">
             16 seçenek · DiceBear pixel-art
           </p>
-          <div className="grid grid-cols-4 gap-3" data-testid="avatar-grid">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3" data-testid="avatar-grid">
             {AVATAR_SEEDS.map((seed) => {
               const isCurrent = currentSeed === seed;
               return (
@@ -89,5 +101,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
         </div>
       </div>
     </div>
+,
+    document.body
   );
 };

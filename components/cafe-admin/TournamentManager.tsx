@@ -217,7 +217,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
               {tournamentForm.tiers.map((tier, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2"
+                  className="flex flex-wrap items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2"
                 >
                   <span className="font-riso-display text-base font-bold text-riso-pink-deep min-w-[2rem]">
                     #{idx + 1}
@@ -231,7 +231,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                     }
                     required
                     data-testid={`tournament-tier-${idx}-reward`}
-                    className="riso-focus flex-1 border-2 border-carbon bg-paper px-2 py-1.5 font-riso-body text-sm text-carbon"
+                    className="riso-focus flex-1 min-w-[140px] border-2 border-carbon bg-paper px-2 py-1.5 font-riso-body text-sm text-carbon"
                   >
                     <option value="">Ödül seç...</option>
                     {activeRewards.map((r) => (

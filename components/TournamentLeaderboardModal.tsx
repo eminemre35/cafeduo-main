@@ -96,15 +96,15 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="riso-kantin fixed inset-0 z-[120] flex items-center justify-center px-4 py-6"
+      className="riso-kantin fixed inset-0 z-[120] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6"
       role="dialog"
       aria-modal="true"
       aria-label="Turnuva sıralaması"
     >
       <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative z-10 w-full max-w-lg bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100vh-3rem)] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-carbon px-5 py-3 shrink-0">
+      <div className="relative z-10 w-full max-w-lg bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col">
+        <div className="flex items-center justify-between border-b-2 border-carbon px-4 sm:px-5 py-3 shrink-0">
           <div className="min-w-0">
             <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.18em] text-carbon-soft">
               Turnuva Sıralaması
@@ -123,7 +123,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
           </button>
         </div>
 
-        <div className="p-4 overflow-y-auto">
+        <div className="p-3 sm:p-4 overflow-y-auto">
           {loading && !data ? (
             <p className="font-riso-body text-carbon-muted animate-pulse">Yükleniyor...</p>
           ) : error ? (
@@ -142,7 +142,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                 return (
                   <li
                     key={row.id}
-                    className="flex items-center gap-3 border-2 border-carbon bg-paper-deep p-2.5"
+                    className="flex items-center gap-2.5 sm:gap-3 border-2 border-carbon bg-paper-deep p-2 sm:p-2.5"
                     data-testid={`tournament-leaderboard-row-${row.id}`}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-carbon bg-paper font-riso-display text-sm font-bold text-carbon">
