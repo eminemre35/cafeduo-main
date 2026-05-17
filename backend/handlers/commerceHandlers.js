@@ -1,5 +1,8 @@
 const crypto = require('crypto');
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
+// Cache invalidator for GET /rewards — the route is wrapped in cache(600s) so
+// admin create/delete must flush or users see stale catalog for up to 10min.
+const { clearCache } = require('../middleware/cache');
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
 
@@ -127,6 +130,9 @@ const createCommerceHandlers = ({
              RETURNING id, title, cost, description, icon, cafe_id, is_active, created_at`,
             [title, cost, description || '', icon || 'coffee', cafeId || null]
           );
+          await clearCache('cache:/api/rewards*').catch((err) => {
+            logger.warn(`Reward cache invalidation failed after create: ${err.message}`);
+          });
           return res.json({ success: true, reward: result.rows[0] });
         } catch (err) {
           return sendApiError(res, logger, 'Reward creation error', err, 'Ödül oluşturulamadı.');
@@ -249,6 +255,9 @@ const createCommerceHandlers = ({
             });
           }
 
+          await clearCache('cache:/api/rewards*').catch((err) => {
+            logger.warn(`Reward cache invalidation failed after delete: ${err.message}`);
+          });
           return res.json({ success: true });
         } catch (err) {
           return sendApiError(res, logger, 'Reward deletion error', err, 'Ödül silinemedi.');
