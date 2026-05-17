@@ -30,7 +30,9 @@ const creditTournamentPoints = async ({ client, game, transferredPoints, logger 
   try {
     const tournamentId = Number(game?.tournament_id || game?.tournamentId || 0);
     if (!Number.isInteger(tournamentId) || tournamentId <= 0) return;
-    if (!Number.isFinite(transferredPoints) || transferredPoints <= 0) return;
+    // Allow 0-stake games: every win adds at least 1 tournament point so
+    // friendly matches still count toward the leaderboard. Higher stakes
+    // still weight the standings via Math.max below.
 
     // Re-verify the tournament is still active. Between game create and
     // game finish the admin could have cancelled it (`status='cancelled'`)
@@ -58,7 +60,7 @@ const creditTournamentPoints = async ({ client, game, transferredPoints, logger 
       `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
-      [tournamentId, winnerRes.rows[0].id, game.id, Math.floor(transferredPoints)]
+      [tournamentId, winnerRes.rows[0].id, game.id, Math.max(1, Math.floor(Number(transferredPoints) || 0) + 1)]
     );
   } catch (err) {
     if (logger?.warn) {

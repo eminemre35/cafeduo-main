@@ -7,6 +7,7 @@
  * every settlement, so we'd see new scores in at most ~30s worst case.
  */
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Trophy, Medal } from 'lucide-react';
 import { api } from '../lib/api';
 import { getAvatarUrl } from '../lib/avatars';
@@ -30,6 +31,18 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
   const [data, setData] = useState<TournamentLeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Lock body scroll while the modal is open so the background page
+    // doesn't scroll behind the leaderboard list.
+    if (typeof document === 'undefined') return undefined;
+    if (!isOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -67,7 +80,10 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
     prizeByRank.set(tier.rank, rewardTitle || `Ödül #${tier.reward_id}`);
   }
 
-  return (
+  // Render via portal to document.body so transformed/filtered ancestors
+  // on Dashboard can't shift `position: fixed` relative to themselves.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div
       className="riso-kantin fixed inset-0 z-[120] flex items-center justify-center px-4 py-6"
       role="dialog"
@@ -166,6 +182,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
