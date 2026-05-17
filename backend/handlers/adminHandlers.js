@@ -736,6 +736,17 @@ const createAdminHandlers = ({
           }
           return res.json({ success: true });
         } catch (err) {
+          // 23503 = foreign_key_violation. Was silently surfacing as a generic
+          // 500 'Kullanıcı silinemedi.' before; now we return 409 with the
+          // offending child table so admins (and Sentry) see what's blocking.
+          if (err && err.code === '23503') {
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'USER_HAS_DEPENDENT_ROWS',
+              message: 'Kullanıcının başka tablolarda kayıtları var, silinemiyor.',
+              details: { constraint: err.constraint || null, table: err.table || null },
+            });
+          }
           return sendApiError(res, logger, 'Admin delete user error', err, 'Kullanıcı silinemedi.');
         }
       },
