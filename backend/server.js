@@ -804,6 +804,29 @@ const initDb = async () => {
         clearCache('achievements:*');
       }
 
+      // 7b. Upgrade FK constraints to ON DELETE CASCADE so admin user-delete
+      //     doesn't crash on FK violation (23503). user_items and
+      //     user_achievements were originally created with the default
+      //     NO ACTION rule; we upgrade idempotently on each boot.
+      const upgradeFkCascade = async (table, constraint, fkClause) => {
+        try {
+          await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT IF EXISTS ${constraint}`);
+          await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT ${constraint} ${fkClause}`);
+        } catch (e) {
+          logger.warn(`⚠️ FK upgrade skipped: ${table}.${constraint} - ${e.message}`);
+        }
+      };
+      await upgradeFkCascade(
+        'user_items',
+        'user_items_user_id_fkey',
+        'FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE'
+      );
+      await upgradeFkCascade(
+        'user_achievements',
+        'user_achievements_user_id_fkey',
+        'FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE'
+      );
+
       // 8. Seed Initial Rewards (If there is no active reward left)
       const rewardsCheck = await pool.query('SELECT COUNT(*) FROM rewards WHERE is_active = true');
       if (parseInt(rewardsCheck.rows[0].count) === 0) {
