@@ -59,12 +59,19 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
    * Mağaza ödüllerini çek
    */
   const fetchRewards = useCallback(async () => {
+    // Skip the round-trip when the user hasn't checked in yet. Without a
+    // cafe_id the API returns [] anyway (rewards are cafe-scoped server-side),
+    // and the empty fetch on first mount caused a brief 'Mağaza Boş' flash
+    // before the re-fetch fired once cafe_id arrived from /api/auth/me.
+    if (!currentUser?.cafe_id) {
+      setRewards([]);
+      setRewardsError(null);
+      setRewardsLoading(false);
+      return;
+    }
     try {
       setRewardsLoading(true);
-      // Rewards are STRICTLY cafe-scoped server-side (commerceHandlers.getRewards).
-      // Without cafeId the API returns [] — that's why the shop was always empty
-      // before this fix. Pass the checked-in user's cafe_id so the catalog renders.
-      const data = await api.rewards.list(currentUser?.cafe_id ?? undefined);
+      const data = await api.rewards.list(currentUser.cafe_id);
       setRewards(Array.isArray(data) ? data : []);
       setRewardsError(null);
     } catch (err: unknown) {
