@@ -18,10 +18,13 @@ import { RetroButton } from './RetroButton';
 // Hooks
 import { useGames } from '../hooks/useGames';
 import { useRewards } from '../hooks/useRewards';
+import { useActiveTournament } from '../hooks/useActiveTournament';
 import { useToast } from '../contexts/ToastContext';
 
 // Sub-components
 import { StatusBar } from './dashboard/StatusBar';
+import { TournamentBanner } from './TournamentBanner';
+import { TournamentLeaderboardModal } from './TournamentLeaderboardModal';
 import { GameSection } from './dashboard/GameSection';
 import { RewardSection } from './dashboard/RewardSection';
 // DailyRewardWheel parking ramped — kept in tree but not mounted in the
@@ -114,6 +117,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     leaveGame,
     setActiveGame,
   } = useGames({ currentUser, tableCode });
+
+  // Banner data — cafe-scoped. When the user isn't checked in,
+  // useActiveTournament returns null and the banner won't render.
+  const { tournament: activeTournament } = useActiveTournament(
+    currentUser.cafe_id ? Number(currentUser.cafe_id) : null
+  );
+  const [tournamentLeaderboardOpen, setTournamentLeaderboardOpen] = useState(false);
 
   const {
     rewards,
@@ -434,6 +444,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onOpenProfile={handleOpenOwnProfile}
         />
 
+        {activeTournament && (
+          <TournamentBanner
+            tournament={activeTournament}
+            onOpenLeaderboard={() => setTournamentLeaderboardOpen(true)}
+          />
+        )}
+
         {/* Main Navigation Tabs */}
         <div className="relative bg-paper border-4 border-carbon p-2 md:p-3 riso-shadow-sm flex flex-col">
           <div className="flex items-center gap-2 md:gap-4">
@@ -559,6 +576,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
         />
       </div>
     </div>
+    {activeTournament && (
+      <TournamentLeaderboardModal
+        isOpen={tournamentLeaderboardOpen}
+        onClose={() => setTournamentLeaderboardOpen(false)}
+        tournament={activeTournament}
+      />
+    )}
   );
 };
 

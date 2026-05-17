@@ -628,6 +628,35 @@ export const api = {
     },
   },
 
+  // TOURNAMENTS — cafe-scoped time-windowed competitions. See backend
+  // routes/tournamentRoutes.js for the request shape.
+  tournaments: {
+    list: async (cafeId: string | number): Promise<Tournament[]> => {
+      return await fetchAPI(`/tournaments?cafeId=${cafeId}`);
+    },
+    create: async (payload: {
+      name: string;
+      game_type?: string | null;
+      start_at: string;
+      end_at: string;
+      prize_tiers: Array<{ rank: number; reward_id: number }>;
+      cafeId?: string | number;
+    }): Promise<{ success: true; tournament: Tournament }> => {
+      return await fetchAPI('/tournaments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    cancel: async (id: number | string): Promise<void> => {
+      await fetchAPI(`/tournaments/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    leaderboard: async (id: number | string): Promise<TournamentLeaderboardResponse> => {
+      return await fetchAPI(`/tournaments/${id}/leaderboard`);
+    },
+  },
+
   shop: {
     buy: async (rewardId: string | number): Promise<ShopBuyResponse> => {
       return await fetchAPI('/shop/buy', {

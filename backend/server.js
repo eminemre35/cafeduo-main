@@ -98,6 +98,7 @@ const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const storeRoutes = require('./routes/storeRoutes'); // Store Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
 const { createCommerceRoutes } = require('./routes/commerceRoutes');
+const { createTournamentRoutes } = require('./routes/tournamentRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createSystemRoutes } = require('./routes/systemRoutes');
 const { createGameRoutes } = require('./routes/gameRoutes');
@@ -114,12 +115,14 @@ const {
 } = require('./utils/cafeAdminValidation');
 const { createAdminHandlers } = require('./handlers/adminHandlers');
 const { createCommerceHandlers } = require('./handlers/commerceHandlers');
+const { createTournamentHandlers } = require('./handlers/tournamentHandlers');
 const { createGameHandlers } = require('./handlers/gameHandlers');
 const { createProfileHandlers } = require('./handlers/profileHandlers');
 const { createGameRepository } = require('./repositories/gameRepository');
 const { createGameService } = require('./services/gameService');
 const { createLobbyCacheService } = require('./services/lobbyCacheService');
 const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
+const { registerTournamentJobs } = require('./jobs/tournamentJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 const { socketAuthMiddleware } = require('./middleware/socketAuth'); // Socket.IO Auth Middleware
 const { getBlacklistFailMode, getRequiredJwtSecret } = require('./utils/securityConfig');
@@ -804,6 +807,48 @@ const initDb = async () => {
         clearCache('achievements:*');
       }
 
+      // 7a. Tournament tables. Defensive CREATE TABLE IF NOT EXISTS so the
+      //     same boot path migrates fresh DBs and prod where the table may
+      //     already exist. CHECK + UNIQUE constraints below are critical:
+      //       - tournament_window_ok guards against end_at <= start_at
+      //       - UNIQUE(tournament_id, game_id, user_id) in tournament_points
+      //         lets the settlement hook re-run safely (idempotent credit)
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tournaments (
+          id SERIAL PRIMARY KEY,
+          cafe_id INTEGER NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+          name VARCHAR(120) NOT NULL,
+          game_type VARCHAR(50),
+          start_at TIMESTAMP WITH TIME ZONE NOT NULL,
+          end_at TIMESTAMP WITH TIME ZONE NOT NULL,
+          status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+          prize_tiers JSONB NOT NULL DEFAULT '[]'::jsonb,
+          created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          finalized_at TIMESTAMP WITH TIME ZONE,
+          CONSTRAINT tournament_window_ok CHECK (end_at > start_at)
+        );
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS tournament_points (
+          id SERIAL PRIMARY KEY,
+          tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          game_id INTEGER REFERENCES games(id) ON DELETE SET NULL,
+          points INTEGER NOT NULL,
+          recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE (tournament_id, game_id, user_id)
+        );
+      `);
+      await createIndex(
+        'idx_tournaments_cafe_window',
+        'CREATE INDEX IF NOT EXISTS idx_tournaments_cafe_window ON tournaments(cafe_id, start_at, end_at, status)'
+      );
+      await createIndex(
+        'idx_tournament_points_lookup',
+        'CREATE INDEX IF NOT EXISTS idx_tournament_points_lookup ON tournament_points(tournament_id, user_id)'
+      );
+
       // 7b. Upgrade FK constraints to ON DELETE CASCADE so admin user-delete
       //     doesn't crash on FK violation (23503). user_items and
       //     user_achievements were originally created with the default
@@ -948,6 +993,20 @@ const commerceRoutes = createCommerceRoutes({
   authenticateToken,
   cache,
   commerceHandlers,
+});
+
+// Tournament handlers + routes are cafe-scoped competitions that draw
+// prizes from the same `rewards` table commerce uses. Same factory shape.
+const tournamentHandlers = createTournamentHandlers({
+  pool,
+  isDbConnected,
+  logger,
+});
+
+const tournamentRoutes = createTournamentRoutes({
+  authenticateToken,
+  cache,
+  tournamentHandlers,
 });
 
 const profileRoutes = createProfileRoutes({
@@ -1098,6 +1157,16 @@ registerGameCleanupJobs({
   logger,
 });
 
+// Tournament finalizer — promotes scheduled→active, then active→finished
+// (distributes prize coupons via user_items). Mirrors the cleanup-job
+// pattern so they share the same restart story.
+registerTournamentJobs({
+  pool,
+  isDbConnected,
+  logger,
+  clearCache,
+});
+
 // --- SWAGGER UI ---
 try {
   const swaggerDocument = YAML.load(path.resolve(__dirname, '../openapi.yaml'));
@@ -1136,6 +1205,7 @@ app.use('/api/admin', adminRoutes);
 
 // Commerce/Rewards Routes (Modularized)
 app.use('/api', commerceRoutes);
+app.use('/api', tournamentRoutes);
 
 // 2.6 FUNCTIONS REMOaED (Moved to backend/utils/geo.js)
 

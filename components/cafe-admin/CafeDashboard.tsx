@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo } from 'react';
-import { Coffee, Gift, MapPin, QrCode } from 'lucide-react';
+import { Trophy, Coffee, Gift, MapPin, QrCode } from 'lucide-react';
 import type { User } from '../../types';
 import { useCafeAdmin } from '../../hooks/useCafeAdmin';
 import { CafeStats } from './CafeStats';
 import { CouponScanner } from './CouponScanner';
 import { RewardManager } from './RewardManager';
+import { TournamentManager } from './TournamentManager';
 import { LocationManager } from './LocationManager';
 import type { CafeAdminTab } from './types';
 
@@ -50,6 +51,13 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     deleteReward,
     updateLocation,
     pickCurrentLocation,
+    tournaments,
+    tournamentsLoading,
+    tournamentsError,
+    tournamentForm,
+    setTournamentForm,
+    createTournament,
+    cancelTournament,
   } = useCafeAdmin({ currentUser });
 
   const stats = useMemo(
@@ -114,6 +122,12 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
       label: 'Ödül Yönetimi',
       icon: Gift,
       activeClassName: 'bg-riso-pink text-carbon border-carbon riso-shadow-sm',
+    },
+    {
+      id: 'tournaments',
+      label: 'Turnuvalar',
+      icon: Trophy,
+      activeClassName: 'bg-riso-mustard text-carbon border-carbon riso-shadow-sm',
     },
     {
       id: 'settings',
@@ -207,6 +221,26 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
               onRewardFormChange={setRewardForm}
               onCreateReward={handleCreateReward}
               onDeleteReward={handleDeleteReward}
+            />
+          </section>
+        )}
+
+        {activeTab === 'tournaments' && (
+          <section
+            id="cafe-admin-panel-tournaments"
+            role="tabpanel"
+            aria-labelledby="cafe-admin-tab-tournaments"
+          >
+            <TournamentManager
+              rewards={rewards}
+              rewardsLoading={rewardsLoading}
+              tournaments={tournaments}
+              tournamentsLoading={tournamentsLoading}
+              tournamentsError={tournamentsError}
+              tournamentForm={tournamentForm}
+              setTournamentForm={setTournamentForm}
+              onCreate={createTournament}
+              onCancel={cancelTournament}
             />
           </section>
         )}

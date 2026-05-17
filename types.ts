@@ -150,3 +150,41 @@ export interface DeleteCafeResult {
   };
   cleanup: DeleteCafeCleanup;
 }
+
+
+export type TournamentStatus = 'scheduled' | 'active' | 'finalizing' | 'finished' | 'cancelled';
+
+export interface TournamentPrizeTier {
+  rank: number;
+  reward_id: number;
+}
+
+export interface Tournament {
+  id: number;
+  cafe_id: number;
+  name: string;
+  game_type: string | null;
+  start_at: string;
+  end_at: string;
+  status: TournamentStatus;
+  prize_tiers: TournamentPrizeTier[];
+  created_by: number | null;
+  created_at: string;
+  finalized_at: string | null;
+}
+
+export interface TournamentLeaderboardRow {
+  id: number;
+  username: string;
+  avatar_url: string | null;
+  total_points: number;
+  games_counted: number;
+}
+
+export interface TournamentLeaderboardResponse {
+  tournament: Pick<
+    Tournament,
+    'id' | 'cafe_id' | 'name' | 'status' | 'start_at' | 'end_at' | 'prize_tiers'
+  >;
+  leaderboard: TournamentLeaderboardRow[];
+}

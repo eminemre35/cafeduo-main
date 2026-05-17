@@ -1,6 +1,6 @@
 import type { Reward, Cafe } from '../../types';
 
-export type CafeAdminTab = 'verification' | 'rewards' | 'settings';
+export type CafeAdminTab = 'verification' | 'rewards' | 'tournaments' | 'settings';
 
 export type CafeCouponStatus = 'idle' | 'success' | 'error';
 export type CafeLocationStatus = 'idle' | 'success' | 'error';
@@ -37,4 +37,22 @@ export interface CafeInfoState {
   secondaryLatitude?: number | null;
   secondaryLongitude?: number | null;
   secondaryRadius?: number | null;
+}
+
+
+/**
+ * Form state for the admin TournamentManager. Mirrors the body shape
+ * accepted by POST /api/tournaments but with strings for the form inputs.
+ */
+export interface TournamentTierForm {
+  rank: number;
+  rewardId: number | null;
+}
+
+export interface TournamentFormData {
+  name: string;
+  gameType: string;  // '' means 'all games count'
+  startAt: string;   // <input type="datetime-local"> value
+  endAt: string;
+  tiers: TournamentTierForm[];
 }
