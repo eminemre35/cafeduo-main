@@ -146,6 +146,62 @@ const createCreateGameHandler = (deps) => {
           }
         }
 
+        // Tournament opt-in. Host explicitly toggled "join active tournament"
+        // in the create modal. Anything else (missing field, 0, negative,
+        // non-active tournament) skips the tournament credit silently.
+        let tournamentId = null;
+        const rawTournamentId = Number(req.body?.tournamentId);
+        if (Number.isInteger(rawTournamentId) && rawTournamentId > 0) {
+          if (!actorCafeId) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+              error: 'Turnuvaya katılmak için bir kafede check-in olman gerekiyor.',
+              code: 'TOURNAMENT_REQUIRES_CHECKIN',
+            });
+          }
+          try {
+            await client.query('SAVEPOINT tournament_lookup');
+            const tournRes = await client.query(
+              `SELECT id, game_type FROM tournaments
+                WHERE id = $1 AND cafe_id = $2 AND status = 'active'
+                  AND start_at <= now() AND end_at > now()`,
+              [rawTournamentId, actorCafeId]
+            );
+            await client.query('RELEASE SAVEPOINT tournament_lookup');
+            if (tournRes.rows.length === 0) {
+              await client.query('ROLLBACK');
+              return res.status(400).json({
+                error: 'Bu turnuva şu an aktif değil veya kafenle eşleşmiyor.',
+                code: 'TOURNAMENT_NOT_ACCEPTING_GAMES',
+              });
+            }
+            const tourn = tournRes.rows[0];
+            if (tourn.game_type && tourn.game_type !== gameType) {
+              await client.query('ROLLBACK');
+              return res.status(400).json({
+                error: `Bu turnuva sadece ${tourn.game_type} oyunlarını kabul ediyor.`,
+                code: 'TOURNAMENT_GAME_TYPE_MISMATCH',
+              });
+            }
+            tournamentId = tourn.id;
+          } catch (tourErr) {
+            try {
+              await client.query('ROLLBACK TO SAVEPOINT tournament_lookup');
+            } catch {
+              /* savepoint already gone */
+            }
+            // If the tournaments table doesn't exist yet (fresh DB pre-migration),
+            // soft-fail: treat as no tournament. Real failure modes get logged.
+            if (tourErr?.code !== '42P01') {
+              logger.warn('Tournament lookup failed (soft-fail)', {
+                message: tourErr?.message,
+                code: tourErr?.code,
+              });
+            }
+            tournamentId = null;
+          }
+        }
+
         const initialGameState = isChessGameType(gameType)
           ? { chess: createInitialChessState(req.body?.chessClock) }
           : {};
@@ -158,6 +214,7 @@ const createCreateGameHandler = (deps) => {
               table,
               gameState: initialGameState,
               cafeId: actorCafeId,
+              tournamentId,
             })
           : null;
 

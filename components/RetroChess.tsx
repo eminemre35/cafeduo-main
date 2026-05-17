@@ -804,8 +804,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
   const handleSquareClick = (square: Square) => {
     if (submitting || serverStatus === 'finished') return;
-    if (!isBot && playerColor && !isMyTurn) {
-      setMessage('Sıra rakipte.');
+    // Block clicks when it's not the user's turn — including the brief
+    // window before the snapshot resolves playerColor. Previously a
+    // playerColor=null guard let the click fall through to
+    // effectiveSelectableColor=turn, so the user could pick the wrong-side
+    // piece and the server would 409 silently.
+    if (!isBot && !isMyTurn) {
+      setMessage(playerColor ? 'Sıra rakipte.' : 'Oyun yükleniyor…');
       return;
     }
 
@@ -879,9 +884,22 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               <div className="text-xs text-carbon-muted">Durum</div>
               <div className="font-bold text-carbon">{statusLabel}</div>
             </div>
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Sıra</div>
-              <div className="font-bold text-carbon">{turnLabel}</div>
+            <div
+              className={`border-2 border-carbon p-3 ${isMyTurn ? 'bg-riso-spring/40 animate-pulse' : 'bg-paper-deep'}`}
+              data-testid="retro-chess-turn-tile"
+            >
+              <div className="text-xs text-carbon-muted">
+                {playerColor ? (
+                  <>
+                    Sen: <span className="font-bold">{playerColor === 'w' ? 'Beyaz' : 'Siyah'}</span>
+                  </>
+                ) : (
+                  'Sıra'
+                )}
+              </div>
+              <div className="font-bold text-carbon">
+                {playerColor ? (isMyTurn ? 'Sıra sende' : 'Sıra rakipte') : turnLabel}
+              </div>
             </div>
             <div className="border-2 border-carbon bg-paper-deep p-3">
               <div className="text-xs text-carbon-muted">Tempo</div>

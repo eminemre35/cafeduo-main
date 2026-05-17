@@ -19,6 +19,8 @@ import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, Check, Trophy } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui';
+import type { Tournament } from '../types';
+import { Trophy } from 'lucide-react';
 
 interface CreateGameModalProps {
   isOpen: boolean;
@@ -26,9 +28,13 @@ interface CreateGameModalProps {
   onSubmit: (
     gameType: string,
     points: number,
-    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+    options?: {
+      chessClock?: { baseSeconds: number; incrementSeconds: number; label: string };
+      tournamentId?: number | null;
+    }
   ) => Promise<void> | void;
   maxPoints: number;
+  activeTournament?: Tournament | null;
 }
 
 interface GameDef {
@@ -107,6 +113,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   onClose,
   onSubmit,
   maxPoints: maxPointsProp,
+  activeTournament = null,
 }) => {
   // Cap the user-visible max at STAKE_MAX (150). Even if the user has a
   // bigger wallet, a single match's stake is bounded — keeps loss exposure
@@ -121,6 +128,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toast = useToast();
+  const [joinTournament, setJoinTournament] = useState(false);
+  React.useEffect(() => {
+    if (!isOpen) setJoinTournament(false);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -183,16 +194,21 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     try {
       const selectedTempo =
         CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) || CHESS_TEMPO_OPTIONS[1];
-      const options =
-        gameType === 'Retro Satranç'
-          ? {
-              chessClock: {
-                baseSeconds: selectedTempo.baseSeconds,
-                incrementSeconds: selectedTempo.incrementSeconds,
-                label: selectedTempo.label,
-              },
-            }
-          : undefined;
+      const baseOptions: {
+        chessClock?: { baseSeconds: number; incrementSeconds: number; label: string };
+        tournamentId?: number | null;
+      } = {};
+      if (gameType === 'Retro Satranç') {
+        baseOptions.chessClock = {
+          baseSeconds: selectedTempo.baseSeconds,
+          incrementSeconds: selectedTempo.incrementSeconds,
+          label: selectedTempo.label,
+        };
+      }
+      if (joinTournament && activeTournament?.id) {
+        baseOptions.tournamentId = activeTournament.id;
+      }
+      const options = Object.keys(baseOptions).length > 0 ? baseOptions : undefined;
       await Promise.resolve(onSubmit(gameType, points, options));
       toast.success(`${gameType} oyunu oluşturuldu!`);
       onClose();
@@ -435,6 +451,33 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 </span>
               </div>
             </div>
+            {activeTournament && (
+              <label
+                className="riso-focus flex items-center justify-between gap-3 border-2 border-carbon bg-riso-mustard/40 p-3 cursor-pointer hover:bg-riso-mustard/60 transition-colors"
+                data-testid="create-game-tournament-toggle"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Trophy size={18} className="text-carbon shrink-0" strokeWidth={2.4} />
+                  <div className="min-w-0">
+                    <p className="font-riso-display text-sm uppercase tracking-wider text-carbon">
+                      Bu turnuvaya katıl
+                    </p>
+                    <p className="font-riso-mono text-[0.65rem] text-carbon-muted truncate">
+                      {activeTournament.name}
+                      {activeTournament.game_type ? ` · ${activeTournament.game_type}` : " · Tüm oyunlar"}
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={joinTournament}
+                  onChange={(e) => setJoinTournament(e.target.checked)}
+                  className="h-5 w-5 accent-riso-pink-deep"
+                  aria-label="Turnuvaya katıl"
+                />
+              </label>
+            )}
+
           </form>
         </div>
 

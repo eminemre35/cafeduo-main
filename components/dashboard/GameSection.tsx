@@ -6,6 +6,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { GameHistoryEntry, GameRequest, User } from '../../types';
+import type { Tournament } from '../../types';
 import { GameLobby } from '../GameLobby';
 import { CreateGameModal } from '../CreateGameModal';
 import { SkeletonGrid } from '../Skeleton';
@@ -36,8 +37,12 @@ interface GameSectionProps {
   onCreateGame: (
     gameType: string,
     points: number,
-    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+    options?: {
+      chessClock?: { baseSeconds: number; incrementSeconds: number; label: string };
+      tournamentId?: number | null;
+    }
   ) => Promise<void>;
+  activeTournament?: Tournament | null;
   onJoinGame: (gameId: number) => Promise<void>;
   onCancelGame?: (gameId: number | string) => Promise<void>;
   onViewProfile: (username: string) => void;
@@ -61,6 +66,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
   onCancelGame = async () => {},
   onViewProfile,
   onRejoinGame,
+  activeTournament = null,
 }) => {
   const [quickJoinBusy, setQuickJoinBusy] = useState(false);
   const [historyDetailLoading, setHistoryDetailLoading] = useState(false);
@@ -317,6 +323,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={onCreateGame}
         maxPoints={currentUser?.points ?? 0}
+        activeTournament={activeTournament}
       />
 
       {/* History Detail Modal */}

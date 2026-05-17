@@ -114,7 +114,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
   };
 
   const insertWaitingGame = async (client, params) => {
-    const { hostName, gameType, points, table, gameState, cafeId } = params;
+    const { hostName, gameType, points, table, gameState, cafeId, tournamentId = null } = params;
     // PR #36 — `cafe_id` recorded on every new game so per-cafe daily limits
     // and isolation queries don't need an extra join through users.
     //
@@ -125,8 +125,8 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
     // keeps the outer tx alive when the wrapped query fails — without
     // this, the very next query in the transaction dies with 25P02.
     const fullInsert = `
-        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, cafe_id)
-        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)
+        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, cafe_id, tournament_id)
+        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7)
         RETURNING
           id,
           host_name as "hostName",
@@ -137,11 +137,12 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           guest_name as "guestName",
           game_state as "gameState",
           cafe_id as "cafeId",
-          created_at as "createdAt"
+          created_at as "createdAt",
+          tournament_id as "tournamentId"
       `;
     const fallbackInsert = `
-        INSERT INTO games (host_name, game_type, points, table_code, status, game_state)
-        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb)
+        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, tournament_id)
+        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)
         RETURNING
           id,
           host_name as "hostName",
@@ -152,7 +153,8 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           guest_name as "guestName",
           game_state as "gameState",
           NULL::int as "cafeId",
-          created_at as "createdAt"
+          created_at as "createdAt",
+          tournament_id as "tournamentId"
       `;
     try {
       await client.query('SAVEPOINT game_insert_with_cafe');
@@ -163,6 +165,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
         table,
         JSON.stringify(gameState || {}),
         cafeId ?? null,
+        tournamentId ?? null,
       ]);
       await client.query('RELEASE SAVEPOINT game_insert_with_cafe');
       return result.rows[0] || null;
@@ -183,6 +186,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
         points,
         table,
         JSON.stringify(gameState || {}),
+        tournamentId ?? null,
       ]);
       return fallback.rows[0] || null;
     }

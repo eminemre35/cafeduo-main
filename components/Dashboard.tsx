@@ -539,6 +539,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onCancelGame={handleCancelGame}
                     onViewProfile={handleViewProfile}
                     onRejoinGame={handleRejoinGame}
+                    activeTournament={activeTournament}
                   />
                 </div>
 

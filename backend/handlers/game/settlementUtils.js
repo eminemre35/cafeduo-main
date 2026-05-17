@@ -17,61 +17,50 @@ const isNonCompetitiveGameType = (gameType) =>
   NON_COMPETITIVE_GAME_TYPES.has(String(gameType || '').trim());
 
 /**
- * Credit points to active tournament leaderboards. Runs inside the caller's
- * transaction so prize totals stay consistent with user.points. Safe to
- * re-run (UNIQUE(tournament_id, game_id, user_id) prevents double credit).
+ * Credit the game winner's stake into the *one* tournament the host
+ * explicitly opted into (`game.tournament_id`). Pre-opt-in behaviour
+ * scanned every matching active tournament; we no longer do that — users
+ * want to play freely without being silently enrolled.
  *
- * Failure is logged but never thrown — a tournament-credit hiccup must not
- * roll back the parent game-finish transaction (would cancel the user's win).
+ * Idempotent (UNIQUE(tournament_id, game_id, user_id) + ON CONFLICT DO
+ * NOTHING) and non-fatal: any error here is logged at warn level so the
+ * parent game-finish transaction commits regardless.
  */
-const creditTournamentPoints = async ({ client, game, transferredPoints, gameType, logger }) => {
+const creditTournamentPoints = async ({ client, game, transferredPoints, logger }) => {
   try {
-    if (!game?.cafe_id) return;
+    const tournamentId = Number(game?.tournament_id || game?.tournamentId || 0);
+    if (!Number.isInteger(tournamentId) || tournamentId <= 0) return;
     if (!Number.isFinite(transferredPoints) || transferredPoints <= 0) return;
 
-    const activeRes = await client.query(
-      `SELECT id, game_type
-         FROM tournaments
-        WHERE cafe_id = $1
-          AND status = 'active'
-          AND start_at <= now()
-          AND end_at >= now()`,
-      [game.cafe_id]
+    // Re-verify the tournament is still active. Between game create and
+    // game finish the admin could have cancelled it (`status='cancelled'`)
+    // or end_at could have passed. Either way we skip the credit so the
+    // finalizer (tournamentJobs.js) closes the books on what was scored
+    // before the change.
+    const tournRes = await client.query(
+      `SELECT id, status, cafe_id FROM tournaments WHERE id = $1`,
+      [tournamentId]
     );
+    if (tournRes.rows.length === 0) return;
+    const tourn = tournRes.rows[0];
+    if (tourn.status !== 'active') return;
+    if (game?.cafe_id && Number(tourn.cafe_id) !== Number(game.cafe_id)) return;
 
-    if (activeRes.rows.length === 0) return;
-
-    const eligible = activeRes.rows.filter((row) => {
-      // game_type === null means 'all games count'
-      if (!row.game_type) return true;
-      return String(row.game_type).trim() === String(gameType || game.game_type || '').trim();
-    });
-    if (eligible.length === 0) return;
-
-    // Identify the winner — they get the credited points. The loser scored 0
-    // in stake terms but we still record a 0-point entry so they show up on
-    // the leaderboard when their cumulative total is computed (this also
-      // exercises the UNIQUE constraint on re-runs).
-    const winnerName = String(game.winner || '').trim().toLowerCase();
+    const winnerName = String(game?.winner || '').trim().toLowerCase();
     if (!winnerName) return;
-
     const winnerRes = await client.query(
       `SELECT id FROM users WHERE LOWER(username) = $1 LIMIT 1`,
       [winnerName]
     );
     if (winnerRes.rows.length === 0) return;
-    const winnerId = winnerRes.rows[0].id;
 
-    for (const tournament of eligible) {
-      await client.query(
-        `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
-        [tournament.id, winnerId, game.id, Math.floor(transferredPoints)]
-      );
-    }
+    await client.query(
+      `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
+      [tournamentId, winnerRes.rows[0].id, game.id, Math.floor(transferredPoints)]
+    );
   } catch (err) {
-    // Non-fatal — log and move on so game finalization isn't blocked.
     if (logger?.warn) {
       logger.warn('Tournament credit failed (non-fatal)', {
         error: err?.message || String(err),
@@ -177,7 +166,6 @@ const applyDbSettlement = async ({
         client,
         game,
         transferredPoints: transferable,
-        gameType,
         logger,
       });
       return { transferredPoints: transferable };

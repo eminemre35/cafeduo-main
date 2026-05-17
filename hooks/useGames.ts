@@ -338,7 +338,10 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     async (
       gameType: string,
       points: number,
-      options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+      options?: {
+        chessClock?: { baseSeconds: number; incrementSeconds: number; label: string };
+        tournamentId?: number | null;
+      }
     ) => {
       try {
         const newGame = await api.games.create({
@@ -347,6 +350,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
           points,
           table: tableCode || currentUser.table_number || 'MASA00',
           ...(options?.chessClock ? { chessClock: options.chessClock } : {}),
+          ...(options?.tournamentId ? { tournamentId: options.tournamentId } : {}),
         });
 
         // Oyun listesine ekle

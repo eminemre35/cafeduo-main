@@ -676,6 +676,14 @@ const initDb = async () => {
       await addColumn('games', 'player2_move', 'VARCHAR(50)');
       await addColumn('games', 'game_state', 'JSONB');
       await addColumn('games', 'winner', 'VARCHAR(255)');
+      // PR — tournament opt-in. Games not enrolled in any tournament keep
+      // this NULL and the settlement hook skips them. Set explicitly at
+      // create time when the host toggles 'turnuvaya katıl'.
+      await addColumn(
+        'games',
+        'tournament_id',
+        'INTEGER REFERENCES tournaments(id) ON DELETE SET NULL'
+      );
 
       // Cafes Table Updates (Location System)
       await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
