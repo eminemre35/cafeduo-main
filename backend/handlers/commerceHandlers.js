@@ -192,44 +192,11 @@ const createCommerceHandlers = ({
         // the shop UI has something to render. Filtered list isn't mutated
         // across requests — these are stateless per-call defaults.
         if (filtered.length === 0) {
-          return res.json([
-            {
-              id: 1,
-              title: 'Bedava Filtre Kahve',
-              cost: 500,
-              description: 'Günün yorgunluğunu at.',
-              icon: 'coffee',
-              cafe_id: targetCafeId,
-              is_active: true,
-            },
-            {
-              id: 2,
-              title: '%20 Hesap İndirimi',
-              cost: 850,
-              description: 'Tüm masada geçerli.',
-              icon: 'discount',
-              cafe_id: targetCafeId,
-              is_active: true,
-            },
-            {
-              id: 3,
-              title: 'Cheesecake İkramı',
-              cost: 400,
-              description: 'Tatlı bir mola ver.',
-              icon: 'dessert',
-              cafe_id: targetCafeId,
-              is_active: true,
-            },
-            {
-              id: 4,
-              title: 'Oyun Jetonu x5',
-              cost: 100,
-              description: 'Ekstra oyun hakkı.',
-              icon: 'game',
-              cafe_id: targetCafeId,
-              is_active: true,
-            },
-          ]);
+          return res.json(BASELINE_REWARDS.map((r) => ({
+            ...r,
+            cafe_id: targetCafeId,
+            is_active: true,
+          })));
         }
         return res.json(filtered);
       },
