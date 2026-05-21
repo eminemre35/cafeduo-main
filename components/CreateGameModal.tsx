@@ -21,7 +21,6 @@ import { X, AlertTriangle, Check, Trophy } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui';
 import type { Tournament } from '../types';
-import { Trophy } from 'lucide-react';
 
 interface CreateGameModalProps {
   isOpen: boolean;
