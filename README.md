@@ -87,6 +87,28 @@
 
 </details>
 
+<details open>
+<summary>🚪 <b>Giriş sonrası — Check-in Gateway (GPS + Masa numarası)</b></summary>
+
+<br/>
+
+<table>
+<tr>
+<td align="center" width="62%">
+  <b>Desktop</b><br/><br/>
+  <img src="./assets/screenshots/dashboard-desktop.png" alt="CafeDuo Check-in Desktop" width="100%"/>
+</td>
+<td align="center" width="38%">
+  <b>Mobil</b><br/><br/>
+  <img src="./assets/screenshots/dashboard-mobile.png" alt="CafeDuo Check-in Mobil" width="55%"/>
+</td>
+</tr>
+</table>
+
+Kullanıcı giriş yaptıktan sonra **kafe seçer + masa numarası girer + GPS konumu doğrular** — KVKK uyumlu konum izni mesajıyla. Bu, oyun başlamadan önceki tek "gerçek dünya" doğrulama noktasıdır.
+
+</details>
+
 <details>
 <summary>🔒 <b>Gizlilik politikası (KVKK uyumlu)</b></summary>
 
