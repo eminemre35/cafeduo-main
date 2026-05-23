@@ -29,6 +29,7 @@
 
 - [Öne Çıkan Özellikler](#-öne-çıkan-özellikler)
 - [Mimari](#️-mimari)
+- [Ekran Görüntüleri](#-ekran-görüntüleri)
 - [Teknoloji Yığını](#️-teknoloji-yığını)
 - [Hızlı Başlangıç](#-hızlı-başlangıç)
 - [Kullanım Akışı ve Roller](#-kullanım-akışı-ve-roller)
@@ -58,49 +59,44 @@
 
 ## 🏗️ Mimari
 
-```mermaid
-graph TB
-    subgraph Client["🖥️ İstemci Katmanı"]
-        UI[React 18 + TypeScript<br/>Vite · Tailwind v4 · PWA]
-    end
-    subgraph Edge["🌐 Edge / Reverse Proxy"]
-        CADDY[Caddy 2<br/>Otomatik HTTPS · Let's Encrypt]
-    end
-    subgraph API["⚙️ API Katmanı"]
-        EXP[Node.js 20 + Express<br/>JWT · CSRF · Rate Limit · RBAC]
-        SOCK[Socket.IO<br/>WebSocket + polling fallback]
-    end
-    subgraph Cache["⚡ Cache & Realtime"]
-        REDIS[(Redis 7<br/>session · pub/sub · rate-limit store)]
-    end
-    subgraph Data["🗄️ Persistence"]
-        PG[(PostgreSQL 15<br/>+ pgvector)]
-    end
+![CafeDuo Mimari Diyagramı](./assets/architecture.png)
 
-    UI -->|HTTPS / JSON| CADDY
-    CADDY --> EXP
-    UI <-->|WebSocket| SOCK
-    EXP --- SOCK
-    EXP --> REDIS
-    SOCK --> REDIS
-    EXP --> PG
+**6 servis · 4 katman.** İstemci → Edge (Caddy) → Application Services (Auth · Cafe · Game · Rewards · Realtime · Achievements) → Persistence (PostgreSQL + Redis). Tüm servisler Docker Compose'da konteynerize edilmiştir; tek `docker compose up` komutuyla ayağa kalkar. Caddy 2, `/api/*` ve `/socket.io` yollarını ilgili servislere yönlendirir; Redis hem cache hem Socket.IO pub/sub köprüsü olarak kullanılır.
 
-    style UI fill:#61DAFB,stroke:#333,color:#000
-    style CADDY fill:#1F88C0,stroke:#333,color:#fff
-    style EXP fill:#339933,stroke:#333,color:#fff
-    style SOCK fill:#010101,stroke:#fff,color:#fff
-    style REDIS fill:#DC382D,stroke:#333,color:#fff
-    style PG fill:#4169E1,stroke:#333,color:#fff
-```
+## 📸 Ekran Görüntüleri
+
+<table>
+<tr>
+<td align="center" width="62%">
+  <b>Desktop</b><br/><br/>
+  <img src="./assets/screenshots/landing-desktop.png" alt="CafeDuo Desktop Landing" width="100%"/>
+</td>
+<td align="center" width="38%">
+  <b>Mobil (PWA)</b><br/><br/>
+  <img src="./assets/screenshots/landing-mobile.png" alt="CafeDuo Mobil Landing" width="55%"/>
+</td>
+</tr>
+</table>
 
 <details>
-<summary>📷 <b>Yüksek çözünürlüklü mimari diyagramı (PNG)</b></summary>
+<summary>📜 <b>Landing sayfası — tam kaydırma (full page)</b></summary>
 
-![CafeDuo Mimari Diyagramı](./assets/architecture.png)
+<br/>
+
+![CafeDuo Landing Full](./assets/screenshots/landing-full-desktop.png)
 
 </details>
 
-**4 katmanlı yapı:** İstemci → Edge → API/Realtime → Persistence. Tüm servisler Docker Compose'da konteynerize edilmiştir; tek `docker compose up` komutuyla ayağa kalkar.
+<details>
+<summary>🔒 <b>Gizlilik politikası (KVKK uyumlu)</b></summary>
+
+<br/>
+
+|                                          Desktop                                          |                                         Mobil                                         |
+| :---------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: |
+| <img src="./assets/screenshots/privacy-desktop.png" alt="Gizlilik Desktop" width="100%"/> | <img src="./assets/screenshots/privacy-mobile.png" alt="Gizlilik Mobil" width="55%"/> |
+
+</details>
 
 ## ⚙️ Teknoloji Yığını
 
