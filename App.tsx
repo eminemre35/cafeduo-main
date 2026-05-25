@@ -44,6 +44,13 @@ const ResetPasswordPage = lazyWithRetry(
     })),
   'ResetPasswordPage'
 );
+const BusinessLanding = lazyWithRetry(
+  () =>
+    import('./components/BusinessLanding').then((module) => ({
+      default: module.BusinessLanding,
+    })),
+  'BusinessLanding'
+);
 // Loading Component
 const PageLoader = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center text-carbon">
@@ -259,6 +266,15 @@ const AppContent: React.FC = () => {
                     <HowItWorks />
                     <Games onPlayClick={openRegister} />
                     <About />
+                  </PageTransition>
+                }
+              />
+
+              <Route
+                path="/kafeler"
+                element={
+                  <PageTransition>
+                    <BusinessLanding />
                   </PageTransition>
                 }
               />
