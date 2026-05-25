@@ -7,8 +7,6 @@
  * social proof, free pilot offer).
  *
  * Pilot CTA = WhatsApp deep-link + mailto fallback. No backend needed.
- * NOTE: Replace WHATSAPP_NUMBER and CONTACT_EMAIL below with real values
- * before launch (or move to import.meta.env when ready).
  */
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -26,12 +24,11 @@ import {
 } from 'lucide-react';
 import { Button, Squiggle } from './ui';
 
-// TODO: değiştir — kendi WhatsApp numaran (uluslararası format, + ve boşluksuz)
-const WHATSAPP_NUMBER = '905555555555';
+const WHATSAPP_NUMBER = '905538542535';
 const WHATSAPP_PREFILL = encodeURIComponent(
   'Selam, cafeduotr.com pilot programı için yazıyorum. Kafem hakkında konuşabilir miyiz?'
 );
-const CONTACT_EMAIL = 'pilot@cafeduotr.com';
+const CONTACT_EMAIL = 'info@cafeduotr.com';
 
 const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_PREFILL}`;
 const mailtoHref = `mailto:${CONTACT_EMAIL}?subject=Pilot%20Ba%C5%9Fvuru&body=Kafemin%20ad%C4%B1%3A%20%0AKonum%3A%20%0AInstagram%3A%20%0A`;
