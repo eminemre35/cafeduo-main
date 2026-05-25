@@ -8,7 +8,7 @@
  * Handler signatures + data-testid attributes preserved (logout-button).
  */
 import React, { useEffect, useState } from 'react';
-import { Bell, Menu, X, Coffee, LogOut, ChevronRight, Wallet } from 'lucide-react';
+import { Bell, Menu, X, Coffee, LogOut, ChevronRight, Wallet, Store } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
@@ -26,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const isBusinessPage = location.pathname === '/kafeler';
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -47,6 +48,11 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
     }
 
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const goToBusiness = () => {
+    setIsOpen(false);
+    navigate('/kafeler');
   };
 
   return (
@@ -92,6 +98,18 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     {item.label}
                   </button>
                 ))}
+                <button
+                  onClick={goToBusiness}
+                  aria-current={isBusinessPage ? 'page' : undefined}
+                  className={`riso-focus inline-flex items-center gap-1.5 border-2 border-carbon px-3 py-1.5 font-riso-body text-xs font-bold uppercase tracking-[0.1em] transition-all ${
+                    isBusinessPage
+                      ? 'bg-riso-mustard text-carbon riso-shadow-sm'
+                      : 'bg-paper text-carbon hover:bg-riso-mustard hover:translate-x-[-1px] hover:translate-y-[-1px]'
+                  }`}
+                >
+                  <Store size={14} />
+                  Kafeler
+                </button>
               </>
             ) : (
               <div className="flex items-center gap-2">
@@ -153,16 +171,28 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                 {!isLoggedIn && <Bell size={18} className="text-carbon-muted" />}
               </div>
               {!isLoggedIn ? (
-                NAV_ITEMS.map((item) => (
+                <>
+                  {NAV_ITEMS.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToSection(item.id)}
+                      className="riso-focus flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
+                    >
+                      {item.label}
+                      <ChevronRight size={20} className="text-carbon-muted" />
+                    </button>
+                  ))}
                   <button
-                    key={item.id}
-                    onClick={() => scrollToSection(item.id)}
-                    className="riso-focus flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
+                    onClick={goToBusiness}
+                    aria-current={isBusinessPage ? 'page' : undefined}
+                    className="riso-focus mt-2 flex items-center justify-between border-2 border-carbon bg-riso-mustard px-3 py-3 font-riso-body text-base font-bold uppercase tracking-[0.08em] text-carbon riso-shadow-sm"
                   >
-                    {item.label}
-                    <ChevronRight size={20} className="text-carbon-muted" />
+                    <span className="flex items-center gap-2">
+                      <Store size={20} /> Kafe Sahipleri
+                    </span>
+                    <ChevronRight size={20} />
                   </button>
-                ))
+                </>
               ) : (
                 <>
                   {user && !isHomePage && (
