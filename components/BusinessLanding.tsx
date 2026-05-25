@@ -1,5 +1,5 @@
 /**
- * BusinessLanding — /kafeler route (PR feat/business-landing).
+ * BusinessLanding — /kafeler route.
  *
  * Cafe-owner facing landing page used in pilot outreach.
  * Same Riso Kantin design system as Hero.tsx; copy shifts from
@@ -45,6 +45,40 @@ export const BusinessLanding: React.FC = () => {
     </div>
   );
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stat tile (sticker-pinned mini stat used in hero strip)
+// ─────────────────────────────────────────────────────────────────────────────
+interface StatProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: 'pink' | 'blue' | 'mustard';
+  rotate: number;
+}
+
+const STAT_TONE: Record<StatProps['tone'], string> = {
+  pink: 'bg-riso-pink text-carbon',
+  blue: 'bg-riso-blue text-paper',
+  mustard: 'bg-riso-mustard text-carbon',
+};
+
+const Stat: React.FC<StatProps> = ({ icon, label, value, tone, rotate }) => (
+  <div
+    style={{ transform: `rotate(${rotate}deg)` }}
+    className={`${STAT_TONE[tone]} relative border-2 border-carbon p-4 riso-shadow-sm`}
+  >
+    <div className="flex items-center gap-3">
+      <span className="inline-flex shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] opacity-80">
+          {label}
+        </p>
+        <p className="font-riso-display text-xl leading-none">{value}</p>
+      </div>
+    </div>
+  </div>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hero
