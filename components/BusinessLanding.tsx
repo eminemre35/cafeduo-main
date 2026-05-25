@@ -363,7 +363,7 @@ const PricingSection: React.FC = () => (
             </p>
           </div>
           <p className="font-riso-mono text-xs uppercase tracking-[0.14em] text-carbon-soft">
-            Yıllık ₺6.400 · 2 ay hediye
+            Yıllık ₺6.400 · 4 ay hediye
           </p>
         </div>
 
@@ -421,28 +421,28 @@ const PricingSection: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FAQ — minimal divider list
+// FAQ — substantive answers (no one-liners)
 // ─────────────────────────────────────────────────────────────────────────────
 const FAQS = [
   {
-    q: 'Müşteri telefonuna uygulama yüklemek zorunda mı?',
-    a: 'Hayır. CafeDuo bir PWA — tarayıcıdan anında açılır. İsteyen ana ekrana ekleyebilir.',
+    q: 'Müşterilerimin telefonlarına uygulama yüklemesi gerekiyor mu?',
+    a: 'Hayır. CafeDuo modern bir Progressive Web App (PWA) olarak çalışır — kafenizdeki masa QR kodunu tarayan müşteri saniyeler içinde tarayıcıdan sisteme giriş yapar; App Store veya Play Store sürtüşmesi yoktur. Sık gelen müşteri isterse tek dokunuşla CafeDuo\'yu ana ekranına ekleyebilir, ancak bu zorunlu değildir. Oturum başına yaklaşık 3–5 MB veri kullanır, üç beş yıllık telefonlarda dahi akıcı çalışır.',
   },
   {
-    q: 'Pilot bittiğinde ne olur?',
-    a: 'Memnunsanız Pro plana geçersiniz. Memnun değilseniz hesabınız kapanır, hiçbir şey ödemezsiniz.',
+    q: 'Pilot programının sonunda ne oluyor, otomatik ödeme alınıyor mu?',
+    a: 'Hayır, otomatik ödeme yok. Pilot bitmeden 5 gün önce WhatsApp üzerinden sizinle iletişime geçer, birlikte ölçümlere bakarız: gerçekleşen oturum sayısı, kullanılan kuponlar, müşteri akışının değiştiği saatler. Devam etmek istiyorsanız Pro plana açık rızanızla geçeriz; istemiyorsanız hesap sessizce kapanır ve pilot süresince oluşmuş kafe verileri KVKK gereği size raporlanır, ardından silinir. Hiçbir gizli ücret veya iptal cezası işletilmez.',
   },
   {
-    q: 'KVKK uyumu var mı?',
-    a: 'Evet. Konum izni KVKK uyumlu açıklama ile alınır, kullanıcı verisi minimum tutulur. Detay: /gizlilik',
+    q: 'KVKK ve veri güvenliği konusunda nasıl bir altyapı kullanılıyor?',
+    a: 'CafeDuo, KVKK ve GDPR çerçevesine uygun olarak tasarlandı. Müşteriden işin yürümesi için zorunlu olan minimum veri (kullanıcı adı, e-posta, opsiyonel avatar) alınır; konum verisi yalnızca masa check-in anında doğrulama amacıyla kullanılır ve sunucuda saklanmaz. Aydınlatma metni, açık rıza akışları ve veri silme talebi süreçleri sistemin içine gömülüdür. Parolalar bcrypt cost=12 ile hash\'lenir, SQL enjeksiyon koruması için tüm sorgular parametrelidir. Detaylı politika /gizlilik sayfasında, denetim için resmi belge setine WhatsApp\'tan ulaşabilirsiniz.',
   },
   {
-    q: 'Kuponlar nasıl kullanılır?',
-    a: 'Müşteri kazandığı kuponu CafeDuo uygulamasında gösterir, siz kasada QR ile onaylarsınız. Sahtekarlık koruması var.',
+    q: 'Kuponların sahteleştirilmesi veya iki kez kullanılması mümkün mü?',
+    a: 'Hayır. Her kupon, müşteri uygulamasında benzersiz bir QR kod olarak görünür; siz kasada CafeDuo panelinin doğrulama ekranıyla bunu tararsınız ve sistem atomik bir veritabanı işlemiyle kuponu o anda iptal eder. Aynı kupon tekrar gösterilse bile geçersiz çıkar, ekran görüntüsü ile sahteleme yapılamaz. İsterseniz personeliniz için ayrı bir "kasiyer" rolü oluşturup yetkilerini kısıtlayabilir, günlük kupon kullanım raporlarını panelden inceleyebilirsiniz.',
   },
   {
-    q: 'Setup ne kadar sürer?',
-    a: 'Ortalama 30 dakika. Sizinle birlikte yapıyoruz: kafe bilgisi, masa PIN\'leri, 3 ödül seçeneği.',
+    q: 'Kurulum süreci nasıl ilerliyor, benden ne kadar vakit isteniyor?',
+    a: 'Ortalama 30 dakikada birlikte tamamlıyoruz. WhatsApp video görüşmesinde önce kafenizin GPS koordinatını sabitleyip masalarınız için günlük dönen güvenlik PIN\'lerini tanımlıyoruz. Ardından müşterilerinize sunacağınız 3 başlangıç ödülünü panelden giriyoruz — örneğin: 250 puan = filtre kahve, 500 puan = %10 indirim kuponu, 1000 puan = ev tatlısı. Görüşme sonunda masalara koyacağınız QR kodlarını PDF olarak elinize ulaştırıyoruz; ertesi gün masalara yerleştirmek dışında sizden bir aksiyon beklenmiyor.',
   },
 ];
 
