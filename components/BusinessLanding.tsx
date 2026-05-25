@@ -1,28 +1,26 @@
 /**
  * BusinessLanding — /kafeler route.
  *
- * Cafe-owner facing landing page used in pilot outreach.
- * Same Riso Kantin design system as Hero.tsx; copy shifts from
- * "student fun" to "owner ROI" (returning customer, no-show recovery,
- * social proof, free pilot offer).
+ * Cafe-owner facing landing. Same Riso Kantin design system primitives
+ * as / but a quieter, editorial rhythm: asymmetric hero, no sticker
+ * decorations, tighter palette (paper + carbon + mustard accent),
+ * single pricing card.
  *
  * Pilot CTA = WhatsApp deep-link + mailto fallback. No backend needed.
  */
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  ArrowRight,
+  ArrowUpRight,
   Check,
+  ChevronDown,
   Clock,
-  Coffee,
-  Gift,
   MessageCircle,
   Repeat,
   Sparkles,
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { Button, Squiggle } from './ui';
 
 const WHATSAPP_NUMBER = '905538542535';
 const WHATSAPP_PREFILL = encodeURIComponent(
@@ -33,181 +31,191 @@ const CONTACT_EMAIL = 'info@cafeduotr.com';
 const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_PREFILL}`;
 const mailtoHref = `mailto:${CONTACT_EMAIL}?subject=Pilot%20Ba%C5%9Fvuru&body=Kafemin%20ad%C4%B1%3A%20%0AKonum%3A%20%0AInstagram%3A%20%0A`;
 
-export const BusinessLanding: React.FC = () => {
-  return (
-    <div className="riso-kantin riso-kantin-app bg-paper">
-      <HeroSection />
-      <HowItWorksOwner />
-      <ValueProps />
-      <PricingSection />
-      <FaqSection />
-      <ClosingCta />
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat tile (sticker-pinned mini stat used in hero strip)
-// ─────────────────────────────────────────────────────────────────────────────
-interface StatProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tone: 'pink' | 'blue' | 'mustard';
-  rotate: number;
-}
-
-const STAT_TONE: Record<StatProps['tone'], string> = {
-  pink: 'bg-riso-pink text-carbon',
-  blue: 'bg-riso-blue text-paper',
-  mustard: 'bg-riso-mustard text-carbon',
-};
-
-const Stat: React.FC<StatProps> = ({ icon, label, value, tone, rotate }) => (
-  <div
-    style={{ transform: `rotate(${rotate}deg)` }}
-    className={`${STAT_TONE[tone]} relative border-2 border-carbon p-4 riso-shadow-sm`}
-  >
-    <div className="flex items-center gap-3">
-      <span className="inline-flex shrink-0">{icon}</span>
-      <div className="min-w-0">
-        <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] opacity-80">
-          {label}
-        </p>
-        <p className="font-riso-display text-xl leading-none">{value}</p>
-      </div>
-    </div>
+export const BusinessLanding: React.FC = () => (
+  <div className="riso-kantin riso-kantin-app bg-paper">
+    <HeroSection />
+    <NumbersBar />
+    <HowItWorksOwner />
+    <ValueProps />
+    <PricingSection />
+    <FaqSection />
+    <ClosingCta />
   </div>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hero
+// Hero — asymmetric, no stickers
 // ─────────────────────────────────────────────────────────────────────────────
 const HeroSection: React.FC = () => (
   <section
     aria-label="Kafe sahipleri için ana bölüm"
-    className="relative min-h-[80vh] overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28"
+    className="relative overflow-hidden bg-paper pt-32 pb-16 sm:pt-40 sm:pb-24"
   >
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-0 opacity-[0.06] mix-blend-multiply"
-      style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-        backgroundSize: '6px 6px',
-      }}
-    />
+    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+      <div className="grid gap-10 md:grid-cols-12 md:items-center md:gap-12">
+        {/* Left — copy */}
+        <div className="md:col-span-7">
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 flex"
+          >
+            <span className="inline-flex items-center gap-2 border-b-2 border-carbon px-0 py-1 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon">
+              Kafe Sahipleri · Pilot Programı
+            </span>
+          </motion.div>
 
-    {/* Decorative sticker shapes */}
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-0">
-      <div className="absolute left-[6%] top-[18%] h-16 w-16 bg-riso-mustard rotate-[-8deg] border-2 border-carbon riso-shadow-pink-only opacity-90 hidden md:block" />
-      <div className="absolute right-[8%] top-[24%] h-20 w-20 bg-riso-pink rotate-[6deg] border-2 border-carbon riso-shadow-blue-only opacity-90 hidden md:block" />
-      <div className="absolute left-[12%] bottom-[12%] h-12 w-28 bg-riso-blue rotate-[-2deg] border-2 border-carbon hidden lg:block" />
-    </div>
+          <motion.h1
+            lang="tr"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="font-riso-display text-[2.5rem] sm:text-[3.4rem] lg:text-[4.2rem] leading-[1.02] tracking-tight text-carbon"
+          >
+            Öğrenci kafeleri için{' '}
+            <em className="not-italic text-riso-pink-deep">sessiz</em> bir{' '}
+            <span className="inline-block border-b-4 border-carbon pb-1">sadakat motoru</span>
+            .
+          </motion.h1>
 
-    <div className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-6 flex justify-center"
-      >
-        <span className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-3 py-1.5 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.16em] text-carbon riso-shadow-pink-only">
-          <span className="h-2 w-2 rounded-full bg-riso-pink animate-pulse" />
-          Kafe sahipleri için · İlk 2 kafeye 1 ay ücretsiz
-        </span>
-      </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.18 }}
+            className="mt-6 max-w-xl font-riso-body text-lg leading-relaxed text-carbon-soft"
+          >
+            Müşterileriniz masada mini oyunlar oynar, puan biriktirir, sizin koyduğunuz
+            ödüllerle (kahve, indirim, tatlı) geri gelir. Kurulum 30 dakika. İlk ay
+            ücretsiz. Sözleşme yok.
+          </motion.p>
 
-      <motion.h1
-        lang="tr"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.05 }}
-        className="text-center font-riso-display text-[2.4rem] sm:text-[3.6rem] lg:text-[4.6rem] leading-[0.95] tracking-tight text-carbon"
-      >
-        Üniversiteli müşteri{' '}
-        <span className="relative inline-block">
-          <span className="relative z-10 text-riso-pink-deep">geri gelsin</span>
-          <span aria-hidden="true" className="absolute -bottom-1 left-0 right-0 h-2.5">
-            <Squiggle tone="blue" />
-          </span>
-        </span>
-        , masada kalsın, paylaşsın.
-      </motion.h1>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            className="mt-8 flex flex-col items-start gap-3 sm:flex-row"
+          >
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="riso-focus inline-flex items-center gap-2 bg-carbon px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-paper transition-transform hover:translate-y-[-1px]"
+            >
+              <MessageCircle size={16} /> Pilot Başvur
+              <ArrowUpRight size={16} className="opacity-70" />
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                document
+                  .getElementById('nasil-calisir')
+                  ?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="riso-focus inline-flex items-center gap-2 px-1 py-3 font-riso-body text-sm font-semibold tracking-[0.04em] text-carbon underline decoration-carbon decoration-2 underline-offset-[6px] hover:text-riso-pink-deep"
+            >
+              Nasıl çalıştığını gör <ChevronDown size={16} />
+            </button>
+          </motion.div>
+        </div>
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.18 }}
-        className="mx-auto mt-6 max-w-2xl text-center font-riso-body text-lg leading-relaxed text-carbon-soft sm:text-xl"
-      >
-        Müşterileriniz masada mini oyunlar oynar, puan kazanır, sizin koyduğunuz ödülleri alır.
-        Kurulum 30 dakika. İlk ay ücretsiz. Sözleşme yok.
-      </motion.p>
-
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.25 }}
-        className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
-      >
-        <Button
-          tone="pink"
-          size="lg"
-          onClick={() => window.open(whatsappHref, '_blank', 'noopener,noreferrer')}
-          aria-label="WhatsApp ile pilot başvuru"
-          trailingIcon={<ArrowRight size={18} />}
+        {/* Right — pilot card */}
+        <motion.aside
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="md:col-span-5"
+          aria-label="Pilot programı özet kartı"
         >
-          Pilot Başvur — WhatsApp
-        </Button>
-        <Button
-          tone="paper"
-          size="lg"
-          onClick={() => {
-            const el = document.getElementById('nasil-calisir');
-            el?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          aria-label="Nasıl çalıştığını gör"
-          leadingIcon={<Coffee size={17} />}
-        >
-          Nasıl Çalışır?
-        </Button>
-      </motion.div>
+          <div className="border-2 border-carbon bg-riso-mustard p-6 sm:p-7 riso-shadow-md">
+            <p className="font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.16em] text-carbon opacity-80">
+              İlk 2 Kafe
+            </p>
+            <p className="mt-2 font-riso-display text-3xl text-carbon sm:text-4xl">
+              1 ay ücretsiz pilot
+            </p>
+            <p className="mt-2 font-riso-body text-sm leading-relaxed text-carbon">
+              Setup&apos;ı birlikte yapıyoruz. Ay sonu 20 dakika geri bildirim + isim
+              kullanım izni — o kadar.
+            </p>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.35 }}
-        className="mx-auto mt-14 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3"
-      >
-        <Stat icon={<Clock size={18} />} label="Kurulum" value="30 dk" tone="pink" rotate={-1.5} />
-        <Stat icon={<Gift size={18} />} label="Pilot" value="1 ay ücretsiz" tone="blue" rotate={1} />
-        <Stat icon={<Repeat size={18} />} label="Sözleşme" value="İstediğin an iptal" tone="mustard" rotate={-0.5} />
-      </motion.div>
+            <ul className="mt-5 space-y-2 font-riso-body text-[15px] text-carbon">
+              <li className="flex items-start gap-2">
+                <Check size={16} className="mt-1 shrink-0" /> Tüm özellikler açık
+              </li>
+              <li className="flex items-start gap-2">
+                <Check size={16} className="mt-1 shrink-0" /> WhatsApp destek hattı
+              </li>
+              <li className="flex items-start gap-2">
+                <Check size={16} className="mt-1 shrink-0" /> Memnun kalmazsanız iz yok
+              </li>
+            </ul>
+
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="riso-focus mt-6 inline-flex w-full items-center justify-between border-2 border-carbon bg-paper px-4 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-carbon transition-transform hover:translate-y-[-1px]"
+            >
+              <span className="inline-flex items-center gap-2">
+                <MessageCircle size={16} /> WhatsApp&apos;tan yaz
+              </span>
+              <ArrowUpRight size={16} />
+            </a>
+          </div>
+        </motion.aside>
+      </div>
     </div>
   </section>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// How It Works — owner POV
+// Numbers Bar — flat, no rotation, no stickers
+// ─────────────────────────────────────────────────────────────────────────────
+const NUMBERS = [
+  { icon: <Clock size={18} />, label: 'Kurulum', value: '30 dakika' },
+  { icon: <Repeat size={18} />, label: 'Sözleşme', value: 'İstediğin an iptal' },
+  { icon: <Sparkles size={18} />, label: 'Yatırım', value: 'Sıfır' },
+];
+
+const NumbersBar: React.FC = () => (
+  <section aria-label="Anahtar sayılar" className="border-t border-carbon/15 bg-paper">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-carbon/15 px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6">
+      {NUMBERS.map((n) => (
+        <div key={n.label} className="flex items-center gap-4 px-2 py-6 sm:px-6">
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-carbon text-carbon">
+            {n.icon}
+          </span>
+          <div>
+            <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.16em] text-carbon-soft">
+              {n.label}
+            </p>
+            <p className="font-riso-display text-xl text-carbon">{n.value}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// How It Works — owner POV (inline numbers, no floating badges)
 // ─────────────────────────────────────────────────────────────────────────────
 const STEPS = [
   {
     n: '01',
     title: 'Kafenizi tanıtın',
     body: 'Konum, masa sayısı ve 3 ödül seçeneği girin. Setup\'ı bizzat birlikte yapıyoruz.',
-    tone: 'pink' as const,
   },
   {
     n: '02',
     title: 'Müşteriler oynar',
     body: 'Masadan QR ile giriş yaparlar, 5 dakikalık oyunlar oynarlar, puan biriktirirler.',
-    tone: 'blue' as const,
   },
   {
     n: '03',
     title: 'Sizin ödülünüzü alırlar',
     body: 'Puanlarını kahve, indirim veya tatlı kuponuna çevirirler. Kupon QR ile kasada gösterilir.',
-    tone: 'mustard' as const,
   },
 ];
 
@@ -215,41 +223,36 @@ const HowItWorksOwner: React.FC = () => (
   <section
     id="nasil-calisir"
     aria-label="Nasıl çalışır"
-    className="relative border-t-2 border-carbon bg-paper py-20 sm:py-28"
+    className="border-t border-carbon/15 bg-paper py-20 sm:py-28"
   >
-    <div className="mx-auto max-w-5xl px-4 sm:px-6">
-      <div className="mb-12 text-center">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <header className="mb-14 max-w-2xl">
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          Sizin için
+          Akış
         </p>
-        <h2 className="mt-2 font-riso-display text-[2.2rem] sm:text-[3rem] leading-tight text-carbon">
-          3 adımda kafede yeni bir tat
+        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
+          Üç adımda kafe içinde dönen ufak bir ekonomi.
         </h2>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-3">
         {STEPS.map((s, i) => (
           <motion.div
             key={s.n}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.4, delay: i * 0.08 }}
-            className={`relative border-2 border-carbon bg-paper p-6 riso-shadow-sm`}
+            transition={{ duration: 0.4, delay: i * 0.06 }}
+            className="relative"
           >
-            <span
-              className={`absolute -top-3 -left-3 inline-flex h-12 w-12 items-center justify-center border-2 border-carbon font-riso-display text-lg ${
-                s.tone === 'pink'
-                  ? 'bg-riso-pink text-carbon'
-                  : s.tone === 'blue'
-                    ? 'bg-riso-blue text-paper'
-                    : 'bg-riso-mustard text-carbon'
-              }`}
-            >
-              {s.n}
-            </span>
-            <h3 className="mt-4 font-riso-display text-xl text-carbon">{s.title}</h3>
-            <p className="mt-3 font-riso-body text-base leading-relaxed text-carbon-soft">
+            <div className="flex items-baseline gap-3">
+              <span className="font-riso-display text-2xl text-carbon-soft">{s.n}</span>
+              <span className="h-px flex-1 bg-carbon/20" />
+            </div>
+            <h3 className="mt-4 font-riso-display text-xl leading-tight text-carbon">
+              {s.title}
+            </h3>
+            <p className="mt-3 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
               {s.body}
             </p>
           </motion.div>
@@ -260,70 +263,64 @@ const HowItWorksOwner: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Value props — what's in it for the cafe
+// Value props — owner-side benefits, flat outlines
 // ─────────────────────────────────────────────────────────────────────────────
 const BENEFITS = [
   {
-    icon: <Repeat size={22} />,
+    icon: <Repeat size={20} />,
     title: 'Geri dönen müşteri',
-    body: 'Puan biriktiren öğrenci, ödülünü kullanmaya geri gelir. Sadakat kartı doğal hâliyle çalışır.',
+    body: 'Puan biriktiren öğrenci ödülünü kullanmaya geri gelir. Sadakat kartı doğal hâliyle çalışır.',
   },
   {
-    icon: <TrendingUp size={22} />,
-    title: 'Ortalama harcama artışı',
-    body: 'Masada daha uzun kalan müşteri daha çok sipariş verir. Oyun = 15-30 dk ek oturma.',
+    icon: <TrendingUp size={20} />,
+    title: 'Daha uzun oturum, daha çok sipariş',
+    body: 'Oyun = 15–30 dk ek masa süresi. Doluluk saatleri dışında en hissedilir fark burada.',
   },
   {
-    icon: <Users size={22} />,
-    title: 'Yeni müşteri',
-    body: 'Liderlik tablosu ve "arkadaşı yen" mekaniği = öğrenciler arkadaşlarını kafenize çağırır.',
+    icon: <Users size={20} />,
+    title: 'Arkadaş getiren müşteri',
+    body: 'Liderlik tablosu ve düello mekaniği = öğrenciler arkadaşlarını kafenize çağırır.',
   },
   {
-    icon: <Sparkles size={22} />,
-    title: 'Sosyal medyada görünürlük',
-    body: 'Kazanılan ödüller doğal Instagram içeriği üretir. Etiketleme + lokasyon paylaşımı bedava.',
+    icon: <Sparkles size={20} />,
+    title: 'Ücretsiz Instagram görünürlüğü',
+    body: 'Kazanılan ödüller story\'lere giriyor — lokasyon etiketi ve marka adı doğal yoldan paylaşılır.',
   },
 ];
 
 const ValueProps: React.FC = () => (
   <section
     aria-label="Faydalar"
-    className="relative border-t-2 border-carbon bg-riso-pink-soft py-20 sm:py-28"
+    className="border-t border-carbon/15 bg-paper py-20 sm:py-28"
   >
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-0 opacity-[0.08] mix-blend-multiply"
-      style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-        backgroundSize: '6px 6px',
-      }}
-    />
-    <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-      <div className="mb-12 text-center">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <header className="mb-14 max-w-2xl">
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          Cafeduo ile
+          Sahibe katkı
         </p>
-        <h2 className="mt-2 font-riso-display text-[2.2rem] sm:text-[3rem] leading-tight text-carbon">
-          Kafenize ne katar?
+        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
+          Kafenizin günlüğüne neler ekler?
         </h2>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-2">
         {BENEFITS.map((b, i) => (
           <motion.div
             key={b.title}
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.4, delay: i * 0.06 }}
-            className="flex items-start gap-4 border-2 border-carbon bg-paper p-5 riso-shadow-sm"
+            transition={{ duration: 0.4, delay: i * 0.05 }}
+            className="flex items-start gap-4"
           >
-            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center border-2 border-carbon bg-riso-mustard text-carbon">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-carbon text-carbon">
               {b.icon}
             </span>
             <div>
-              <h3 className="font-riso-display text-lg text-carbon">{b.title}</h3>
-              <p className="mt-1 font-riso-body text-base leading-relaxed text-carbon-soft">
+              <h3 className="font-riso-display text-lg leading-tight text-carbon">
+                {b.title}
+              </h3>
+              <p className="mt-2 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
                 {b.body}
               </p>
             </div>
@@ -335,82 +332,85 @@ const ValueProps: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pricing
+// Pricing — single Pro card, pilot inline
 // ─────────────────────────────────────────────────────────────────────────────
 const PricingSection: React.FC = () => (
   <section
     aria-label="Fiyatlandırma"
-    className="relative border-t-2 border-carbon bg-paper py-20 sm:py-28"
+    className="border-t border-carbon/15 bg-paper py-20 sm:py-28"
   >
-    <div className="mx-auto max-w-5xl px-4 sm:px-6">
-      <div className="mb-12 text-center">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6">
+      <header className="mb-12 text-left">
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
           Şeffaf fiyat
         </p>
-        <h2 className="mt-2 font-riso-display text-[2.2rem] sm:text-[3rem] leading-tight text-carbon">
-          Önce deneyin, sonra konuşalım
+        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
+          Önce deneyin, sonra konuşuruz.
         </h2>
-      </div>
+        <p className="mt-3 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
+          Tek bir plan, gizli madde yok. Pilotu memnun bitirirseniz aynı plana geçersiniz.
+        </p>
+      </header>
 
-      <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Pilot */}
-        <div className="relative border-2 border-carbon bg-riso-mustard p-6 riso-shadow-sm">
-          <span className="absolute -top-3 left-4 inline-block border-2 border-carbon bg-paper px-2 py-0.5 font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] text-carbon">
-            İlk 2 kafe
-          </span>
-          <h3 className="mt-2 font-riso-display text-2xl text-carbon">Pilot</h3>
-          <p className="mt-1 font-riso-display text-5xl text-carbon">₺0</p>
-          <p className="font-riso-body text-sm text-carbon-soft">1 ay tamamen ücretsiz</p>
-          <ul className="mt-5 space-y-2 font-riso-body text-sm text-carbon">
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> Tüm özellikler açık
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> Birlikte setup
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> WhatsApp destek
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> Vaka çalışması karşılığı
-            </li>
-          </ul>
+      <div className="border-2 border-carbon bg-paper p-7 riso-shadow-md sm:p-9">
+        <div className="flex flex-col gap-2 border-b border-carbon/20 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-riso-mono text-[0.7rem] uppercase tracking-[0.18em] text-carbon-soft">
+              CafeDuo Pro
+            </p>
+            <p className="mt-2 font-riso-display text-5xl leading-none text-carbon">
+              ₺800<span className="font-riso-body text-lg text-carbon-soft"> /ay</span>
+            </p>
+          </div>
+          <p className="font-riso-mono text-xs uppercase tracking-[0.14em] text-carbon-soft">
+            Yıllık ₺6.400 · 2 ay hediye
+          </p>
         </div>
 
-        {/* Pro */}
-        <div className="relative border-2 border-carbon bg-paper p-6 riso-shadow-sm">
-          <h3 className="mt-2 font-riso-display text-2xl text-carbon">Pro</h3>
-          <p className="mt-1 font-riso-display text-5xl text-carbon">
-            ₺800
-            <span className="font-riso-body text-base text-carbon-soft"> /ay</span>
+        <ul className="mt-6 grid grid-cols-1 gap-x-8 gap-y-3 font-riso-body text-[15px] text-carbon sm:grid-cols-2">
+          <li className="flex items-start gap-2">
+            <Check size={16} className="mt-1 shrink-0" /> Sınırsız müşteri & oyun
+          </li>
+          <li className="flex items-start gap-2">
+            <Check size={16} className="mt-1 shrink-0" /> Kafe paneli + analitik
+          </li>
+          <li className="flex items-start gap-2">
+            <Check size={16} className="mt-1 shrink-0" /> Kupon ve çark yönetimi
+          </li>
+          <li className="flex items-start gap-2">
+            <Check size={16} className="mt-1 shrink-0" /> KVKK uyumlu, gizlilik tam
+          </li>
+          <li className="flex items-start gap-2">
+            <Check size={16} className="mt-1 shrink-0" /> WhatsApp destek hattı
+          </li>
+          <li className="flex items-start gap-2">
+            <Check size={16} className="mt-1 shrink-0" /> İstediğin an iptal
+          </li>
+        </ul>
+
+        <div className="mt-7 flex flex-col items-start justify-between gap-4 border-t border-carbon/20 pt-6 sm:flex-row sm:items-center">
+          <p className="font-riso-body text-sm text-carbon">
+            <span className="font-bold text-riso-pink-deep">İlk 2 pilot kafe</span> için
+            ilk ay <span className="font-bold">₺0</span> — vaka çalışması karşılığında.
           </p>
-          <p className="font-riso-body text-sm text-carbon-soft">
-            Yıllık ₺6.400 (2 ay hediye)
-          </p>
-          <ul className="mt-5 space-y-2 font-riso-body text-sm text-carbon">
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> Sınırsız müşteri & oyun
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> Kafe paneli + analitik
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> Kupon ve çark yönetimi
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={16} className="mt-0.5 shrink-0" /> İstediğin an iptal
-            </li>
-          </ul>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="riso-focus inline-flex items-center gap-2 bg-carbon px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-paper transition-transform hover:translate-y-[-1px]"
+          >
+            Pilot için yaz <ArrowUpRight size={16} className="opacity-70" />
+          </a>
         </div>
       </div>
 
-      <p className="mt-8 text-center font-riso-body text-sm text-carbon-soft">
-        3+ şubeli kafelere özel teklif —{' '}
+      <p className="mt-6 font-riso-body text-sm text-carbon-soft">
+        3+ şubeli zincir kafelere özel teklif için{' '}
         <a
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline decoration-riso-pink decoration-2 underline-offset-2"
+          className="underline decoration-carbon decoration-2 underline-offset-2 hover:text-riso-pink-deep"
         >
           WhatsApp&apos;tan yazın
         </a>
@@ -421,7 +421,7 @@ const PricingSection: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FAQ
+// FAQ — minimal divider list
 // ─────────────────────────────────────────────────────────────────────────────
 const FAQS = [
   {
@@ -449,28 +449,28 @@ const FAQS = [
 const FaqSection: React.FC = () => (
   <section
     aria-label="Sıkça sorulan sorular"
-    className="relative border-t-2 border-carbon bg-paper py-20 sm:py-28"
+    className="border-t border-carbon/15 bg-paper py-20 sm:py-28"
   >
     <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <div className="mb-10 text-center">
+      <header className="mb-10 text-left">
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          SSS
+          Sık sorulanlar
         </p>
-        <h2 className="mt-2 font-riso-display text-[2rem] sm:text-[2.6rem] leading-tight text-carbon">
-          Hemen aklınıza gelenler
+        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
+          Aklınıza gelen ilkler.
         </h2>
-      </div>
+      </header>
 
-      <div className="divide-y-2 divide-carbon border-2 border-carbon bg-paper riso-shadow-sm">
+      <div className="divide-y divide-carbon/20 border-y border-carbon/20">
         {FAQS.map((f, i) => (
-          <details key={i} className="group p-5">
-            <summary className="cursor-pointer list-none font-riso-display text-lg text-carbon flex items-start justify-between gap-4">
-              <span>{f.q}</span>
-              <span className="font-riso-mono text-sm text-carbon-soft transition-transform group-open:rotate-45">
+          <details key={i} className="group py-5">
+            <summary className="flex cursor-pointer list-none items-start justify-between gap-4 font-riso-body text-base font-semibold text-carbon">
+              <span className="flex-1">{f.q}</span>
+              <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-carbon text-carbon transition-transform group-open:rotate-45">
                 +
               </span>
             </summary>
-            <p className="mt-3 font-riso-body text-base leading-relaxed text-carbon-soft">
+            <p className="mt-3 max-w-2xl font-riso-body text-[15px] leading-relaxed text-carbon-soft">
               {f.a}
             </p>
           </details>
@@ -481,42 +481,52 @@ const FaqSection: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Closing CTA
+// Closing — carbon (dark) for premium close
 // ─────────────────────────────────────────────────────────────────────────────
 const ClosingCta: React.FC = () => (
   <section
     aria-label="Son çağrı"
-    className="relative border-t-2 border-carbon bg-riso-blue py-20 sm:py-28 text-paper"
+    className="relative bg-carbon py-20 text-paper sm:py-28"
   >
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
-      <h2 className="font-riso-display text-[2.2rem] sm:text-[3rem] leading-tight">
-        İlk 2 kafeden biri olun.
-      </h2>
-      <p className="mx-auto mt-4 max-w-xl font-riso-body text-lg leading-relaxed opacity-95">
-        1 ay tamamen ücretsiz. 20 dakikalık geri bildirim + isim kullanım izni karşılığında.
-        Setup&apos;ı birlikte yapıyoruz.
-      </p>
+    <div className="mx-auto max-w-4xl px-4 sm:px-6">
+      <div className="grid gap-8 md:grid-cols-12 md:items-end">
+        <div className="md:col-span-7">
+          <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-paper/70">
+            Sıra sizde
+          </p>
+          <h2 className="mt-3 font-riso-display text-[2.2rem] leading-tight tracking-tight sm:text-[3rem]">
+            İlk 2 kafeden biri olun.
+          </h2>
+          <p className="mt-4 max-w-xl font-riso-body text-[15px] leading-relaxed text-paper/85">
+            1 ay tamamen ücretsiz. 20 dakika geri bildirim + isim kullanım izni
+            karşılığında. Setup&apos;ı birlikte yapıyoruz, sizden 0 vakit.
+          </p>
+        </div>
 
-      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 border-2 border-carbon bg-riso-pink px-5 py-3 font-riso-display text-base text-carbon riso-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
-        >
-          <MessageCircle size={18} /> WhatsApp ile başvur
-        </a>
-        <a
-          href={mailtoHref}
-          className="inline-flex items-center gap-2 border-2 border-carbon bg-paper px-5 py-3 font-riso-display text-base text-carbon riso-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform"
-        >
-          E-posta gönder
-        </a>
+        <div className="flex flex-col gap-3 md:col-span-5">
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="riso-focus inline-flex items-center justify-between border-2 border-paper bg-paper px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-carbon transition-transform hover:translate-y-[-1px]"
+          >
+            <span className="inline-flex items-center gap-2">
+              <MessageCircle size={16} /> WhatsApp ile başvur
+            </span>
+            <ArrowUpRight size={16} />
+          </a>
+          <a
+            href={mailtoHref}
+            className="riso-focus inline-flex items-center justify-between border-2 border-paper/40 px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-paper transition-colors hover:border-paper"
+          >
+            <span>E-posta gönder</span>
+            <ArrowUpRight size={16} className="opacity-70" />
+          </a>
+          <p className="font-riso-mono text-[0.7rem] uppercase tracking-[0.14em] text-paper/60">
+            Cevap genelde 1 saatte gelir.
+          </p>
+        </div>
       </div>
-
-      <p className="mt-6 font-riso-mono text-xs uppercase tracking-[0.14em] opacity-80">
-        Cevap genelde 1 saatte gelir.
-      </p>
     </div>
   </section>
 );
