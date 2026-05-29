@@ -25,6 +25,7 @@ import {
   ArrowLeft,
   Cookie,
 } from 'lucide-react';
+import { Reveal } from './ui';
 
 export const PrivacyPolicy: React.FC = () => {
   // Force scroll to top on mount — react-router doesn't do this for SPA
@@ -232,7 +233,7 @@ interface PolicySectionProps {
  *  a numbered/iconned heading and a free-form body. Keeps the layout
  *  uniform across all 8 sections — change once, reflected everywhere. */
 const PolicySection: React.FC<PolicySectionProps> = ({ number, title, icon, iconBg, children }) => (
-  <section className="border-2 border-carbon bg-paper-deep p-5 sm:p-6 riso-shadow-sm">
+  <Reveal as="section" className="border-2 border-carbon bg-paper-deep p-5 sm:p-6 riso-shadow-sm">
     <header className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-carbon">
       <div
         className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 border-carbon ${iconBg}`}
@@ -245,7 +246,7 @@ const PolicySection: React.FC<PolicySectionProps> = ({ number, title, icon, icon
       </h2>
     </header>
     <div className="text-carbon text-sm sm:text-base leading-relaxed">{children}</div>
-  </section>
+  </Reveal>
 );
 
 export default PrivacyPolicy;

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
+import { Reveal } from './ui';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -55,7 +56,10 @@ export const ResetPasswordPage: React.FC = () => {
 
   return (
     <section className="rf-section bg-paper  min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md border-2 border-carbon bg-paper riso-shadow-sm p-6 md:p-8 riso-shadow-md">
+      <Reveal
+        as="div"
+        className="w-full max-w-md border-2 border-carbon bg-paper riso-shadow-sm p-6 md:p-8 riso-shadow-md"
+      >
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
           CafeDuo Güvenlik
         </p>
@@ -146,7 +150,7 @@ export const ResetPasswordPage: React.FC = () => {
         >
           Ana sayfaya dön ve giriş yap
         </Link>
-      </div>
+      </Reveal>
     </section>
   );
 };

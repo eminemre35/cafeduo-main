@@ -6,8 +6,7 @@
  */
 import React from 'react';
 import { ChevronRight, Coffee, Trophy, UserPlus } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Card, Squiggle } from './ui';
+import { Card, Squiggle, RevealGroup, RevealItem } from './ui';
 
 interface Step {
   id: string;
@@ -84,19 +83,16 @@ export const HowItWorks: React.FC = () => (
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <RevealGroup className="grid grid-cols-1 gap-6 md:grid-cols-3" stagger={0.1}>
         {steps.map((step, index) => (
-          <motion.article
+          <RevealItem
             key={step.id}
+            as="article"
+            hover
             data-testid={`how-step-${step.id}`}
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
-            style={{ transform: `rotate(${step.rotate}deg)` }}
             className="relative"
           >
-            <Card tone="paper" shadow="md" rotation={0}>
+            <Card tone="paper" shadow="md" rotation={step.rotate}>
               <div className="flex items-start justify-between gap-4">
                 <div
                   className={`flex h-12 w-12 items-center justify-center border-2 border-carbon ${TILE_BG[step.tone]}`}
@@ -126,9 +122,9 @@ export const HowItWorks: React.FC = () => (
                 <ChevronRight size={16} strokeWidth={3} className="text-carbon" />
               </div>
             )}
-          </motion.article>
+          </RevealItem>
         ))}
-      </div>
+      </RevealGroup>
     </div>
   </section>
 );

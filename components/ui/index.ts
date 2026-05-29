@@ -15,3 +15,6 @@ export { Modal } from './Modal';
 export { Tabs } from './Tabs';
 export type { TabItem } from './Tabs';
 export { Squiggle } from './Squiggle';
+
+export { Reveal, RevealGroup, RevealItem } from './Reveal';
+export { fadeUp, staggerContainer, staggerItem, reducedFade, hoverShift } from './motionVariants';

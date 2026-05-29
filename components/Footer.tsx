@@ -9,6 +9,7 @@ import React from 'react';
 import { Instagram, Twitter, Mail, Shield, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BUILD_META } from '../lib/buildMeta';
+import { RevealGroup, RevealItem } from './ui';
 
 export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -29,8 +30,8 @@ export const Footer: React.FC = () => {
       />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-3 gap-8 items-start">
-          <div>
+        <RevealGroup className="grid md:grid-cols-3 gap-8 items-start">
+          <RevealItem>
             <div className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 items-center justify-center border-2 border-carbon bg-riso-pink">
                 <span className="font-riso-display text-lg font-bold text-carbon">CD</span>
@@ -55,9 +56,9 @@ export const Footer: React.FC = () => {
             >
               v-{BUILD_META.shortVersion}
             </span>
-          </div>
+          </RevealItem>
 
-          <div>
+          <RevealItem>
             <p className="font-riso-mono text-[0.7rem] font-bold tracking-wider uppercase text-carbon-soft">
               Yasal
             </p>
@@ -69,9 +70,9 @@ export const Footer: React.FC = () => {
               Gizlilik Politikası &amp; KVKK
               <ArrowUpRight size={14} />
             </Link>
-          </div>
+          </RevealItem>
 
-          <div>
+          <RevealItem>
             <p className="font-riso-mono text-[0.7rem] font-bold tracking-wider uppercase text-carbon-soft mb-3">
               İletişim
             </p>
@@ -108,8 +109,8 @@ export const Footer: React.FC = () => {
             >
               cafeduotr@gmail.com
             </a>
-          </div>
-        </div>
+          </RevealItem>
+        </RevealGroup>
       </div>
     </footer>
   );

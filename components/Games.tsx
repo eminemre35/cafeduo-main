@@ -6,8 +6,7 @@
  */
 import React from 'react';
 import { ArrowUpRight, Brain, Crown, Gauge, Sparkles, Swords, Timer } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Card, Squiggle } from './ui';
+import { Card, Squiggle, RevealGroup, RevealItem } from './ui';
 
 type GameTone = 'mustard' | 'blue' | 'pink';
 
@@ -65,7 +64,7 @@ const TONE_BG: Record<GameTone, string> = {
   pink: 'bg-riso-pink text-carbon',
 };
 
-const GameCard: React.FC<GameCardData & { onClick?: () => void; index: number }> = ({
+const GameCard: React.FC<GameCardData & { onClick?: () => void }> = ({
   title,
   subtitle,
   duration,
@@ -76,22 +75,18 @@ const GameCard: React.FC<GameCardData & { onClick?: () => void; index: number }>
   cta,
   rotate,
   onClick,
-  index,
 }) => (
-  <motion.article
+  <RevealItem
+    as="article"
+    hover
     onClick={onClick}
     role={onClick ? 'button' : undefined}
     tabIndex={onClick ? 0 : undefined}
     onKeyDown={onClick ? (event) => event.key === 'Enter' && onClick() : undefined}
     aria-label={`${title} - ${cta}`}
-    initial={{ opacity: 0, y: 16 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-50px' }}
-    transition={{ duration: 0.4, delay: index * 0.08 }}
-    style={{ transform: `rotate(${rotate}deg)` }}
     className="group cursor-pointer"
   >
-    <Card tone="paper" shadow="md">
+    <Card tone="paper" shadow="md" rotation={rotate}>
       <div
         className={`inline-flex items-center gap-2 border-2 border-carbon px-3 py-1 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] ${TONE_BG[tone]}`}
       >
@@ -126,7 +121,7 @@ const GameCard: React.FC<GameCardData & { onClick?: () => void; index: number }>
         />
       </div>
     </Card>
-  </motion.article>
+  </RevealItem>
 );
 
 interface HighlightProps {
@@ -137,7 +132,7 @@ interface HighlightProps {
 }
 
 const Highlight: React.FC<HighlightProps> = ({ icon, title, text, tone }) => (
-  <div className="flex items-start gap-3 border-2 border-carbon bg-paper-deep p-4">
+  <RevealItem className="flex items-start gap-3 border-2 border-carbon bg-paper-deep p-4">
     <div
       className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 border-carbon ${TONE_BG[tone]}`}
     >
@@ -147,7 +142,7 @@ const Highlight: React.FC<HighlightProps> = ({ icon, title, text, tone }) => (
       <p className="font-riso-display text-base text-carbon">{title}</p>
       <p className="mt-0.5 font-riso-body text-xs leading-5 text-carbon-soft">{text}</p>
     </div>
-  </div>
+  </RevealItem>
 );
 
 export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) => {
@@ -197,13 +192,13 @@ export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) =
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {games.map((game, index) => (
-            <GameCard key={game.title} {...game} onClick={onPlayClick} index={index} />
+        <RevealGroup className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {games.map((game) => (
+            <GameCard key={game.title} {...game} onClick={onPlayClick} />
           ))}
-        </div>
+        </RevealGroup>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+        <RevealGroup className="mt-10 grid gap-4 sm:grid-cols-3" stagger={0.06}>
           <Highlight
             icon={<Timer size={18} strokeWidth={2.4} />}
             title="Beklerken Oyna"
@@ -222,7 +217,7 @@ export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) =
             text="Sadakat döngüsü oyunla görünür hale gelir."
             tone="mustard"
           />
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

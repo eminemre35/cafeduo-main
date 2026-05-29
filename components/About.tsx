@@ -6,8 +6,7 @@
  */
 import React from 'react';
 import { Building2, Gauge, Server, ShieldCheck, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Card, Squiggle } from './ui';
+import { Card, Squiggle, Reveal, RevealGroup, RevealItem } from './ui';
 
 interface Pillar {
   icon: React.ReactNode;
@@ -55,13 +54,7 @@ export const About: React.FC = () => {
     <section id="about" className="riso-kantin bg-paper py-20 sm:py-28" aria-label="Hakkımızda">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-stretch gap-6 lg:grid-cols-12">
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.5 }}
-            className="lg:col-span-7"
-          >
+          <Reveal className="lg:col-span-7">
             <Card tone="paper" shadow="md" className="p-7 md:p-9">
               <p className="mb-3 font-riso-mono text-xs font-bold uppercase tracking-[0.18em] text-carbon-soft">
                 // Neden CafeDuo?
@@ -85,10 +78,12 @@ export const About: React.FC = () => {
                 güçlendirir.
               </p>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <RevealGroup className="mt-8 grid gap-3 sm:grid-cols-2" stagger={0.06}>
                 {pillars.map((pillar) => (
-                  <article
+                  <RevealItem
                     key={pillar.title}
+                    as="article"
+                    hover
                     className="border-2 border-carbon bg-paper p-4 transition-colors hover:bg-paper-deep"
                   >
                     <div
@@ -100,19 +95,13 @@ export const About: React.FC = () => {
                     <p className="mt-1 font-riso-body text-sm leading-6 text-carbon-soft">
                       {pillar.text}
                     </p>
-                  </article>
+                  </RevealItem>
                 ))}
-              </div>
+              </RevealGroup>
             </Card>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex flex-col gap-4 lg:col-span-5"
-          >
+          <Reveal delay={0.1} className="flex flex-col gap-4 lg:col-span-5">
             <Card tone="mustard" shadow="md" rotation={1}>
               <div className="inline-flex items-center gap-2 font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] text-carbon">
                 <Building2 size={14} />
@@ -160,7 +149,7 @@ export const About: React.FC = () => {
                 </li>
               </ul>
             </Card>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>
