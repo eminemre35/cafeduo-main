@@ -26,6 +26,8 @@ export default {
       functions: 50,
     },
   },
+  // CI coverage rozeti `coverage-summary.json` okur; json-summary olmadan 0% (kırmızı) çıkar.
+  coverageReporters: ['json', 'json-summary', 'text', 'lcov', 'clover'],
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
   testPathIgnorePatterns: ['/node_modules/', '<rootDir>/e2e/'],
   collectCoverageFrom: [
