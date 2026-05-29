@@ -119,7 +119,7 @@ describe('UserProfileModal', () => {
     const onClose = jest.fn();
     const { container } = render(<UserProfileModal isOpen={true} onClose={onClose} user={user} />);
 
-    fireEvent.click(screen.getAllByRole('button')[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Profili kapat' }));
     expect(onClose).toHaveBeenCalledTimes(1);
 
     const backdrop = container.querySelector('.absolute.inset-0');

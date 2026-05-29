@@ -62,7 +62,7 @@ describe('RetroChess (classic)', () => {
       jest.advanceTimersByTime(600);
     });
 
-    expect(screen.getByText(/Sıra sende/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Sıra sende/i).length).toBeGreaterThan(0);
   });
 
   it('calls onLeave when user exits', () => {

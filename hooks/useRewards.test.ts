@@ -11,8 +11,8 @@ jest.mock('../lib/api', () => ({
     shop: {
       buy: jest.fn(),
       inventory: jest.fn(),
-    }
-  }
+    },
+  },
 }));
 
 import { api } from '../lib/api';
@@ -26,7 +26,8 @@ describe('useRewards', () => {
     wins: 0,
     gamesPlayed: 0,
     role: 'user',
-    isAdmin: false
+    isAdmin: false,
+    cafe_id: 1,
   };
 
   beforeEach(() => {
@@ -35,21 +36,21 @@ describe('useRewards', () => {
 
   it('initial state and fetches on mount', async () => {
     const mockRewards = [
-      { id: 1, title: 'Kahve', cost: 100, description: 'Kahve', icon: 'coffee' }
+      { id: 1, title: 'Kahve', cost: 100, description: 'Kahve', icon: 'coffee' },
     ];
     const mockInventory = [
-      { 
-        id: 1, 
+      {
+        id: 1,
         redeemId: 'ABC123',
-        itemId: 1, 
-        title: 'Kahve', 
-        code: 'ABC123', 
+        itemId: 1,
+        title: 'Kahve',
+        code: 'ABC123',
         cost: 100,
         description: 'Kahve',
         icon: 'coffee',
-        redeemedAt: new Date(), 
-        isUsed: false 
-      }
+        redeemedAt: new Date(),
+        isUsed: false,
+      },
     ];
 
     (api.rewards.list as jest.Mock).mockResolvedValue(mockRewards);
@@ -88,7 +89,7 @@ describe('useRewards', () => {
     const mockResponse = {
       success: true,
       newPoints: 400,
-      reward: { code: 'COFFEE123' }
+      reward: { code: 'COFFEE123' },
     };
 
     (api.rewards.list as jest.Mock).mockResolvedValue([]);
@@ -100,7 +101,7 @@ describe('useRewards', () => {
     await waitFor(() => expect(api.rewards.list).toHaveBeenCalled());
 
     const reward = { id: 1, title: 'Kahve', cost: 100, description: 'Kahve', icon: 'coffee' };
-    
+
     const buyResult = await act(async () => {
       return await result.current.buyReward(reward);
     });
@@ -118,7 +119,13 @@ describe('useRewards', () => {
 
     await waitFor(() => expect(api.rewards.list).toHaveBeenCalled());
 
-    const expensiveReward = { id: 1, title: 'Pahalı', cost: 1000, description: 'Pahalı', icon: 'diamond' };
+    const expensiveReward = {
+      id: 1,
+      title: 'Pahalı',
+      cost: 1000,
+      description: 'Pahalı',
+      icon: 'diamond',
+    };
 
     await expect(
       act(async () => {
@@ -165,7 +172,7 @@ describe('useRewards', () => {
     const { result } = renderHook(() => useRewards({ currentUser: mockUser }));
 
     await waitFor(() => expect(api.rewards.list).toHaveBeenCalled());
-    
+
     jest.clearAllMocks();
 
     await act(async () => {
@@ -182,7 +189,7 @@ describe('useRewards', () => {
     const { result } = renderHook(() => useRewards({ currentUser: mockUser }));
 
     await waitFor(() => expect(api.shop.inventory).toHaveBeenCalled());
-    
+
     jest.clearAllMocks();
 
     await act(async () => {

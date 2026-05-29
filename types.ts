@@ -96,6 +96,7 @@ export interface Reward {
   cost: number;
   description: string;
   icon: 'coffee' | 'discount' | 'dessert' | 'game' | string;
+  is_active?: boolean;
 }
 
 export interface RedeemedReward extends Reward {
@@ -150,7 +151,6 @@ export interface DeleteCafeResult {
   };
   cleanup: DeleteCafeCleanup;
 }
-
 
 export type TournamentStatus = 'scheduled' | 'active' | 'finalizing' | 'finished' | 'cancelled';
 

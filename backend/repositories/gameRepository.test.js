@@ -69,10 +69,18 @@ describe('gameRepository', () => {
       gameState: { chess: { fen: 'startpos' } },
     });
 
-    // PR #36 — cafe_id added as $6 (null when not provided)
+    // cafe_id added as $6, tournament_id as $7 (both null when not provided)
     expect(client.query).toHaveBeenCalledWith(
-      expect.stringContaining("VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)"),
-      ['emin', 'retro_chess', 100, 'MASA08', JSON.stringify({ chess: { fen: 'startpos' } }), null]
+      expect.stringContaining("VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7)"),
+      [
+        'emin',
+        'retro_chess',
+        100,
+        'MASA08',
+        JSON.stringify({ chess: { fen: 'startpos' } }),
+        null,
+        null,
+      ]
     );
     expect(row).toEqual({ id: 77, gameType: 'retro_chess', status: 'waiting' });
   });
