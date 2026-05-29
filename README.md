@@ -53,7 +53,7 @@
 | 🎰  | **Günlük çark**                 | `Europe/Istanbul` TZ unique index; her kafe kendi çark içeriğini yönetir    |
 | 🛡️  | **OWASP Top 10 uyumlu**         | JWT+CSRF double-submit, bcrypt cost=12, parametreli SQL, rate limiting      |
 | 📱  | **PWA (kurulabilir)**           | Offline-first cache, mobilde otomatik zorluk ayarı                          |
-| 🌐  | **Otomatik HTTPS**              | Caddy 2 + Let's Encrypt; Dokploy ile push-to-deploy                         |
+| 🌐  | **Otomatik HTTPS**              | Traefik (prod, Dokploy) · Caddy 2 (self-host compose) + Let's Encrypt       |
 | 🧠  | **Akademik temel**              | Octalysis (Chou, 2015) + Öz Belirleme Kuramı (Deci & Ryan)                  |
 | 📊  | **Gözlemlenebilir**             | Sentry APM, Winston structured logs, opsiyonel Prometheus stack             |
 
@@ -61,7 +61,7 @@
 
 ![CafeDuo Mimari Diyagramı](./assets/architecture.png)
 
-**6 servis · 4 katman.** İstemci → Edge (Caddy) → Application Services (Auth · Cafe · Game · Rewards · Realtime · Achievements) → Persistence (PostgreSQL + Redis). Tüm servisler Docker Compose'da konteynerize edilmiştir; tek `docker compose up` komutuyla ayağa kalkar. Caddy 2, `/api/*` ve `/socket.io` yollarını ilgili servislere yönlendirir; Redis hem cache hem Socket.IO pub/sub köprüsü olarak kullanılır.
+**6 servis · 4 katman.** İstemci → Edge (reverse proxy) → Application Services (Auth · Cafe · Game · Rewards · Realtime · Achievements) → Persistence (PostgreSQL + Redis). Tüm servisler konteynerizedir. **Prod'da Dokploy + Traefik** edge proxy olarak `/api/*` ve `/socket.io` yollarını backend'e yönlendirir; self-host için `docker compose up` ile Caddy 2 aynı işi görür. Redis hem cache hem Socket.IO pub/sub köprüsü olarak kullanılır.
 
 ## 📸 Ekran Görüntüleri
 
@@ -130,7 +130,7 @@ Kullanıcı giriş yaptıktan sonra **kafe seçer + masa numarası girer + GPS k
 | **Önbellek**      | Redis 7                                       | Sub-ms gecikme; pub/sub; rate-limit ve JWT blacklist store                  |
 | **Realtime**      | Socket.IO                                     | WebSocket + polling fallback (zayıf bağlantı dayanıklılığı)                 |
 | **Kapsayıcı**     | Docker · Docker Compose                       | 4 servis (postgres / redis / api / web), taşınabilir                        |
-| **Reverse Proxy** | Caddy 2                                       | Otomatik HTTPS, sıfır-konfig Let's Encrypt                                  |
+| **Reverse Proxy** | Traefik (prod, Dokploy) · Caddy 2 (compose)   | Otomatik HTTPS, Let's Encrypt                                               |
 | **CI / CD**       | GitHub Actions · Dokploy                      | `main`'e her push → otomatik build + deploy                                 |
 | **Test**          | Jest · React Testing Library · Playwright     | 898 unit/integration + smoke E2E                                            |
 | **Gözlemleme**    | Sentry APM · Winston · (opsiyonel) Prometheus | Structured logs, hata izleme, metrik                                        |
@@ -249,7 +249,7 @@ OWASP Top 10 karşılığı uygulanan kontroller:
 | **A01 Broken Access Control**     | RBAC + middleware (`requireAdmin`, `requireCafeAdmin`, `requireOwnership`) |
 | **A02 Cryptographic Failures**    | bcrypt cost=12, JWT secret ≥64 hex, HTTPS-only cookie                      |
 | **A03 Injection**                 | %100 parametreli SQL (prepared statement), `SELECT *` yasak                |
-| **A05 Security Misconfiguration** | Helmet, CSP, Caddy auto-HTTPS, secrets sadece env'de                       |
+| **A05 Security Misconfiguration** | Helmet, CSP, Traefik auto-HTTPS, secrets sadece env'de                     |
 | **A07 Identification Failures**   | Rate limit (login 15 dk / 20 deneme), JWT Redis blacklist                  |
 | **CSRF**                          | Double-submit cookie + custom header pattern                               |
 | **XSS**                           | React JSX otomatik escape; inline HTML kullanılmaz                         |
@@ -268,7 +268,7 @@ Dokploy GitHub watcher (~1 dk)
         ↓
 docker compose build + recreate
         ↓
-Caddy + Let's Encrypt (otomatik sertifika)
+Traefik + Let's Encrypt (otomatik sertifika)
         ↓
 https://cafeduotr.com ✅
 ```

@@ -16,7 +16,7 @@ Supporting files:
 
 - `Dockerfile` for the backend API.
 - `Dockerfile.web` for the frontend build and Nginx static server.
-- `deploy/Caddyfile` when using the bundled Caddy reverse proxy.
+- `deploy/Caddyfile` only for standalone Docker Compose self-host; Dokploy uses its built-in Traefik proxy.
 - `.env.production.example` as the production environment template.
 
 ## Required Production Environment

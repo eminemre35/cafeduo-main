@@ -2,7 +2,7 @@
 
 Üniversite öğrencileri için oyunlaştırılmış kafe sadakat platformu. Kullanıcı kafede check-in yapar, 2 kişilik oyun oynar, puan kazanır, ödüllere dönüştürür.
 
-**Stack:** Node 20 + Express, React + Vite + TS, PostgreSQL 15 (pgvector), Redis 7, Socket.IO, Docker Compose + Caddy 2 production.
+**Stack:** Node 20 + Express, React + Vite + TS, PostgreSQL 15 (pgvector), Redis 7, Socket.IO. **Prod runtime: Dokploy + Traefik** (`deploy/docker-compose.dokploy.yml`); Docker Compose + Caddy 2 repoda self-host alternatifi olarak duruyor.
 
 ## Komutlar
 
@@ -17,10 +17,10 @@
 
 ## Workflow
 
-- **Branch açma**, doğrudan `main`'e push (her push `deploy-vps.yml` tetikler → prod deploy)
+- **Branch açma**, doğrudan `main`'e push → **Dokploy push-to-deploy** ile prod'a çıkar (eski GitHub Actions `deploy-vps.yml` 2026-05-16'dan beri tetiklenmiyor)
 - `npm run quality && npm test` yerelde yeşil olmadan commit ETME
 - Husky pre-commit `lint-staged` çalıştırır (eslint --fix + prettier --write staged dosyalar)
-- Commit sonrası: `gh run watch <id>` ile deploy bekle, smoke fail → `git revert HEAD && git push`
+- Commit sonrası deploy'u **Dokploy panelinden** izle (`http://217.60.254.141:3000`); prod bozulursa `git revert HEAD && git push` (Dokploy yeniden deploy eder), `npm run smoke:live` ile doğrula
 - Production: https://cafeduotr.com, health: `/api/health` → `{database:true}`
 
 ## Mimari Notlar
@@ -55,11 +55,10 @@
 
 ## Production / Deploy
 
-- **Deploy path:** sunucuda `/opt/cafeduo-main`, container'lar Docker Compose ile
-- **`.github/workflows/deploy-vps.yml`:** rsync → migrate:status → docker compose up --build → smoke
+- **Gerçek prod runtime: Dokploy + Traefik** (doğrulandı 2026-05-29, SSH). VDS `217.60.254.141` (Hostligo, Ubuntu 22.04). Dokploy `main`'i GitHub'dan çekip `/etc/dokploy/compose/cafeduo-proje-3qsnfh/code/deploy/docker-compose.dokploy.yml`'i çalıştırır; container'lar `cafeduo-proje-3qsnfh-{web,api,redis,postgres}-1`, reverse proxy `dokploy-traefik`. SSH: `ssh -i ~/.ssh/id_ed25519_cafeduo root@217.60.254.141`, panel `:3000`.
+- **Eski pipeline (devre dışı):** `.github/workflows/deploy-vps.yml` rsync → `/opt/cafeduo-main` → docker compose + Caddy + smoke yapıyordu; **son çalışması 2026-05-16**, artık tetiklenmiyor. `/opt/cafeduo-main` sunucuda stale kalıntı.
 - **Husky prod fix:** `"prepare": "husky || true"` zorunlu (Dockerfile `npm ci --only=production` devDeps'i kaldırır, husky binary olmaz)
 - **Sentry DSN şu an boş** (production env'de set edilmemiş)
-- **Dokploy** alternatifi de configure edilmiş (`deploy/docker-compose.dokploy.yml`)
 
 ## Bilinen Tech Debt
 

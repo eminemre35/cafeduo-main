@@ -25,7 +25,7 @@ info:
 servers:
   - url: http://localhost:3001
     description: Local development server
-  - url: https://cafeduo-api.onrender.com
+  - url: https://cafeduotr.com
     description: Production server
 
 security:
