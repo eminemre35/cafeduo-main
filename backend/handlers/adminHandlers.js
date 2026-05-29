@@ -439,6 +439,12 @@ const createAdminHandlers = ({
             });
           }
 
+          try {
+            await clearCacheByPattern('cache:/api/cafes*');
+          } catch (cacheErr) {
+            logger.warn('Cafe cache cleanup failed after update', cacheErr);
+          }
+
           return res.json({ success: true, cafe: result.rows[0] });
         } catch (err) {
           return sendApiError(res, logger, 'Cafe update error', err, 'Kafe güncellenemedi.');
@@ -495,6 +501,12 @@ const createAdminHandlers = ({
              RETURNING ${buildCafeProjection(columns)}`,
             values
           );
+
+          try {
+            await clearCacheByPattern('cache:/api/cafes*');
+          } catch (cacheErr) {
+            logger.warn('Cafe cache cleanup failed after create', cacheErr);
+          }
 
           return res.status(201).json({ success: true, cafe: result.rows[0] });
         } catch (err) {
