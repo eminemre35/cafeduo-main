@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { ChevronRight, Coffee, Trophy, UserPlus } from 'lucide-react';
-import { Card, Squiggle, RevealGroup, RevealItem } from './ui';
+import { Card, Squiggle, RevealGroup, RevealItem, TiltCard } from './ui';
 
 interface Step {
   id: string;
@@ -88,34 +88,35 @@ export const HowItWorks: React.FC = () => (
           <RevealItem
             key={step.id}
             as="article"
-            hover
             data-testid={`how-step-${step.id}`}
             className="relative"
           >
-            <Card tone="paper" shadow="md" rotation={step.rotate}>
-              <div className="flex items-start justify-between gap-4">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center border-2 border-carbon ${TILE_BG[step.tone]}`}
-                >
-                  {step.icon}
+            <TiltCard>
+              <Card tone="paper" shadow="md" rotation={step.rotate}>
+                <div className="flex items-start justify-between gap-4">
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center border-2 border-carbon ${TILE_BG[step.tone]}`}
+                  >
+                    {step.icon}
+                  </div>
+                  <span className="font-riso-display text-5xl leading-none text-paper-dim">
+                    {step.id}
+                  </span>
                 </div>
-                <span className="font-riso-display text-5xl leading-none text-paper-dim">
-                  {step.id}
-                </span>
-              </div>
 
-              <h3 className="mt-5 font-riso-display text-2xl text-carbon">{step.title}</h3>
-              <p className="mt-2 font-riso-body text-sm leading-6 text-carbon-soft">
-                {step.description}
-              </p>
+                <h3 className="mt-5 font-riso-display text-2xl text-carbon">{step.title}</h3>
+                <p className="mt-2 font-riso-body text-sm leading-6 text-carbon-soft">
+                  {step.description}
+                </p>
 
-              <div className="mt-6 inline-flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-1.5">
-                <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-carbon-muted">
-                  Ortalama
-                </span>
-                <span className="font-riso-mono font-bold text-carbon">{step.hint}</span>
-              </div>
-            </Card>
+                <div className="mt-6 inline-flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-1.5">
+                  <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] text-carbon-muted">
+                    Ortalama
+                  </span>
+                  <span className="font-riso-mono font-bold text-carbon">{step.hint}</span>
+                </div>
+              </Card>
+            </TiltCard>
 
             {index < steps.length - 1 && (
               <div className="absolute -right-4 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center border-2 border-carbon bg-riso-pink md:flex">

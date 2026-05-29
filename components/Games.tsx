@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { ArrowUpRight, Brain, Crown, Gauge, Sparkles, Swords, Timer } from 'lucide-react';
-import { Card, Squiggle, RevealGroup, RevealItem } from './ui';
+import { Card, Squiggle, RevealGroup, RevealItem, TiltCard } from './ui';
 
 type GameTone = 'mustard' | 'blue' | 'pink';
 
@@ -78,7 +78,6 @@ const GameCard: React.FC<GameCardData & { onClick?: () => void }> = ({
 }) => (
   <RevealItem
     as="article"
-    hover
     onClick={onClick}
     role={onClick ? 'button' : undefined}
     tabIndex={onClick ? 0 : undefined}
@@ -86,41 +85,43 @@ const GameCard: React.FC<GameCardData & { onClick?: () => void }> = ({
     aria-label={`${title} - ${cta}`}
     className="group cursor-pointer"
   >
-    <Card tone="paper" shadow="md" rotation={rotate}>
-      <div
-        className={`inline-flex items-center gap-2 border-2 border-carbon px-3 py-1 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] ${TONE_BG[tone]}`}
-      >
-        {icon}
-        <span>{badge}</span>
-      </div>
-
-      <h3 className="mt-5 font-riso-display text-2xl text-carbon">{title}</h3>
-      <p className="mt-2 font-riso-body text-sm leading-6 text-carbon-soft">{subtitle}</p>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 border-t-2 border-paper-dim pt-4 font-riso-body text-sm">
-        <div>
-          <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] text-carbon-muted">
-            Süre
-          </p>
-          <p className="mt-0.5 font-riso-mono font-bold text-carbon">{duration}</p>
+    <TiltCard>
+      <Card tone="paper" shadow="md" rotation={rotate}>
+        <div
+          className={`inline-flex items-center gap-2 border-2 border-carbon px-3 py-1 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] ${TONE_BG[tone]}`}
+        >
+          {icon}
+          <span>{badge}</span>
         </div>
-        <div className="text-right">
-          <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] text-carbon-muted">
-            Mod
-          </p>
-          <p className="mt-0.5 font-bold text-carbon">{mode}</p>
-        </div>
-      </div>
 
-      <div className="mt-5 flex items-center gap-1.5 font-riso-body text-sm font-bold text-riso-pink-deep transition-transform group-hover:translate-x-1">
-        <span>{cta}</span>
-        <ArrowUpRight
-          size={14}
-          strokeWidth={2.5}
-          className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-        />
-      </div>
-    </Card>
+        <h3 className="mt-5 font-riso-display text-2xl text-carbon">{title}</h3>
+        <p className="mt-2 font-riso-body text-sm leading-6 text-carbon-soft">{subtitle}</p>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 border-t-2 border-paper-dim pt-4 font-riso-body text-sm">
+          <div>
+            <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] text-carbon-muted">
+              Süre
+            </p>
+            <p className="mt-0.5 font-riso-mono font-bold text-carbon">{duration}</p>
+          </div>
+          <div className="text-right">
+            <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.14em] text-carbon-muted">
+              Mod
+            </p>
+            <p className="mt-0.5 font-bold text-carbon">{mode}</p>
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center gap-1.5 font-riso-body text-sm font-bold text-riso-pink-deep transition-transform group-hover:translate-x-1">
+          <span>{cta}</span>
+          <ArrowUpRight
+            size={14}
+            strokeWidth={2.5}
+            className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          />
+        </div>
+      </Card>
+    </TiltCard>
   </RevealItem>
 );
 

@@ -5,6 +5,7 @@ import { Hero } from './components/Hero';
 import { HowItWorks } from './components/HowItWorks';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
+import { CursorInk } from './components/ui';
 import { AuthModal } from './components/AuthModal';
 
 import { User } from './types';
@@ -352,6 +353,10 @@ const AppContent: React.FC = () => {
       </main>
 
       <Footer />
+
+      {['/', '/kafeler', '/gizlilik', '/reset-password'].includes(location.pathname) && (
+        <CursorInk />
+      )}
 
       <AuthModal
         isOpen={isAuthOpen}

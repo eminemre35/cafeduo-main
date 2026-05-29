@@ -18,3 +18,5 @@ export { Squiggle } from './Squiggle';
 
 export { Reveal, RevealGroup, RevealItem } from './Reveal';
 export { fadeUp, staggerContainer, staggerItem, reducedFade, hoverShift } from './motionVariants';
+export { TiltCard } from './TiltCard';
+export { CursorInk } from './CursorInk';
