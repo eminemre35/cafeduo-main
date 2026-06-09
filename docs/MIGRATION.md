@@ -3,6 +3,8 @@
 CafeDuo'yu bir VDS'ten başka bir VDS'e taşıma rehberi. Felaket kurtarma (DR) prosedürü olarak da kullanılır.
 
 > 🧪 **Bu prosedür test edildi (2026-05-24).** B2 yedeğinden restore smoke test geçti: 9 users / 7 cafes / 51 games / 5 user_items — prod ile birebir eşleşti.
+>
+> **2026-06-08 pre-migration:** Prod snapshot 9 users / 8 cafes / 56 games. Son dump `cafeduo-20260608-180824.dump`, env `cafeduo-dokploy-env-20260608-181039.txt`. Otomasyon: `deploy/scripts/migration/` + `migration-state.json`. Yeni VDS IP gelince: `continue-when-new-vds-ready.sh NEW_IP`.
 
 ---
 

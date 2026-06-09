@@ -48,6 +48,8 @@
     "perf:api-p95": "node scripts/perf/api-p95.mjs",
     "smoke:prod": "node scripts/smoke/prod-smoke.mjs",
     "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs",
+    "smoke:gate": "node scripts/automation/smoke-gate.mjs",
+    "migration:state": "node -e \"console.log(require('fs').readFileSync('deploy/scripts/migration/migration-state.json','utf8'))\"",
     "migrate:create": "node-pg-migrate create",
     "migrate:up": "node scripts/migrations/run-node-pg-migrate.js up",
     "migrate:down": "node scripts/migrations/run-node-pg-migrate.js down",

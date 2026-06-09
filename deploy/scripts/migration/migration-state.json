@@ -1,0 +1,50 @@
+{
+  "updatedAt": "2026-06-08T18:10:39Z",
+  "phase": "awaiting-new-vds-ip",
+  "oldVds": "217.60.254.141",
+  "newVdsIp": null,
+  "domain": "cafeduotr.com",
+  "dns": {
+    "currentA": "217.60.254.141",
+    "recommendedTtlSeconds": 300,
+    "currentDefaultTtlSeconds": 3600,
+    "ttlAction": "BEFORE cutover (24-48h): turkticaret.net panel -> cafeduotr.com A record TTL 300s (su an default 3600)",
+    "ttlStatus": "documented-not-changed-yet"
+  },
+  "prodRowCounts": {
+    "users": 9,
+    "cafes": 8,
+    "games": 56,
+    "capturedAt": "2026-06-08"
+  },
+  "latestBackup": {
+    "file": "cafeduo-20260608-180824.dump",
+    "b2Path": "b2-cafeduo:cafeduo-backups/daily/cafeduo-20260608-180824.dump",
+    "sizeBytes": 51791
+  },
+  "dokployEnvBackup": {
+    "status": "ok",
+    "file": "cafeduo-dokploy-env-20260608-181039.txt",
+    "b2Path": "b2-cafeduo:cafeduo-backups/dokploy-env/cafeduo-dokploy-env-20260608-181039.txt",
+    "sizeBytes": 784
+  },
+  "scope": "cafeduo-only-flowmind-stays-on-old-vds",
+  "completedPreMigration": [
+    "SSH key verified locally",
+    "Manual backup cafeduo-20260608-180824.dump to B2",
+    "Dokploy env export cafeduo-dokploy-env-20260608-181039.txt to B2",
+    "Prod row counts captured (9/8/56)",
+    "Migration scripts added under deploy/scripts/migration/",
+    "Pre-cutover smoke:live passed on old prod"
+  ],
+  "blockedOn": "NEW_VDS_IP — run continue-when-new-vds-ready.sh after purchase",
+  "nextSteps": [
+    "Purchase new VDS (Ubuntu 22.04+, 4GB+ RAM, 40GB+ SSD)",
+    "Run new-vds-bootstrap.sh on new VDS",
+    "Dokploy: GitHub eminemrre/cafeduo-main deploy/docker-compose.dokploy.yml",
+    "Paste env from latest dokploy-env B2 file",
+    "restore-postgres-from-b2.sh on new VDS",
+    "DNS A record to NEW_VDS_IP",
+    "npm run smoke:live"
+  ]
+}
