@@ -3,12 +3,11 @@
  * Handles game resignation with winner determination and settlement
  */
 
+const { findOpponentName } = require('../validation');
 const {
-  isAdminActor,
-  findOpponentName,
-} = require('../validation');
-const { isChessGameType } = require('../chessUtils');
-const { assertGameStatusTransition, assertRequiredGameStatus, GAME_STATUS } = require('../../../utils/gameStateMachine');
+  assertGameStatusTransition,
+  assertRequiredGameStatus,
+} = require('../../../utils/gameStateMachine');
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
 
@@ -19,9 +18,9 @@ const createResignGameHandler = (deps) => {
     logger,
     normalizeParticipantName,
     getGameParticipants,
-    gameService,
+    gameService: _gameService,
     getMemoryGames,
-    setMemoryGames,
+    setMemoryGames: _setMemoryGames,
     getMemoryUsers,
     emitRealtimeUpdate,
     GAME_STATUS,
@@ -69,7 +68,9 @@ const createResignGameHandler = (deps) => {
         const winnerByResign = findOpponentName(actorParticipant, game, getGameParticipants);
         if (!winnerByResign) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Rakip bulunamadığı için teslim işlemi yapılamadı.' });
+          return res
+            .status(409)
+            .json({ error: 'Rakip bulunamadığı için teslim işlemi yapılamadı.' });
         }
 
         const resignTransition = assertGameStatusTransition({
@@ -84,9 +85,7 @@ const createResignGameHandler = (deps) => {
 
         const nowIso = new Date().toISOString();
         const currentGameState =
-          game.game_state && typeof game.game_state === 'object'
-            ? { ...game.game_state }
-            : {};
+          game.game_state && typeof game.game_state === 'object' ? { ...game.game_state } : {};
         const currentChessState =
           currentGameState.chess && typeof currentGameState.chess === 'object'
             ? { ...currentGameState.chess }
@@ -105,12 +104,13 @@ const createResignGameHandler = (deps) => {
             winner: winnerByResign,
             result: 'resign',
             isGameOver: true,
-            clock: currentChessState.clock && typeof currentChessState.clock === 'object'
-              ? {
-                  ...currentChessState.clock,
-                  lastTickAt: null,
-                }
-              : currentChessState.clock,
+            clock:
+              currentChessState.clock && typeof currentChessState.clock === 'object'
+                ? {
+                    ...currentChessState.clock,
+                    lastTickAt: null,
+                  }
+                : currentChessState.clock,
             updatedAt: nowIso,
           };
         }
@@ -176,10 +176,14 @@ const createResignGameHandler = (deps) => {
       return res.status(409).json(mapTransitionError(resignStatus));
     }
 
-    const winnerByResign = findOpponentName(actorParticipant, {
-      host_name: game.hostName,
-      guest_name: game.guestName,
-    }, getGameParticipants);
+    const winnerByResign = findOpponentName(
+      actorParticipant,
+      {
+        host_name: game.hostName,
+        guest_name: game.guestName,
+      },
+      getGameParticipants
+    );
     if (!winnerByResign) {
       return res.status(409).json({ error: 'Rakip bulunamadığı için teslim işlemi yapılamadı.' });
     }
@@ -194,7 +198,8 @@ const createResignGameHandler = (deps) => {
     }
 
     const nowIso = new Date().toISOString();
-    const currentGameState = game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
+    const currentGameState =
+      game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
     const currentChessState =
       currentGameState.chess && typeof currentGameState.chess === 'object'
         ? { ...currentGameState.chess }
@@ -214,12 +219,13 @@ const createResignGameHandler = (deps) => {
               winner: winnerByResign,
               result: 'resign',
               isGameOver: true,
-              clock: currentChessState.clock && typeof currentChessState.clock === 'object'
-                ? {
-                    ...currentChessState.clock,
-                    lastTickAt: null,
-                  }
-                : currentChessState.clock,
+              clock:
+                currentChessState.clock && typeof currentChessState.clock === 'object'
+                  ? {
+                      ...currentChessState.clock,
+                      lastTickAt: null,
+                    }
+                  : currentChessState.clock,
               updatedAt: nowIso,
             },
           }

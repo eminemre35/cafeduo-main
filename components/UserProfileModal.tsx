@@ -16,7 +16,18 @@
  *   - level label format: "LEVEL N" / "LEVEL N+1"
  */
 import React, { useEffect, useState } from 'react';
-import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase, Package, ImageIcon } from 'lucide-react';
+import {
+  X,
+  Trophy,
+  Gamepad2,
+  Star,
+  Clock,
+  Edit2,
+  Save,
+  Briefcase,
+  Package,
+  ImageIcon,
+} from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
@@ -92,7 +103,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         await api.users.update({ ...user, department });
       }
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       alert('Güncelleme başarısız.');
     } finally {
       setLoading(false);
@@ -350,7 +361,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             setAvatarUrl(nextUrl);
             await api.users.update({ ...user, avatar_url: nextUrl });
             setAvatarPickerOpen(false);
-          } catch (err) {
+          } catch {
             // Roll back on failure and surface a generic warning — the
             // backend rejects malformed URLs, so this is rare in normal flow.
             setAvatarUrl(user.avatar_url ?? null);

@@ -1,15 +1,15 @@
 /**
  * Lobby Cache Service
- * 
+ *
  * Redis tabanlı lobby cache katmanı.
  * Waiting games listelerini cache'leyerek DB yükünü azaltır.
- * 
+ *
  * Cache Strategy:
  * - Cache-aside pattern
  * - Short TTL (5 saniye) - stale data riskini minimize
  * - Write-through invalidation - oyun değiştiğinde anında cache temizle
  * - Graceful fallback - Redis yoksa DB'ye düşer
- * 
+ *
  * Cache Keys:
  * - lobby:all           -> Tüm waiting games
  * - lobby:table:{code}  -> Masa bazlı games
@@ -87,7 +87,10 @@ const setCachedGames = async (redisClient, key, games) => {
  * @param {Object} params - { tableCode, cafeId, invalidateAll }
  * @returns {Promise<void>}
  */
-const invalidateLobbyCache = async (redisClient, { tableCode, cafeId, invalidateAll = false } = {}) => {
+const invalidateLobbyCache = async (
+  redisClient,
+  { tableCode, cafeId, invalidateAll = false } = {}
+) => {
   if (!redisClient) {
     return;
   }
@@ -101,15 +104,11 @@ const invalidateLobbyCache = async (redisClient, { tableCode, cafeId, invalidate
       let cursor = '0';
       let totalDeleted = 0;
       const batch = [];
-      
+
       do {
-        const [nextCursor, keys] = await redisClient.scan(
-          cursor,
-          'MATCH', pattern,
-          'COUNT', 100
-        );
+        const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
         cursor = nextCursor;
-        
+
         if (keys.length > 0) {
           batch.push(...keys);
           if (batch.length >= 100) {
@@ -119,12 +118,12 @@ const invalidateLobbyCache = async (redisClient, { tableCode, cafeId, invalidate
           }
         }
       } while (cursor !== '0');
-      
+
       if (batch.length > 0) {
         await redisClient.del(...batch);
         totalDeleted += batch.length;
       }
-      
+
       if (totalDeleted > 0) {
         logger.debug(`Invalidated ${totalDeleted} lobby cache entries (all)`);
       }
@@ -165,8 +164,6 @@ const createLobbyCacheService = ({ redisClient }) => {
    */
   const getWaitingGames = async ({ scope, tableCode, cafeId }, dbFetcher) => {
     let cacheKey;
-    let cachedGames;
-
     // Cache key belirle
     if (scope === 'table' && tableCode) {
       cacheKey = cacheKeys.table(tableCode);
@@ -177,7 +174,7 @@ const createLobbyCacheService = ({ redisClient }) => {
     }
 
     // Cache'ten dene
-    cachedGames = await getCachedGames(redisClient, cacheKey);
+    const cachedGames = await getCachedGames(redisClient, cacheKey);
     if (cachedGames !== null) {
       logger.debug(`Lobby cache hit: ${cacheKey}`);
       return cachedGames;
@@ -242,17 +239,13 @@ const createLobbyCacheService = ({ redisClient }) => {
       const pattern = `${CACHE_PREFIX}*`;
       let cursor = '0';
       const keys = [];
-      
+
       do {
-        const [nextCursor, batch] = await redisClient.scan(
-          cursor,
-          'MATCH', pattern,
-          'COUNT', 100
-        );
+        const [nextCursor, batch] = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
         cursor = nextCursor;
         keys.push(...batch);
       } while (cursor !== '0');
-      
+
       const infos = await Promise.all(
         keys.map(async (key) => {
           const ttl = await redisClient.ttl(key);

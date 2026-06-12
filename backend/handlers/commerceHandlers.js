@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 // Cache invalidator for GET /rewards — the route is wrapped in cache(600s) so
@@ -192,11 +193,13 @@ const createCommerceHandlers = ({
         // the shop UI has something to render. Filtered list isn't mutated
         // across requests — these are stateless per-call defaults.
         if (filtered.length === 0) {
-          return res.json(BASELINE_REWARDS.map((r) => ({
-            ...r,
-            cafe_id: targetCafeId,
-            is_active: true,
-          })));
+          return res.json(
+            BASELINE_REWARDS.map((r) => ({
+              ...r,
+              cafe_id: targetCafeId,
+              is_active: true,
+            }))
+          );
         }
         return res.json(filtered);
       },

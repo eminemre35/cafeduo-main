@@ -79,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     null
   );
   const [leavingGame, setLeavingGame] = useState(false);
-  const [showGlitchAnim, setShowGlitchAnim] = useState(false);
+  const [_showGlitchAnim, setShowGlitchAnim] = useState(false);
   const gameEndHandledRef = useRef(false);
   /**
    * Synchronous flag tracking whether the active match has reached a server-
@@ -182,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     try {
       await createGame(gameType, points, options);
       setIsCreateModalOpen(false);
-    } catch (err) {
+    } catch {
       toast.error('Oyun kurulurken hata oluştu.');
     }
   };

@@ -233,7 +233,7 @@ describe('API Layer additional coverage', () => {
     const setIntervalSpy = jest
       .spyOn(global, 'setInterval')
       .mockImplementation((fn: TimerHandler) => {
-        (fn as Function)();
+        (fn as (...args: unknown[]) => unknown)();
         return 123 as unknown as NodeJS.Timeout;
       });
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval').mockImplementation(() => {});
@@ -340,7 +340,7 @@ describe('API Layer additional coverage', () => {
     const setIntervalSpy = jest
       .spyOn(global, 'setInterval')
       .mockImplementation((fn: TimerHandler) => {
-        (fn as Function)();
+        (fn as (...args: unknown[]) => unknown)();
         return 456 as unknown as NodeJS.Timeout;
       });
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval').mockImplementation(() => {});

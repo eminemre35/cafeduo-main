@@ -49,7 +49,7 @@ describe('AuthModal', () => {
   });
 
   it('renders login form by default', () => {
-    const { container } = render(
+    render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -78,7 +78,7 @@ describe('AuthModal', () => {
   });
 
   it('validates email format', async () => {
-    const { container } = render(
+    render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -97,7 +97,7 @@ describe('AuthModal', () => {
   });
 
   it('validates password minimum length', async () => {
-    const { container } = render(
+    render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -129,7 +129,7 @@ describe('AuthModal', () => {
   });
 
   it('toggles password visibility', () => {
-    const { container } = render(
+    render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -254,8 +254,80 @@ describe('AuthModal', () => {
     });
   });
 
-  // Forgot-password flow temporarily disabled — UI link removed (Resend
-  // delivery was unreliable in prod). When the email path is fixed we'll
-  // restore both the button and this test. Backend endpoint + AuthModal
-  // handler logic remain in place; only the trigger is hidden.
+  describe('forgot-password flow', () => {
+    it('shows "Şifremi unuttum" link in login mode', () => {
+      render(
+        <AuthModal
+          isOpen={true}
+          onClose={mockOnClose}
+          initialMode="login"
+          onLoginSuccess={mockOnLoginSuccess}
+        />
+      );
+
+      expect(screen.getByText('Şifremi unuttum')).toBeInTheDocument();
+    });
+
+    it('clicking the link switches to forgot-password form', () => {
+      render(
+        <AuthModal
+          isOpen={true}
+          onClose={mockOnClose}
+          initialMode="login"
+          onLoginSuccess={mockOnLoginSuccess}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Şifremi unuttum'));
+
+      expect(screen.getByRole('heading', { name: 'Şifremi Unuttum' })).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('Şifre')).not.toBeInTheDocument();
+    });
+
+    it('submits forgot-password flow and shows success message', async () => {
+      const { api } = await import('../lib/api');
+      (api.auth.forgotPassword as jest.Mock).mockResolvedValue({
+        success: true,
+        message: 'Sıfırlama bağlantısı gönderildi.',
+      });
+
+      const { container } = render(
+        <AuthModal
+          isOpen={true}
+          onClose={mockOnClose}
+          initialMode="login"
+          onLoginSuccess={mockOnLoginSuccess}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Şifremi unuttum'));
+      fireEvent.change(screen.getByTestId('auth-email-input'), {
+        target: { value: 'emin3619@gmail.com' },
+      });
+      fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+      await waitFor(() => {
+        expect(api.auth.forgotPassword).toHaveBeenCalledWith('emin3619@gmail.com');
+        expect(screen.getByText('Sıfırlama bağlantısı gönderildi.')).toBeInTheDocument();
+      });
+    });
+
+    it('"geri dön" link returns to login form', () => {
+      render(
+        <AuthModal
+          isOpen={true}
+          onClose={mockOnClose}
+          initialMode="login"
+          onLoginSuccess={mockOnLoginSuccess}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Şifremi unuttum'));
+      expect(screen.getByRole('heading', { name: 'Şifremi Unuttum' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Giriş ekranına dön'));
+      expect(screen.getByRole('heading', { name: 'Giriş Yap' })).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Şifre')).toBeInTheDocument();
+    });
+  });
 });

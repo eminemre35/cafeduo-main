@@ -43,7 +43,7 @@ const notFoundHandler = (req, res) => {
 
 const createErrorHandler = ({ logger } = {}) => {
   const log = logger && typeof logger.error === 'function' ? logger.error : console.error;
-  return (err, req, res, next) => {
+  return (err, req, res, _next) => {
     const normalized = (() => {
       if (err instanceof ApiError) return err;
 
@@ -54,7 +54,11 @@ const createErrorHandler = ({ logger } = {}) => {
         return new ApiError({ status: 403, code: 'TOKEN_EXPIRED', message: 'Token expired' });
       }
       if (err?.code === '23505') {
-        return new ApiError({ status: 409, code: 'DUPLICATE_ENTRY', message: 'Resource already exists' });
+        return new ApiError({
+          status: 409,
+          code: 'DUPLICATE_ENTRY',
+          message: 'Resource already exists',
+        });
       }
       if (err?.code === '23503') {
         return new ApiError({
@@ -73,10 +77,14 @@ const createErrorHandler = ({ logger } = {}) => {
       }
 
       const status = Number(err?.status);
-      const normalizedStatus = Number.isFinite(status) && status >= 400 && status <= 599 ? status : 500;
-      const safeMessage = process.env.NODE_ENV === 'production' && normalizedStatus >= 500
-        ? 'Internal server error'
-        : String(err?.message || (normalizedStatus >= 500 ? 'Internal server error' : 'Request failed'));
+      const normalizedStatus =
+        Number.isFinite(status) && status >= 400 && status <= 599 ? status : 500;
+      const safeMessage =
+        process.env.NODE_ENV === 'production' && normalizedStatus >= 500
+          ? 'Internal server error'
+          : String(
+              err?.message || (normalizedStatus >= 500 ? 'Internal server error' : 'Request failed')
+            );
 
       return new ApiError({
         status: normalizedStatus,

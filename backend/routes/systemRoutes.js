@@ -54,7 +54,7 @@ const createSystemRoutes = ({
 
     try {
       checks.database = await isDbConnected();
-    } catch (err) {
+    } catch {
       checks.database = false;
     }
 

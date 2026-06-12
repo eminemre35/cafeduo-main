@@ -4,7 +4,7 @@
  * @description Oyun lobisi ve oyun kurma/katılma işlevselliği
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { GameHistoryEntry, GameRequest, User } from '../../types';
 import type { Tournament } from '../../types';
 import { GameLobby } from '../GameLobby';

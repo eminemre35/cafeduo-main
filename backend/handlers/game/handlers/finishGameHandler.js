@@ -23,7 +23,7 @@ const createFinishGameHandler = (deps) => {
     pickWinnerFromResults,
     gameService,
     getMemoryGames,
-    setMemoryGames,
+    setMemoryGames: _setMemoryGames,
     getMemoryUsers,
     emitRealtimeUpdate,
   } = deps;

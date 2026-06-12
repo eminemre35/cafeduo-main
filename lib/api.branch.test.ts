@@ -4,7 +4,7 @@
  * store endpoints, achievements normalization, cafe check-in branches
  */
 
-import { api, normalizeApiBaseUrl, getCsrfToken } from './api';
+import { api, normalizeApiBaseUrl } from './api';
 
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 

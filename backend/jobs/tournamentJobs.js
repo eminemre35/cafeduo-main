@@ -12,6 +12,7 @@
  * Mirrors the registerGameCleanupJobs pattern (setInterval + pool query +
  * structured logger) so it shares the same restart story.
  */
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 
 const TOURNAMENT_JOB_INTERVAL_MS = Number(process.env.TOURNAMENT_JOB_INTERVAL_MS || 60_000);
@@ -143,7 +144,7 @@ const finalizeOneTournament = async ({ pool, logger, tournamentId, clearCache })
   } catch (err) {
     try {
       await client.query('ROLLBACK');
-    } catch (_rollbackErr) {
+    } catch {
       // ignore — rollback failure is logged below as part of the original error
     }
     logger.error('Tournament finalization failed', {

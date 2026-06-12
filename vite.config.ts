@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
+  const _env = loadEnv(mode, '.', '');
   const resolveCommitSha = () => {
     const fromEnv = String(process.env.GITHUB_SHA || process.env.VITE_APP_VERSION || '').trim();
     if (fromEnv) return fromEnv.slice(0, 12);
@@ -85,7 +85,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-      }
-    }
+      },
+    },
   };
 });

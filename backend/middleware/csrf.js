@@ -20,6 +20,7 @@
  *   res.cookie('csrf_token', generateCsrfToken(), csrfCookieOptions());
  */
 
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 

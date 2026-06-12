@@ -3,10 +3,7 @@
  * Handles chess draw offers (offer, accept, reject, cancel)
  */
 
-const {
-  isAdminActor,
-  normalizeParticipantKey,
-} = require('../validation');
+const { normalizeParticipantKey } = require('../validation');
 const { isChessGameType, createInitialChessState } = require('../chessUtils');
 const {
   assertGameStatusTransition,
@@ -25,7 +22,7 @@ const createDrawOfferHandler = (deps) => {
     logger,
     normalizeParticipantName,
     getMemoryGames,
-    setMemoryGames,
+    setMemoryGames: _setMemoryGames,
     getMemoryUsers,
     emitRealtimeUpdate,
   } = deps;
@@ -65,7 +62,9 @@ const createDrawOfferHandler = (deps) => {
         }
         if (!isChessGameType(game.game_type)) {
           await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
+          return res
+            .status(400)
+            .json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
         }
         const drawOfferStatus = assertRequiredGameStatus({
           currentStatus: game.status,
@@ -79,9 +78,7 @@ const createDrawOfferHandler = (deps) => {
 
         const nowIso = new Date().toISOString();
         const currentGameState =
-          game.game_state && typeof game.game_state === 'object'
-            ? { ...game.game_state }
-            : {};
+          game.game_state && typeof game.game_state === 'object' ? { ...game.game_state } : {};
         const chessState =
           currentGameState.chess && typeof currentGameState.chess === 'object'
             ? { ...currentGameState.chess }
@@ -233,12 +230,13 @@ const createDrawOfferHandler = (deps) => {
           winner: null,
           result: 'draw-agreement',
           isGameOver: true,
-          clock: chessState.clock && typeof chessState.clock === 'object'
-            ? {
-                ...chessState.clock,
-                lastTickAt: null,
-              }
-            : chessState.clock,
+          clock:
+            chessState.clock && typeof chessState.clock === 'object'
+              ? {
+                  ...chessState.clock,
+                  lastTickAt: null,
+                }
+              : chessState.clock,
           updatedAt: nowIso,
         };
         const nextGameState = {
@@ -314,7 +312,9 @@ const createDrawOfferHandler = (deps) => {
       return res.status(403).json({ error: 'Bu oyunda beraberlik işlemi yapma yetkin yok.' });
     }
     if (!isChessGameType(game.gameType)) {
-      return res.status(400).json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
+      return res
+        .status(400)
+        .json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
     }
     const drawOfferStatus = assertRequiredGameStatus({
       currentStatus: game.status,
@@ -453,12 +453,13 @@ const createDrawOfferHandler = (deps) => {
         winner: null,
         result: 'draw-agreement',
         isGameOver: true,
-        clock: chessState.clock && typeof chessState.clock === 'object'
-          ? {
-              ...chessState.clock,
-              lastTickAt: null,
-            }
-          : chessState.clock,
+        clock:
+          chessState.clock && typeof chessState.clock === 'object'
+            ? {
+                ...chessState.clock,
+                lastTickAt: null,
+              }
+            : chessState.clock,
         updatedAt: nowIso,
       },
     };

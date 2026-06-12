@@ -320,10 +320,10 @@ jobs:
           
           # README.md'deki coverage badge'ini güncelle
           # Format: ![Coverage](https://img.shields.io/badge/coverage-XX%25-color)
-          sed -i "s|https://img.shields.io/badge/coverage-[0-9]*%25-[a-z]*|https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}|g" README.md
+          sed -i "s|https://img.shields.io/badge/coverage-[0-9.]*%25-[a-z]*|https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}|g" README.md
           
           # Alternatif format (flat-square vb. için)
-          sed -i "s|https://img.shields.io/badge/coverage-[0-9]*%25-[a-z]*|https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}|g" README.md
+          sed -i "s|https://img.shields.io/badge/coverage-[0-9.]*%25-[a-z]*|https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}|g" README.md
 
       - name: Commit Badge Update
         run: |

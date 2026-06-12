@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { RewardSection } from './RewardSection';
 import { User, Reward, RedeemedReward } from '../../types';
 

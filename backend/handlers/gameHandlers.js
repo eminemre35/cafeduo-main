@@ -9,34 +9,18 @@ const { GAME_STATUS } = require('../utils/gameStateMachine');
 // Import chess utilities (still needed by some handlers)
 const {
   isChessGameType,
-  normalizeChessClockConfig,
-  activateChessClockState,
   createInitialChessState,
   resolveParticipantColor,
   sanitizeChessMovePayload,
   buildChessStateFromEngine,
-  normalizeRuntimeChessClock,
   buildChessTimeoutResolution,
 } = require('./game/chessUtils');
 
 // Import emission utilities
-const {
-  createEmissionUtils,
-} = require('./game/emissionUtils');
-
-// Import settlement utilities
-const {
-  isNonCompetitiveGameType,
-  applyDbSettlement,
-  applyMemorySettlement,
-} = require('./game/settlementUtils');
+const { createEmissionUtils } = require('./game/emissionUtils');
 
 // Import draw offer utilities
-const {
-  normalizeDrawOfferAction,
-  normalizeDrawOffer,
-  createDrawOfferUtils,
-} = require('./game/drawOfferUtils');
+const { createDrawOfferUtils } = require('./game/drawOfferUtils');
 
 // Import extracted handlers (Phase 2 + Phase 3)
 const {
@@ -74,7 +58,7 @@ const createGameHandlers = ({
   const { emitRealtimeUpdate, emitLobbyUpdate } = createEmissionUtils({ io, logger });
 
   // Create draw offer utilities
-  const { createDrawOffer, acceptDrawOffer, rejectDrawOffer, cancelDrawOffer } = createDrawOfferUtils({
+  createDrawOfferUtils({
     pool,
     isDbConnected,
     logger,
@@ -160,7 +144,8 @@ const createGameHandlers = ({
     getGameParticipants,
     pickWinnerFromResults,
     sanitizeScoreSubmission,
-    sanitizeLiveSubmission: (payload) => require('./game/utils/helperUtils').sanitizeLiveSubmission(payload, normalizeGameType),
+    sanitizeLiveSubmission: (payload) =>
+      require('./game/utils/helperUtils').sanitizeLiveSubmission(payload, normalizeGameType),
     getMemoryGames,
     getMemoryUsers,
     io,

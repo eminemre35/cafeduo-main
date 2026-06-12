@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 
 /**
@@ -41,7 +42,7 @@ if (process.env.SENTRY_DSN) {
   try {
     const { ProfilingIntegration } = require('@sentry/profiling-node');
     integrations.push(new ProfilingIntegration());
-  } catch (e) {
+  } catch {
     console.log('⚠️  @sentry/profiling-node not available - profiling disabled');
   }
 
@@ -52,7 +53,7 @@ if (process.env.SENTRY_DSN) {
     profilesSampleRate: 1.0,
     integrations,
     // Filter out sensitive data
-    beforeSend(event, hint) {
+    beforeSend(event, _hint) {
       // Remove password_hash from user object if present
       if (event.user) {
         delete event.user.password_hash;
@@ -415,7 +416,7 @@ io.on('connection', (socket) => {
         emitSocketRoomError(socket, 'state_too_large');
         return;
       }
-    } catch (err) {
+    } catch {
       emitSocketRoomError(socket, 'invalid_state');
       return;
     }
@@ -1269,7 +1270,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // ==========================================
 
 // Debug endpoint for testing Sentry integration
-app.get('/debug-sentry', (req, res) => {
+app.get('/debug-sentry', (_req, _res) => {
   throw new Error('Sentry test error!');
 });
 

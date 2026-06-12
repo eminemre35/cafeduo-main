@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserProfileModal } from './UserProfileModal';
-import { api } from '../lib/api';
 import { User } from '../types';
 
 jest.mock('../lib/api', () => ({

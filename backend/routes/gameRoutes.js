@@ -6,11 +6,7 @@ const {
   validateMovePayload,
 } = require('../validators/gameValidators');
 
-const createGameRoutes = ({
-  authenticateToken,
-  gameHandlers,
-  gameService,
-}) => {
+const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
   const router = express.Router();
 
   router.get('/games', authenticateToken, gameHandlers.getGames);
@@ -18,7 +14,12 @@ const createGameRoutes = ({
   router.post('/games/:id/join', authenticateToken, validateJoinGamePayload, gameHandlers.joinGame);
   router.get('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.getGameState);
   router.post('/games/:id/move', authenticateToken, validateMovePayload, gameHandlers.makeMove);
-  router.post('/games/:id/draw-offer', authenticateToken, validateGameIdParam, gameHandlers.drawOffer);
+  router.post(
+    '/games/:id/draw-offer',
+    authenticateToken,
+    validateGameIdParam,
+    gameHandlers.drawOffer
+  );
   router.post('/games/:id/resign', authenticateToken, validateGameIdParam, gameHandlers.resignGame);
   router.post('/games/:id/finish', authenticateToken, validateGameIdParam, gameHandlers.finishGame);
   router.delete('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.deleteGame);
@@ -26,8 +27,12 @@ const createGameRoutes = ({
 
   router.get('/users/:username/active-game', authenticateToken, async (req, res) => {
     const { username } = req.params;
-    const actor = String(req.user?.username || '').trim().toLowerCase();
-    const target = String(username || '').trim().toLowerCase();
+    const actor = String(req.user?.username || '')
+      .trim()
+      .toLowerCase();
+    const target = String(username || '')
+      .trim()
+      .toLowerCase();
     const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
 
     if (!isAdminActor && actor !== target) {
@@ -37,7 +42,7 @@ const createGameRoutes = ({
     try {
       const activeGame = await gameService.getActiveGameForUser(username);
       return res.json(activeGame);
-    } catch (err) {
+    } catch {
       return res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
     }
   });

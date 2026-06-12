@@ -91,7 +91,6 @@
     "ioredis": "^5.9.2",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.2",
-    "kaboom": "^3000.1.17",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.263.1",
     "nodemailer": "8.0.7",

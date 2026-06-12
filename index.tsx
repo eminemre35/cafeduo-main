@@ -22,7 +22,7 @@ if (sentryDsn) {
     tracesSampleRate: import.meta.env.MODE === 'production' ? 0.1 : 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    beforeSend(event, hint) {
+    beforeSend(event, _hint) {
       // Filter out sensitive data
       if (event.user) {
         delete event.user.email;
@@ -31,15 +31,14 @@ if (sentryDsn) {
       return event;
     },
   });
-  console.log('✅ Sentry frontend monitoring initialized');
+  console.warn('✅ Sentry frontend monitoring initialized');
 } else {
-  console.log('⚠️  VITE_SENTRY_DSN not set - frontend monitoring disabled');
+  console.warn('⚠️  VITE_SENTRY_DSN not set - frontend monitoring disabled');
 }
-
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+  throw new Error('Could not find root element to mount to');
 }
 
 const root = ReactDOM.createRoot(rootElement);

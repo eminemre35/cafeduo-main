@@ -167,7 +167,7 @@ describe('App critical session and routing integration', () => {
     nextAuthUser = null;
     sessionStorage.clear();
 
-    (window.localStorage.getItem as jest.Mock).mockImplementation((key: string) => {
+    (window.localStorage.getItem as jest.Mock).mockImplementation((_key: string) => {
       return null;
     });
   });

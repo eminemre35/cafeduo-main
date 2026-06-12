@@ -10,7 +10,7 @@ const createGetGameStateHandler = (deps) => {
   const {
     pool,
     isDbConnected,
-    logger,
+    logger: _logger,
     buildChessTimeoutResolution,
     getMemoryGames,
     emitRealtimeUpdate,
@@ -18,7 +18,9 @@ const createGetGameStateHandler = (deps) => {
 
   const getGameState = async (req, res) => {
     const { id } = req.params;
-    const actor = String(req.user?.username || '').trim().toLowerCase();
+    const actor = String(req.user?.username || '')
+      .trim()
+      .toLowerCase();
     const adminActor = isAdminActor(req.user);
     if (await isDbConnected()) {
       const baseSelectQuery = `
@@ -45,8 +47,12 @@ const createGetGameStateHandler = (deps) => {
       }
 
       let row = result.rows[0];
-      const host = String(row.hostName || '').trim().toLowerCase();
-      const guest = String(row.guestName || '').trim().toLowerCase();
+      const host = String(row.hostName || '')
+        .trim()
+        .toLowerCase();
+      const guest = String(row.guestName || '')
+        .trim()
+        .toLowerCase();
       if (!adminActor && actor && actor !== host && actor !== guest) {
         return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
       }
@@ -111,8 +117,12 @@ const createGetGameStateHandler = (deps) => {
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }
-    const host = String(game.hostName || '').trim().toLowerCase();
-    const guest = String(game.guestName || '').trim().toLowerCase();
+    const host = String(game.hostName || '')
+      .trim()
+      .toLowerCase();
+    const guest = String(game.guestName || '')
+      .trim()
+      .toLowerCase();
     if (!adminActor && actor && actor !== host && actor !== guest) {
       return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
     }

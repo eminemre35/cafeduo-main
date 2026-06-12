@@ -7,7 +7,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import type { User } from '../types';
-import { suppressExpectedReactError } from '../test-utils/suppressReactError';
 
 const mockVerifyToken = jest.fn();
 const mockLogout = jest.fn();

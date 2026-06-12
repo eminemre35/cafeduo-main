@@ -7,7 +7,6 @@
 import React from 'react';
 import { User } from '../../types';
 import { Trophy, Star, Gamepad2, Wifi, MapPin } from 'lucide-react';
-import { getAvatarUrl } from '../../lib/avatars';
 
 interface StatusBarProps {
   user: User;

@@ -86,7 +86,7 @@ test.describe('Authentication Flow', () => {
     await page.getByPlaceholder('Kullanıcı adı').fill(username);
     await page.locator('[data-testid="auth-email-input"]').fill(email);
     await page.locator('[data-testid="auth-password-input"]').fill(password);
-    await page.locator('[data-testid="auth-submit-button"], form button[type=\"submit\"]').first().click({ force: true });
+    await page.locator('[data-testid="auth-submit-button"], form button[type="submit"]').first().click({ force: true });
 
     const startedAt = Date.now();
     let hasAuthCookie = false;
@@ -114,7 +114,7 @@ test.describe('Authentication Flow', () => {
     await openAuthModal(page);
     await page.locator('[data-testid="auth-email-input"]').fill(session.credentials.email);
     await page.locator('[data-testid="auth-password-input"]').fill(session.credentials.password);
-    await page.locator('[data-testid="auth-submit-button"], form button[type=\"submit\"]').first().click({ force: true });
+    await page.locator('[data-testid="auth-submit-button"], form button[type="submit"]').first().click({ force: true });
 
     const checkInHeadingInitial = page.getByText('Kafeye Giriş');
     const dashboardTabInitial = page.locator('[data-testid="dashboard-tab-games"]').first();
@@ -228,7 +228,7 @@ test.describe('Authentication Flow', () => {
     await openAuthModal(page);
     await page.locator('[data-testid="auth-email-input"]').fill('nonexistent@example.com');
     await page.locator('[data-testid="auth-password-input"]').fill('wrongpass123');
-    await page.locator('[data-testid="auth-submit-button"], form button[type=\"submit\"]').first().click({ force: true });
+    await page.locator('[data-testid="auth-submit-button"], form button[type="submit"]').first().click({ force: true });
 
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
   });

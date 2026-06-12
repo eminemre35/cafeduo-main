@@ -102,7 +102,7 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('✅ Socket connected:', this.socket?.id);
+      console.warn('✅ Socket connected:', this.socket?.id);
       this.notifyListeners();
     });
 
@@ -120,7 +120,7 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
+      console.warn('❌ Socket disconnected:', reason);
       this.notifyListeners();
       // If server disconnected, try to reconnect with fresh token
       if (reason === 'io server disconnect') {

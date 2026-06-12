@@ -29,19 +29,19 @@ const sslRejectUnauthorized = parseBool(process.env.DB_SSL_REJECT_UNAUTHORIZED) 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
-  
+
   // Pool size configuration (OPTIMIZATIONS.md Finding 7)
   max: Number(process.env.DB_POOL_MAX || 20), // Maximum connections
-  min: Number(process.env.DB_POOL_MIN || 2),  // Minimum idle connections
-  
+  min: Number(process.env.DB_POOL_MIN || 2), // Minimum idle connections
+
   // Connection lifecycle
-  idleTimeoutMillis: 30000,  // Release idle connections after 30s
+  idleTimeoutMillis: 30000, // Release idle connections after 30s
   connectionTimeoutMillis: 5000, // Max wait time for connection from pool
   maxUses: 7500, // Retire connections after 7500 uses (prevent leaks)
-  
+
   // Health checks
   allowExitOnIdle: false, // Keep pool alive
-  
+
   // Fallback for local dev if DATABASE_URL is not set
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -70,7 +70,7 @@ pool.on('acquire', () => {
 const logger = require('./utils/logger');
 const DB_STATUS_CACHE_MS = Number(process.env.DB_STATUS_CACHE_MS || 5000);
 
-let dbStatusCache = {
+const dbStatusCache = {
   value: false,
   checkedAt: 0,
   inFlight: null,

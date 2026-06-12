@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
@@ -14,7 +15,7 @@ const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN
 const PASSWORD_RESET_TOKEN_TTL_MS = Math.max(5, PASSWORD_RESET_TOKEN_TTL_MINUTES) * 60 * 1000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
-const USER_SELECT_FIELDS = `
+const _USER_SELECT_FIELDS = `
     id,
     username,
     email,

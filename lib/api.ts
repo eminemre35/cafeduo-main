@@ -573,8 +573,6 @@ export const api = {
 
     // REALTIME LISTENERS (Polling-based fallback)
     onGameChange: (gameId: string, callback: (game: GameRequest) => void) => {
-      let interval: NodeJS.Timeout;
-
       const poll = async () => {
         try {
           const game = await api.games.get(gameId);
@@ -585,14 +583,12 @@ export const api = {
       };
 
       poll(); // Initial fetch
-      interval = setInterval(poll, 15000); // Poll every 15 seconds
+      const interval = setInterval(poll, 15000); // Poll every 15 seconds
 
       return () => clearInterval(interval); // Unsubscribe function
     },
 
     onLobbyChange: (callback: (games: GameRequest[]) => void) => {
-      let interval: NodeJS.Timeout;
-
       const poll = async () => {
         try {
           const games = await api.games.list();
@@ -603,7 +599,7 @@ export const api = {
       };
 
       poll(); // Initial fetch
-      interval = setInterval(poll, 15000); // Poll every 15 seconds
+      const interval = setInterval(poll, 15000); // Poll every 15 seconds
 
       return () => clearInterval(interval); // Unsubscribe function
     },

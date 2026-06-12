@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 const db = require('../db');
 

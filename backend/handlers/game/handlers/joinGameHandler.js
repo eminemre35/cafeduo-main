@@ -3,12 +3,9 @@
  * Handles joining an existing waiting game
  */
 
-const {
-  isAdminActor,
-  normalizeParticipantName,
-} = require('../validation');
+const { isAdminActor } = require('../validation');
 const { isChessGameType, activateChessClockState } = require('../chessUtils');
-const { assertGameStatusTransition, GAME_STATUS } = require('../../../utils/gameStateMachine');
+const { assertGameStatusTransition } = require('../../../utils/gameStateMachine');
 const { mapTransitionError } = require('../utils/errorHelpers');
 
 const createJoinGameHandler = (deps) => {
@@ -37,7 +34,9 @@ const createJoinGameHandler = (deps) => {
       return res.status(400).json({ error: 'guestName zorunludur.' });
     }
     if (!adminActor && !hasCheckIn) {
-      return res.status(403).json({ error: 'Oyuna katılmak için önce kafe check-in işlemi yapmalısın.' });
+      return res
+        .status(403)
+        .json({ error: 'Oyuna katılmak için önce kafe check-in işlemi yapmalısın.' });
     }
 
     if (await isDbConnected()) {
@@ -148,14 +147,16 @@ const createJoinGameHandler = (deps) => {
         }
 
         await client.query('COMMIT');
-        
+
         // Cache invalidation - oyuna katılındı
-        lobbyCacheService?.onGameJoined({
-          tableCode: joinedGame.table,
-        }).catch((err) => {
-          logger.warn(`Cache invalidation failed on game joined: ${err.message}`);
-        });
-        
+        lobbyCacheService
+          ?.onGameJoined({
+            tableCode: joinedGame.table,
+          })
+          .catch((err) => {
+            logger.warn(`Cache invalidation failed on game joined: ${err.message}`);
+          });
+
         emitRealtimeUpdate(joinedGame.id, {
           type: 'game_joined',
           gameId: joinedGame.id,
@@ -223,7 +224,8 @@ const createJoinGameHandler = (deps) => {
     game.status = 'active';
     game.guestName = guestName;
     if (isChessGameType(game.gameType)) {
-      const current = game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
+      const current =
+        game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
       game.gameState = {
         ...current,
         chess: activateChessClockState(current.chess),

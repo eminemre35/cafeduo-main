@@ -49,7 +49,7 @@ jest.mock('./dashboard/StatusBar', () => ({
 
 jest.mock('./dashboard/GameSection', () => ({
   GameSection: ({
-    currentUser,
+    currentUser: _currentUser,
     isMatched,
     games,
     gamesLoading,
@@ -154,7 +154,7 @@ jest.mock('./Achievements', () => ({
 
 // Mock game components (they use socket internally)
 jest.mock('./ArenaBattle', () => ({
-  ArenaBattle: ({ gameId, currentUser, onGameEnd }: any) => (
+  ArenaBattle: ({ gameId: _gameId, currentUser, onGameEnd }: any) => (
     <div data-testid="arena-battle">
       <span>Nişancı Düellosu - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>

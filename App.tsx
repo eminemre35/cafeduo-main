@@ -106,7 +106,7 @@ const AppContent: React.FC = () => {
   // Auth context
   const {
     user,
-    isLoading,
+    isLoading: _isLoading,
     login,
     logout,
     updateUser,

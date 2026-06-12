@@ -1,6 +1,6 @@
 /**
  * API Layer Tests
- * 
+ *
  * @description API client functionality tests
  */
 
@@ -99,7 +99,9 @@ describe('API Layer', () => {
           json: async () => ({ error: 'Invalid credentials' }),
         });
 
-        await expect(api.auth.login('test@example.com', 'wrongpass')).rejects.toThrow('Invalid credentials');
+        await expect(api.auth.login('test@example.com', 'wrongpass')).rejects.toThrow(
+          'Invalid credentials'
+        );
       });
     });
 
@@ -116,7 +118,7 @@ describe('API Layer', () => {
             json: async () => ({ user: mockUser, token: 'jwt-token' }),
           });
 
-        const result = await api.auth.register('newuser', 'new@example.com', 'password123');
+        await api.auth.register('newuser', 'new@example.com', 'password123');
 
         expect(fetch).toHaveBeenCalledWith(
           '/api/auth/register',

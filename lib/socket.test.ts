@@ -29,12 +29,15 @@ describe('socketService', () => {
     socketService.connect();
 
     expect(io).toHaveBeenCalledTimes(1);
-    expect(io).toHaveBeenCalledWith(window.location.origin, expect.objectContaining({
-      withCredentials: true,
-      reconnectionAttempts: Infinity,
-      timeout: 10000,
-      transports: ['polling', 'websocket'],
-    }));
+    expect(io).toHaveBeenCalledWith(
+      window.location.origin,
+      expect.objectContaining({
+        withCredentials: true,
+        reconnectionAttempts: Infinity,
+        timeout: 10000,
+        transports: ['polling', 'websocket'],
+      })
+    );
     expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('connect_error', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
@@ -48,53 +51,51 @@ describe('socketService', () => {
   });
 
   it('logs connect and generic connect_error events', () => {
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     socketService.connect();
     handlers.get('connect')?.();
     handlers.get('connect_error')?.({ message: 'network down' });
 
-    expect(logSpy).toHaveBeenCalledWith('✅ Socket connected:', 'socket-1');
+    expect(warnSpy).toHaveBeenCalledWith('✅ Socket connected:', 'socket-1');
     expect(errorSpy).toHaveBeenCalledWith('❌ Socket connection error:', 'network down');
-    expect(warnSpy).not.toHaveBeenCalled();
 
-    logSpy.mockRestore();
-    errorSpy.mockRestore();
     warnSpy.mockRestore();
+    errorSpy.mockRestore();
   });
 
-  it.each([
-    'Authentication required: No token provided',
-    'Invalid token',
-    'Token expired',
-  ])('warns on auth-related connect_error: %s', (message) => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  it.each(['Authentication required: No token provided', 'Invalid token', 'Token expired'])(
+    'warns on auth-related connect_error: %s',
+    (message) => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    socketService.connect();
-    handlers.get('connect_error')?.({ message });
+      socketService.connect();
+      handlers.get('connect_error')?.({ message });
 
-    expect(errorSpy).toHaveBeenCalledWith('❌ Socket connection error:', message);
-    expect(warnSpy).toHaveBeenCalledWith('⚠️ Socket authentication failed - user may need to re-login');
+      expect(errorSpy).toHaveBeenCalledWith('❌ Socket connection error:', message);
+      expect(warnSpy).toHaveBeenCalledWith(
+        '⚠️ Socket authentication failed - user may need to re-login'
+      );
 
-    errorSpy.mockRestore();
-    warnSpy.mockRestore();
-  });
+      errorSpy.mockRestore();
+      warnSpy.mockRestore();
+    }
+  );
 
   it('reconnects when the server explicitly disconnects the socket', () => {
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     socketService.connect();
     handlers.get('disconnect')?.('io server disconnect');
     handlers.get('disconnect')?.('transport close');
 
-    expect(logSpy).toHaveBeenCalledWith('❌ Socket disconnected:', 'io server disconnect');
-    expect(logSpy).toHaveBeenCalledWith('❌ Socket disconnected:', 'transport close');
+    expect(warnSpy).toHaveBeenCalledWith('❌ Socket disconnected:', 'io server disconnect');
+    expect(warnSpy).toHaveBeenCalledWith('❌ Socket disconnected:', 'transport close');
     expect(mockSocket.connect).toHaveBeenCalledTimes(1);
 
-    logSpy.mockRestore();
+    warnSpy.mockRestore();
   });
 
   it('emits room and state events', () => {
