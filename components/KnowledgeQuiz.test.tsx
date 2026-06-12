@@ -63,7 +63,11 @@ describe('KnowledgeQuiz', () => {
       jest.advanceTimersByTime(1000);
     });
 
-    expect(onGameEnd).toHaveBeenCalledWith('emin', 10);
+    expect(onGameEnd).toHaveBeenCalledWith(
+      'emin',
+      10,
+      expect.objectContaining({ kind: 'quiz', playerScore: expect.any(Number) })
+    );
   });
 
   it('calls onLeave from header button', () => {

@@ -29,6 +29,12 @@ export const reducedFade: Variants = {
   show: { opacity: 1, transition: { duration: 0.2 } },
 };
 
+/** Sonuç kartı girişi — damga vurulmuş hissi (hafif scale + yukarı kayma). */
+export const popIn: Variants = {
+  hidden: { opacity: 0, y: 12, scale: 0.96 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: 'easeOut' } },
+};
+
 /** Hover/tap mikro-etkileşim — Riso "shift" (hafif yukarı kayma). */
 export const hoverShift = {
   whileHover: { y: -3, transition: { duration: 0.15, ease: 'easeOut' } },

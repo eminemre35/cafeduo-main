@@ -32,7 +32,7 @@ interface RetroChessProps {
   gameId: string | number | null;
   opponentName?: string;
   isBot: boolean;
-  onGameEnd: (winner: string, points: number) => void;
+  onGameEnd: (winner: string, points: number, stats?: { kind: 'chess'; moveCount: number }) => void;
   onLeave: () => void;
   /** Fires synchronously when the server reports the match as finished, so
    *  the parent can suppress the forfeit-confirm dialog before the delayed
@@ -327,7 +327,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           console.error('RetroChess finish sync failed', err);
         });
       }
-      window.setTimeout(() => onGameEnd(winner || 'Berabere', points), 700);
+      const stats = { kind: 'chess' as const, moveCount: engine.history().length };
+      window.setTimeout(() => onGameEnd(winner || 'Berabere', points, stats), 700);
     },
     [currentUser.username, gameId, isBot, onGameEnd]
   );
@@ -891,7 +892,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               <div className="text-xs text-carbon-muted">
                 {playerColor ? (
                   <>
-                    Sen: <span className="font-bold">{playerColor === 'w' ? 'Beyaz' : 'Siyah'}</span>
+                    Sen:{' '}
+                    <span className="font-bold">{playerColor === 'w' ? 'Beyaz' : 'Siyah'}</span>
                   </>
                 ) : (
                   'Sıra'

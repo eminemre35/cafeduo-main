@@ -14,6 +14,7 @@ import { RetroChess } from './RetroChess';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
+import { MatchResultCard, type MatchStats } from './dashboard/MatchResultCard';
 
 // Hooks
 import { useGames } from '../hooks/useGames';
@@ -75,9 +76,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
-  const [gameResult, setGameResult] = useState<{ winner: string; earnedPoints: number } | null>(
-    null
-  );
+  const [gameResult, setGameResult] = useState<{
+    winner: string;
+    earnedPoints: number;
+    stats?: MatchStats;
+  } | null>(null);
   const [leavingGame, setLeavingGame] = useState(false);
   const [_showGlitchAnim, setShowGlitchAnim] = useState(false);
   const gameEndHandledRef = useRef(false);
@@ -321,11 +324,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   // Oyun sonu (istatistik + puan güncelleme)
-  const handleGameFinish = (winner: string, earnedPoints: number) => {
+  const handleGameFinish = (winner: string, earnedPoints: number, stats?: MatchStats) => {
     if (gameEndHandledRef.current) return;
     gameEndHandledRef.current = true;
     const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
-    setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints });
+    setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints, stats });
     setShowGlitchAnim(true);
 
     void refetch();
@@ -362,25 +365,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {gameResult && (
-            <div className="mb-6 border-2 border-carbon bg-riso-spring/20 p-4 riso-shadow-sm">
-              <p className="text-sm font-riso-mono uppercase tracking-wider text-carbon">
-                Maç Sonucu
-              </p>
-              <p className="text-lg font-bold text-carbon mt-1 font-riso-display">
-                {gameResult.winner ? `${gameResult.winner} kazandı` : 'Maç berabere bitti'}
-              </p>
-              <p className="text-sm text-carbon-muted mt-1">
-                Puan etkisi:{' '}
-                {gameResult.earnedPoints > 0
-                  ? `+${gameResult.earnedPoints}`
-                  : gameResult.earnedPoints}
-              </p>
-              <div className="mt-3">
-                <RetroButton onClick={handleBackToLobby} variant="primary" disabled={leavingGame}>
-                  {leavingGame ? 'Lobiye dönülüyor...' : 'Sonucu gördüm, lobiye dön'}
-                </RetroButton>
-              </div>
-            </div>
+            <MatchResultCard
+              winner={gameResult.winner}
+              earnedPoints={gameResult.earnedPoints}
+              stats={gameResult.stats}
+              currentUsername={currentUser.username}
+              onDismiss={handleBackToLobby}
+              dismissing={leavingGame}
+            />
           )}
 
           {/* Oyun component'leri */}

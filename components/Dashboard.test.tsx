@@ -187,6 +187,15 @@ jest.mock('framer-motion', () => ({
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  animate: (
+    _from: number,
+    to: number,
+    opts?: { onUpdate?: (v: number) => void; [k: string]: any }
+  ) => {
+    opts?.onUpdate?.(to);
+    return { stop() {} };
+  },
+  useReducedMotion: () => false,
 }));
 
 import { useGames } from '../hooks/useGames';

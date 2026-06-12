@@ -4,7 +4,7 @@ import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
-import { useLiveScoreGame } from '../hooks/useLiveScoreGame';
+import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
 import { AimBattleStageCanvas, type AimBattleStageHandle } from './games/AimBattleStageCanvas';
 import type { HitTier } from '../lib/pixi/aimBattleStage';
 
@@ -13,7 +13,7 @@ interface ArenaBattleProps {
   gameId: string | number | null;
   opponentName?: string;
   isBot: boolean;
-  onGameEnd: (winner: string, points: number) => void;
+  onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
   onLeave: () => void;
   /** Fires the instant the match is settled (live.done flips true) so the
    *  parent can suppress its forfeit-confirm dialog. */
@@ -92,6 +92,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     submissionKeyPrefix: 'arena',
     pollIntervalMs: 2200,
     logName: 'ArenaBattle',
+    statsKind: 'arena',
     onGameEnd,
   });
 

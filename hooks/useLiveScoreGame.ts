@@ -68,7 +68,17 @@ export interface UseLiveScoreGameOptions {
   finalizationTimeoutMs?: number;
   /** Used in error logs to disambiguate concurrent games. Defaults to 'LiveScoreGame'. */
   logName?: string;
-  onGameEnd: (winner: string, points: number) => void;
+  /** Stats `kind` reported to onGameEnd (MatchResultCard chip'leri için). */
+  statsKind: 'quiz' | 'arena';
+  onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
+}
+
+/** Maç bitiminde hook'un elindeki, sonuç kartında gösterilen istatistikler. */
+export interface LiveMatchStats {
+  kind: 'quiz' | 'arena';
+  playerScore: number;
+  opponentScore: number;
+  durationMs: number;
 }
 
 export interface UseLiveScoreGameResult {
@@ -109,6 +119,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
     pollIntervalMs = 2200,
     finalizationTimeoutMs,
     logName = 'LiveScoreGame',
+    statsKind,
     onGameEnd,
   } = options;
 
@@ -124,6 +135,23 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
   const matchStartedAtRef = useRef<number>(Date.now());
   const pollRef = useRef<number | null>(null);
   const finalizationTimeoutRef = useRef<number | null>(null);
+  // finishFromServer/finalizeMatch'in deps'inde skor state'leri yok (kasıtlı —
+  // effect zinciri bozulmasın); güncel skorlar bu ref üzerinden okunur.
+  const scoresRef = useRef({ player: 0, opponent: 0 });
+
+  useEffect(() => {
+    scoresRef.current = { player: playerScore, opponent: opponentScore };
+  }, [playerScore, opponentScore]);
+
+  const buildStats = useCallback(
+    (): LiveMatchStats => ({
+      kind: statsKind,
+      playerScore: scoresRef.current.player,
+      opponentScore: scoresRef.current.opponent,
+      durationMs: Math.max(0, Date.now() - matchStartedAtRef.current),
+    }),
+    [statsKind]
+  );
 
   const reset = useCallback(() => {
     finishHandledRef.current = false;
@@ -168,9 +196,10 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
       const safeStake = Math.max(0, Math.floor(Number(stakeTransferred) || 0));
       const points = isWinner ? safeStake : 0;
       setDone(true);
-      window.setTimeout(() => onGameEnd(winner, points), 700);
+      const stats = buildStats();
+      window.setTimeout(() => onGameEnd(winner, points, stats), 700);
     },
-    [currentUser.username, onGameEnd]
+    [buildStats, currentUser.username, onGameEnd]
   );
 
   const applySnapshot = useCallback(
@@ -254,7 +283,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         // Bot/local: no server settlement, show cosmetic reward only.
         const points = localWinner === currentUser.username ? BOT_WIN_REWARD : 0;
         finishHandledRef.current = true;
-        window.setTimeout(() => onGameEnd(localWinner, points), 900);
+        const botStats = buildStats();
+        window.setTimeout(() => onGameEnd(localWinner, points, botStats), 900);
         return;
       }
 
@@ -272,7 +302,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
 
         if (!finished) {
           finishHandledRef.current = true;
-          window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
+          const pendingStats = buildStats();
+          window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0, pendingStats), 900);
           return;
         }
 
@@ -290,15 +321,17 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         const isWinner = Boolean(winner) && winner === currentUser.username;
         const points = isWinner ? Math.max(0, Math.floor(serverStake)) : 0;
         finishHandledRef.current = true;
-        window.setTimeout(() => onGameEnd(resolvedWinner, points), 900);
+        const finalStats = buildStats();
+        window.setTimeout(() => onGameEnd(resolvedWinner, points, finalStats), 900);
       } catch {
         finishHandledRef.current = true;
-        window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
+        const errorStats = buildStats();
+        window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0, errorStats), 900);
       } finally {
         setResolvingMatch(false);
       }
     },
-    [currentUser.username, gameId, isBot, onGameEnd]
+    [buildStats, currentUser.username, gameId, isBot, onGameEnd]
   );
 
   // Reset state when gameId changes (new match).

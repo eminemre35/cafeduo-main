@@ -4,7 +4,7 @@ import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
-import { useLiveScoreGame } from '../hooks/useLiveScoreGame';
+import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
 import { QuizStageCanvas, type QuizStageHandle } from './games/QuizStageCanvas';
 
 interface KnowledgeQuizProps {
@@ -12,7 +12,11 @@ interface KnowledgeQuizProps {
   gameId: string | number | null;
   opponentName?: string;
   isBot: boolean;
-  onGameEnd: (winner: string, points: number) => void;
+  onGameEnd: (
+    winner: string,
+    points: number,
+    stats?: LiveMatchStats & { maxRounds?: number }
+  ) => void;
   onLeave: () => void;
   /** Fires the instant the match is settled (live.done flips true) so the
    *  parent can suppress its forfeit-confirm dialog. */
@@ -45,7 +49,9 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     pollIntervalMs: 15_000,
     finalizationTimeoutMs: FINALIZATION_FALLBACK_MS,
     logName: 'KnowledgeQuiz',
-    onGameEnd,
+    statsKind: 'quiz',
+    onGameEnd: (winner, points, stats) =>
+      onGameEnd(winner, points, stats && { ...stats, maxRounds: QUIZ_ROUND_COUNT }),
   });
 
   const [roundIndex, setRoundIndex] = useState(0);

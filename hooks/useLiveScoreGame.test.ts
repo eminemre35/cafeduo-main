@@ -82,6 +82,7 @@ describe('useLiveScoreGame', () => {
         isBot: true,
         mode: 'TestMode',
         submissionKeyPrefix: 'test',
+        statsKind: 'arena',
         onGameEnd,
       })
     );
@@ -99,6 +100,7 @@ describe('useLiveScoreGame', () => {
         isBot: true,
         mode: 'TestMode',
         submissionKeyPrefix: 'test',
+        statsKind: 'arena',
         onGameEnd: jest.fn(),
       })
     );
@@ -115,6 +117,7 @@ describe('useLiveScoreGame', () => {
         isBot: true,
         mode: 'TestMode',
         submissionKeyPrefix: 'test',
+        statsKind: 'arena',
         onGameEnd: jest.fn(),
       })
     );
@@ -133,6 +136,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd: jest.fn(),
       })
     );
@@ -162,6 +166,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd: jest.fn(),
       })
     );
@@ -194,6 +199,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd,
       })
     );
@@ -211,7 +217,11 @@ describe('useLiveScoreGame', () => {
     act(() => {
       jest.advanceTimersByTime(1000);
     });
-    expect(onGameEnd).toHaveBeenCalledWith('alice', 25);
+    expect(onGameEnd).toHaveBeenCalledWith(
+      'alice',
+      25,
+      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
+    );
   });
 
   it('finalizeMatch returns immediately for bot/local mode', async () => {
@@ -223,6 +233,7 @@ describe('useLiveScoreGame', () => {
         isBot: true,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd,
       })
     );
@@ -233,7 +244,11 @@ describe('useLiveScoreGame', () => {
     act(() => {
       jest.advanceTimersByTime(1000);
     });
-    expect(onGameEnd).toHaveBeenCalledWith('alice', 10);
+    expect(onGameEnd).toHaveBeenCalledWith(
+      'alice',
+      10,
+      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
+    );
   });
 
   it('applies snapshot: sets host/guest, updates scores, surfaces winner on finished', async () => {
@@ -259,6 +274,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd,
       })
     );
@@ -270,7 +286,11 @@ describe('useLiveScoreGame', () => {
     act(() => {
       jest.advanceTimersByTime(1000);
     });
-    expect(onGameEnd).toHaveBeenCalledWith('bob', 0);
+    expect(onGameEnd).toHaveBeenCalledWith(
+      'bob',
+      0,
+      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
+    );
   });
 
   it('idempotent finish: server confirmation prevents duplicate onGameEnd calls', async () => {
@@ -287,6 +307,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd,
       })
     );
@@ -319,6 +340,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         finalizationTimeoutMs: 5000,
         onGameEnd,
       })
@@ -346,6 +368,7 @@ describe('useLiveScoreGame', () => {
         isBot: false,
         mode: 'TestMode',
         submissionKeyPrefix: 'arena',
+        statsKind: 'arena',
         onGameEnd: jest.fn(),
       })
     );
@@ -366,6 +389,7 @@ describe('useLiveScoreGame', () => {
           isBot: true,
           mode: 'TestMode',
           submissionKeyPrefix: 'arena',
+          statsKind: 'arena',
           onGameEnd,
         }),
       { initialProps: { gameId: 'game-1' } }

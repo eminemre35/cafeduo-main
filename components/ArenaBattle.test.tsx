@@ -126,7 +126,11 @@ describe('ArenaBattle', () => {
       jest.advanceTimersByTime(1000);
     });
 
-    expect(onGameEnd).toHaveBeenCalledWith('emin', 10);
+    expect(onGameEnd).toHaveBeenCalledWith(
+      'emin',
+      10,
+      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
+    );
   });
 
   it('calls onLeave from the exit button', () => {
