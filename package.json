@@ -156,7 +156,8 @@
   },
   "overrides": {
     "@rollup/plugin-terser": "1.0.0",
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "shell-quote": "1.8.4"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
