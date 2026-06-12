@@ -16,6 +16,21 @@ jest.mock('../lib/socket', () => ({
   },
 }));
 
+// RetroButton uses motion.button — mock it as a plain button to keep disabled prop working.
+jest.mock('./RetroButton', () => ({
+  RetroButton: ({ children, disabled, onClick, ...props }: any) => (
+    <button type="button" disabled={disabled} onClick={onClick} {...props}>
+      {children}
+    </button>
+  ),
+  __esModule: true,
+  default: ({ children, disabled, onClick, ...props }: any) => (
+    <button type="button" disabled={disabled} onClick={onClick} {...props}>
+      {children}
+    </button>
+  ),
+}));
+
 // PixiJS overlay requires WebGL; mock as inert canvas in tests so the
 // dynamic import + app.init() don't fire in jsdom.
 jest.mock('./games/AimBattleStageCanvas', () => ({

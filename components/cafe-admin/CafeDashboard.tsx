@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { Trophy, Coffee, Gift, MapPin, QrCode } from 'lucide-react';
 import type { User } from '../../types';
 import { useCafeAdmin } from '../../hooks/useCafeAdmin';
+import { useToast } from '../../contexts/ToastContext';
 import { CafeStats } from './CafeStats';
 import { CouponScanner } from './CouponScanner';
 import { RewardManager } from './RewardManager';
@@ -17,6 +18,7 @@ const toErrorMessage = (error: unknown, fallback: string): string =>
   error instanceof Error && error.message ? error.message : fallback;
 
 export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => {
+  const toast = useToast();
   const {
     activeTab,
     setActiveTab,
@@ -88,21 +90,21 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
   const handleCreateReward = useCallback(async () => {
     try {
       await createReward();
-      window.alert('Ödül başarıyla oluşturuldu!');
+      toast.success('Ödül başarıyla oluşturuldu!');
     } catch (error: unknown) {
-      window.alert(toErrorMessage(error, 'Ödül oluşturulurken hata oluştu.'));
+      toast.error(toErrorMessage(error, 'Ödül oluşturulurken hata oluştu.'));
     }
-  }, [createReward]);
+  }, [createReward, toast]);
 
   const handleDeleteReward = useCallback(
     async (id: number | string) => {
       try {
         await deleteReward(id);
       } catch (error: unknown) {
-        window.alert(toErrorMessage(error, 'Silme işlemi başarısız.'));
+        toast.error(toErrorMessage(error, 'Silme işlemi başarısız.'));
       }
     },
-    [deleteReward]
+    [deleteReward, toast]
   );
 
   const tabItems: Array<{

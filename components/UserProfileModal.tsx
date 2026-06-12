@@ -33,6 +33,7 @@ import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
 import { getAvatarUrl, seedFromAvatarUrl, type AvatarSeed } from '../lib/avatars';
 import { AvatarPickerModal } from './AvatarPickerModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface UserInventoryItem {
   id: number;
@@ -58,6 +59,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   isEditable = false,
   onSaveProfile,
 }) => {
+  const toast = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [department, setDepartment] = useState(user?.department || '');
   const [loading, setLoading] = useState(false);
@@ -104,7 +106,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       }
       setIsEditing(false);
     } catch {
-      alert('Güncelleme başarısız.');
+      toast.error('Güncelleme başarısız.');
     } finally {
       setLoading(false);
     }
@@ -365,7 +367,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             // Roll back on failure and surface a generic warning — the
             // backend rejects malformed URLs, so this is rare in normal flow.
             setAvatarUrl(user.avatar_url ?? null);
-            alert('Avatar kaydedilemedi.');
+            toast.error('Avatar kaydedilemedi.');
           } finally {
             setSavingAvatar(false);
           }

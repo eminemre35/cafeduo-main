@@ -47,13 +47,16 @@ interface DailyRewardWheelProps {
   onGiftWon?: (gift: { label: string }) => void;
 }
 
-const SLICE_COLORS = [
-  'bg-riso-pink text-carbon',
-  'bg-riso-blue text-paper',
-  'bg-riso-mustard text-carbon',
-  'bg-riso-spring text-carbon',
-  'bg-riso-redox text-paper',
-  'bg-paper-deep text-carbon',
+// Inline hex colours — Tailwind class names can't be used in dynamic inline
+// styles (no JIT purge at runtime). Order matches the former SLICE_COLORS
+// array: pink, blue, mustard, spring, redox-red, paper-deep.
+const SLICE_HEX_COLORS = [
+  '#ff3e94', // riso-pink
+  '#1e3fb5', // riso-blue
+  '#f1b41e', // riso-mustard
+  '#5bc25a', // riso-spring
+  '#e0251b', // riso-redox (approximate)
+  '#e8e4da', // paper-deep (approximate)
 ];
 
 export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
@@ -219,22 +222,22 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                           : 360 / slices.length),
                       0
                     );
-                  const color = SLICE_COLORS[idx % SLICE_COLORS.length];
+                  const hexColor = SLICE_HEX_COLORS[idx % SLICE_HEX_COLORS.length];
+                  // Each slice is a full-circle div; conic-gradient paints only
+                  // the arc [startDeg, startDeg+sliceDeg] and leaves the rest
+                  // transparent. Stacking all divs produces the correct pie.
                   return (
                     <div
                       key={idx}
-                      className={`absolute inset-0 ${color}`}
+                      className="absolute inset-0"
+                      data-testid={`wheel-slice-${idx}`}
                       style={{
-                        clipPath: `conic-gradient(from ${startDeg}deg at 50% 50%, currentColor ${sliceDeg}deg, transparent ${sliceDeg}deg)`,
-                        WebkitClipPath: `polygon(50% 50%, 50% 0%, ${
-                          50 + 50 * Math.cos(((startDeg - 90) * Math.PI) / 180)
-                        }% ${50 + 50 * Math.sin(((startDeg - 90) * Math.PI) / 180)}%, ${
-                          50 + 50 * Math.cos(((startDeg + sliceDeg - 90) * Math.PI) / 180)
-                        }% ${50 + 50 * Math.sin(((startDeg + sliceDeg - 90) * Math.PI) / 180)}%)`,
+                        background: `conic-gradient(from ${startDeg}deg, ${hexColor} 0deg ${sliceDeg}deg, transparent ${sliceDeg}deg 360deg)`,
                       }}
                     >
-                      <div
-                        className="absolute font-riso-display font-bold text-xs sm:text-sm whitespace-nowrap"
+                      {/* Label positioned along the midpoint radius of this slice */}
+                      <span
+                        className="absolute font-riso-display font-bold text-xs sm:text-sm whitespace-nowrap text-carbon"
                         style={{
                           top: '50%',
                           left: '50%',
@@ -243,7 +246,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                         }}
                       >
                         {slice.gift ? '🎁' : `+${slice.points}`}
-                      </div>
+                      </span>
                     </div>
                   );
                 })

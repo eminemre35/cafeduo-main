@@ -37,6 +37,12 @@ jest.mock('../lib/socket', () => ({
   },
 }));
 
+// Mock DailyRewardWheel — api.wheel.get'i tetiklememesi için
+jest.mock('./dashboard/DailyRewardWheel', () => ({
+  DailyRewardWheel: ({ cafeId }: { cafeId: string | number | null | undefined }) =>
+    cafeId ? <div data-testid="daily-reward-wheel">Günün Çarkı ({cafeId})</div> : null,
+}));
+
 // Mock sub-components
 jest.mock('./dashboard/StatusBar', () => ({
   StatusBar: ({ user, isMatched }: { user: User; isMatched: boolean }) => (
@@ -299,6 +305,26 @@ describe('Dashboard Integration', () => {
 
       expect(screen.getByTestId('reward-section')).toBeInTheDocument();
     });
+
+    it('renders daily reward wheel when user has cafe_id', () => {
+      renderDashboard();
+      // mockUser has cafe_id: 1
+      expect(screen.getByTestId('daily-reward-wheel')).toBeInTheDocument();
+    });
+
+    it('does not render daily reward wheel when user has no cafe_id', () => {
+      render(
+        <ToastProvider>
+          <AuthProvider>
+            <Dashboard
+              currentUser={{ ...mockUser, cafe_id: undefined }}
+              onUpdateUser={mockOnUpdateUser}
+            />
+          </AuthProvider>
+        </ToastProvider>
+      );
+      expect(screen.queryByTestId('daily-reward-wheel')).not.toBeInTheDocument();
+    });
   });
 
   describe('Tab Navigation', () => {
@@ -513,7 +539,7 @@ describe('Dashboard Integration', () => {
       });
     });
 
-    it('returns to lobby from active game screen', () => {
+    it('returns to lobby from active game screen', async () => {
       const mockLeaveGame = jest.fn();
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
@@ -526,8 +552,14 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       fireEvent.click(screen.getByText('← Lobiye Dön'));
-      expect(window.confirm).toHaveBeenCalled();
-      return waitFor(() => {
+
+      // ConfirmDialog açılır — onay ver (forfeit diyaloğunun onay etiketi 'Çık')
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Çık/ })).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Çık/ }));
+
+      await waitFor(() => {
         expect(mockLeaveGame).toHaveBeenCalledTimes(1);
       });
     });

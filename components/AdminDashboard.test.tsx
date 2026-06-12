@@ -4,6 +4,9 @@
  * Behavior-focused after the visual rewrite: queries target roles, labels,
  * data-testids, and stable strings (user/cafe names, status semantics) rather
  * than the brittle ALL-CAPS retro chrome of the previous design.
+ *
+ * window.confirm/alert replaced with ConfirmDialog (useConfirm) + Toast.
+ * Tüm render çağrıları ToastProvider ile sarılıdır.
  */
 
 import React from 'react';
@@ -11,6 +14,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AdminDashboard } from './AdminDashboard';
 import { User } from '../types';
 import * as apiModule from '../lib/api';
+import { ToastProvider } from '../contexts/ToastContext';
 
 jest.mock('../lib/api', () => ({
   api: {
@@ -30,8 +34,7 @@ jest.mock('../lib/api', () => ({
   },
 }));
 
-Object.defineProperty(window, 'alert', { writable: true, value: jest.fn() });
-Object.defineProperty(window, 'confirm', { writable: true, value: jest.fn() });
+const renderWithProviders = (ui: React.ReactElement) => render(<ToastProvider>{ui}</ToastProvider>);
 
 describe('AdminDashboard', () => {
   const mockCurrentUser: User = {
@@ -115,7 +118,7 @@ describe('AdminDashboard', () => {
   });
 
   it('renders dashboard heading and current admin username', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Concierge' })).toBeInTheDocument();
@@ -124,7 +127,7 @@ describe('AdminDashboard', () => {
   });
 
   it('renders all tab buttons', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Kullanıcılar/ })).toBeInTheDocument();
@@ -134,7 +137,7 @@ describe('AdminDashboard', () => {
   });
 
   it('displays users in users tab by default', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByText('user1')).toBeInTheDocument();
@@ -143,7 +146,7 @@ describe('AdminDashboard', () => {
   });
 
   it('switches to games tab when clicked', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
@@ -157,7 +160,7 @@ describe('AdminDashboard', () => {
   });
 
   it('switches to cafes tab when clicked', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
@@ -170,7 +173,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows user roles with correct badges', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByText('User')).toBeInTheDocument();
@@ -179,7 +182,7 @@ describe('AdminDashboard', () => {
   });
 
   it('filters users by search term', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
@@ -193,7 +196,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows promote button for regular users', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
@@ -204,7 +207,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows demote button for cafe admins', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Yetkiyi Al/ })).toBeInTheDocument();
@@ -212,7 +215,7 @@ describe('AdminDashboard', () => {
   });
 
   it('opens cafe admin modal when promoting user', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => expect(screen.getByText('user1')).toBeInTheDocument());
 
@@ -226,11 +229,10 @@ describe('AdminDashboard', () => {
     });
   });
 
-  it('confirms demotion with window.confirm', async () => {
-    (window.confirm as jest.Mock).mockReturnValue(true);
+  it('confirms demotion via dialog and calls API', async () => {
     (apiModule.api.admin.updateUserRole as jest.Mock).mockResolvedValue({});
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Yetkiyi Al/ })).toBeInTheDocument()
@@ -238,13 +240,19 @@ describe('AdminDashboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Yetkiyi Al/ }));
 
+    // ConfirmDialog açılır — "Evet" butonuna tıkla
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: /Evet/ })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Evet/ }));
+
+    await waitFor(() => {
+      expect(apiModule.api.admin.updateUserRole).toHaveBeenCalledWith(2, 'user', null);
     });
   });
 
   it('shows game status badges', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
@@ -255,7 +263,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows delete game button', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
@@ -265,11 +273,10 @@ describe('AdminDashboard', () => {
     });
   });
 
-  it('confirms before deleting game', async () => {
-    (window.confirm as jest.Mock).mockReturnValue(true);
+  it('confirms before deleting game and calls API', async () => {
     (apiModule.api.games.delete as jest.Mock).mockResolvedValue({});
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Oyunlar/ }));
 
@@ -279,13 +286,20 @@ describe('AdminDashboard', () => {
 
     fireEvent.click(screen.queryAllByRole('button', { name: /^Sil$/ })[0]);
 
+    // ConfirmDialog içeriği 'Geri alınamaz' geçiyor
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Geri alınamaz'));
+      expect(screen.getByText(/Geri alınamaz/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Evet/ }));
+
+    await waitFor(() => {
+      expect(apiModule.api.games.delete).toHaveBeenCalled();
     });
   });
 
   it('shows cafe edit form when a cafe is selected', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
@@ -312,7 +326,7 @@ describe('AdminDashboard', () => {
       { id: 12, name: 'Yedek Kafe', address: 'Adres', total_tables: 8, pin: '5678' },
     ]);
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByText('user1')).toBeInTheDocument();
@@ -344,7 +358,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows add cafe button', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
@@ -354,7 +368,7 @@ describe('AdminDashboard', () => {
   });
 
   it('shows delete cafe button in cafes tab', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
@@ -363,10 +377,8 @@ describe('AdminDashboard', () => {
     });
   });
 
-  it('deletes selected cafe when confirmed', async () => {
-    (window.confirm as jest.Mock).mockReturnValue(true);
-
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+  it('deletes selected cafe when confirmed via dialog', async () => {
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
@@ -375,6 +387,12 @@ describe('AdminDashboard', () => {
     });
 
     fireEvent.click(screen.getByTestId('delete-cafe-button'));
+
+    // ConfirmDialog açılır — onay ver
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Evet/ })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Evet/ }));
 
     await waitFor(() => {
       expect(apiModule.api.admin.deleteCafe).toHaveBeenCalledWith(1);
@@ -386,7 +404,7 @@ describe('AdminDashboard', () => {
       { id: 9, name: 'Tek Kafe', address: 'Adres', total_tables: 10, pin: '1234' },
     ]);
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
@@ -398,7 +416,7 @@ describe('AdminDashboard', () => {
   });
 
   it('opens add cafe modal when clicking add button', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
@@ -414,7 +432,7 @@ describe('AdminDashboard', () => {
   });
 
   it('loads data on mount', async () => {
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(apiModule.api.admin.getUsers).toHaveBeenCalled();
@@ -426,7 +444,7 @@ describe('AdminDashboard', () => {
   it('updates user points from users table', async () => {
     (apiModule.api.admin.updateUserPoints as jest.Mock).mockResolvedValue({});
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByText('user1')).toBeInTheDocument();
@@ -443,11 +461,10 @@ describe('AdminDashboard', () => {
     });
   });
 
-  it('deletes user when confirmed', async () => {
-    (window.confirm as jest.Mock).mockReturnValue(true);
+  it('deletes user when confirmed via dialog', async () => {
     (apiModule.api.admin.deleteUser as jest.Mock).mockResolvedValue({});
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByText('user1')).toBeInTheDocument();
@@ -457,6 +474,12 @@ describe('AdminDashboard', () => {
     const deleteButtons = screen.getAllByRole('button', { name: /^Sil$/ });
     fireEvent.click(deleteButtons[1]);
 
+    // ConfirmDialog açılır — onay ver
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Evet/ })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Evet/ }));
+
     await waitFor(() => {
       expect(apiModule.api.admin.deleteUser).toHaveBeenCalledWith(2);
     });
@@ -465,7 +488,7 @@ describe('AdminDashboard', () => {
   it('creates new user from modal', async () => {
     (apiModule.api.admin.createUser as jest.Mock).mockResolvedValue({ id: 99 });
 
-    render(<AdminDashboard currentUser={mockCurrentUser} />);
+    renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
       expect(screen.getByText('user1')).toBeInTheDocument();

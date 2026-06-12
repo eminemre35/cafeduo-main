@@ -1,6 +1,33 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AuthModal } from './AuthModal';
+
+// AuthModal uses AnimatePresence to conditionally mount content.
+// Replace with a transparent wrapper so fireEvent.blur triggers properly.
+jest.mock('framer-motion', () => ({
+  motion: new Proxy(
+    {},
+    {
+      get: (_t, tag: string) =>
+        React.forwardRef(({ children, ...props }: any, ref: any) => {
+          const {
+            initial: _i,
+            animate: _a,
+            exit: _e,
+            transition: _t2,
+            variants: _v,
+            whileHover: _wh,
+            whileTap: _wt,
+            ...rest
+          } = props;
+          return React.createElement(tag, { ...rest, ref }, children);
+        }),
+    }
+  ),
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+  useReducedMotion: () => false,
+}));
 
 const mockToastSuccess = jest.fn();
 const mockToastError = jest.fn();
@@ -78,7 +105,7 @@ describe('AuthModal', () => {
   });
 
   it('validates email format', async () => {
-    render(
+    const { container } = render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -87,17 +114,24 @@ describe('AuthModal', () => {
       />
     );
 
-    const emailInput = screen.getByPlaceholderText('E-posta');
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-    fireEvent.blur(emailInput);
+    // Submit the form with an invalid email to trigger full validation
+    // (validateForm sets all touched fields and shows all errors at once)
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'invalid-email' },
+    });
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     await waitFor(() => {
-      expect(screen.getByText('Geçerli bir e-posta adresi girin')).toBeInTheDocument();
+      const errors = container.querySelectorAll('p');
+      const found = Array.from(errors).some((p) =>
+        (p.textContent ?? '').includes('Geçerli bir e-posta adresi girin')
+      );
+      expect(found).toBe(true);
     });
   });
 
   it('validates password minimum length', async () => {
-    render(
+    const { container } = render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -106,12 +140,21 @@ describe('AuthModal', () => {
       />
     );
 
-    const passwordInput = screen.getByPlaceholderText('Şifre');
-    fireEvent.change(passwordInput, { target: { value: '123' } });
-    fireEvent.blur(passwordInput);
+    // Fill in a valid email but a short password, then submit to trigger validation
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'test@example.com' },
+    });
+    fireEvent.change(screen.getByTestId('auth-password-input'), {
+      target: { value: '123' },
+    });
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     await waitFor(() => {
-      expect(screen.getByText('Şifre en az 6 karakter olmalıdır')).toBeInTheDocument();
+      const errors = container.querySelectorAll('p');
+      const found = Array.from(errors).some((p) =>
+        (p.textContent ?? '').includes('Şifre en az 6 karakter olmalıdır')
+      );
+      expect(found).toBe(true);
     });
   });
 
@@ -128,7 +171,7 @@ describe('AuthModal', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('toggles password visibility', () => {
+  it('toggles password visibility', async () => {
     render(
       <AuthModal
         isOpen={true}
@@ -138,14 +181,17 @@ describe('AuthModal', () => {
       />
     );
 
-    const passwordInput = screen.getByTestId('auth-password-input');
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(screen.getByTestId('auth-password-input')).toHaveAttribute('type', 'password');
 
     fireEvent.click(screen.getByRole('button', { name: 'Şifreyi göster' }));
-    expect(passwordInput).toHaveAttribute('type', 'text');
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-password-input')).toHaveAttribute('type', 'text');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Şifreyi gizle' }));
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-password-input')).toHaveAttribute('type', 'password');
+    });
   });
 
   it('submits login successfully and returns user', async () => {

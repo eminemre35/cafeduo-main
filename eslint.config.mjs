@@ -211,9 +211,11 @@ export default [
   },
   // Test files — looser
   {
-    files: ['**/*.{test,spec}.{js,ts,tsx}', 'test-setup.ts', 'e2e/**/*.ts'],
+    files: ['**/*.{test,spec}.{js,ts,tsx}', 'test-setup.ts', 'e2e/**/*.ts', '__mocks__/**/*.js'],
     languageOptions: {
       globals: {
+        require: 'readonly',
+        module: 'readonly',
         describe: 'readonly',
         it: 'readonly',
         test: 'readonly',

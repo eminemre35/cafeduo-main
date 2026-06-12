@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CafeDashboard } from './CafeDashboard';
 import { api } from '../lib/api';
 import { User } from '../types';
+import { ToastProvider } from '../contexts/ToastContext';
 
 jest.mock('../lib/api', () => ({
   api: {
@@ -24,6 +25,8 @@ jest.mock('../lib/api', () => ({
 jest.mock('./RetroButton', () => ({
   RetroButton: ({ children, ...props }: any) => <button {...props}>{children}</button>,
 }));
+
+const renderWithProviders = (ui: React.ReactElement) => render(<ToastProvider>{ui}</ToastProvider>);
 
 describe('CafeDashboard', () => {
   const currentUser: User = {
@@ -52,7 +55,7 @@ describe('CafeDashboard', () => {
   });
 
   it('verifies coupon successfully', async () => {
-    render(<CafeDashboard currentUser={currentUser} />);
+    renderWithProviders(<CafeDashboard currentUser={currentUser} />);
 
     fireEvent.change(screen.getByPlaceholderText('CD-XXXX-XXXX-XXXX'), {
       target: { value: 'abc123' },
@@ -71,7 +74,7 @@ describe('CafeDashboard', () => {
       response: { data: { error: 'Kupon geçersiz' } },
     });
 
-    render(<CafeDashboard currentUser={currentUser} />);
+    renderWithProviders(<CafeDashboard currentUser={currentUser} />);
     fireEvent.change(screen.getByPlaceholderText('CD-XXXX-XXXX-XXXX'), {
       target: { value: 'bad' },
     });
@@ -83,7 +86,7 @@ describe('CafeDashboard', () => {
   });
 
   it('loads rewards on rewards tab and creates reward', async () => {
-    render(<CafeDashboard currentUser={currentUser} />);
+    renderWithProviders(<CafeDashboard currentUser={currentUser} />);
     fireEvent.click(screen.getByText('Ödül Yönetimi'));
 
     await waitFor(() => {
@@ -110,7 +113,7 @@ describe('CafeDashboard', () => {
   });
 
   it('deletes reward when trash action confirmed', async () => {
-    const { container } = render(<CafeDashboard currentUser={currentUser} />);
+    const { container } = renderWithProviders(<CafeDashboard currentUser={currentUser} />);
     fireEvent.click(screen.getByText('Ödül Yönetimi'));
 
     await waitFor(() => {
@@ -122,13 +125,20 @@ describe('CafeDashboard', () => {
     );
     expect(deleteButton).toBeTruthy();
     fireEvent.click(deleteButton as HTMLButtonElement);
+
+    // ConfirmDialog açılır — onay ver
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Evet/ })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Evet/ }));
+
     await waitFor(() => {
       expect(api.rewards.delete).toHaveBeenCalledWith(1);
     });
   });
 
   it('validates coordinates before location update', async () => {
-    render(<CafeDashboard currentUser={currentUser} />);
+    renderWithProviders(<CafeDashboard currentUser={currentUser} />);
     fireEvent.click(screen.getByText('Konum Ayarları'));
 
     await waitFor(() => {
@@ -145,7 +155,7 @@ describe('CafeDashboard', () => {
   });
 
   it('updates location when valid values are submitted', async () => {
-    render(<CafeDashboard currentUser={currentUser} />);
+    renderWithProviders(<CafeDashboard currentUser={currentUser} />);
     fireEvent.click(screen.getByText('Konum Ayarları'));
 
     await waitFor(() => {

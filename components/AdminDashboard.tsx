@@ -37,6 +37,8 @@ import {
   AdminUserFormData,
   AdminUserRow,
 } from './admin/types';
+import { useConfirm } from './ui/ConfirmDialog';
+import { useToast } from '../contexts/ToastContext';
 
 interface AdminDashboardProps {
   currentUser: User;
@@ -85,6 +87,8 @@ const formatGameDate = (raw: string): string => {
 };
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
+  const { confirm, confirmDialog } = useConfirm();
+  const toast = useToast();
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [games, setGames] = useState<AdminGameRow[]>([]);
   const [cafes, setCafes] = useState<Cafe[]>([]);
@@ -221,20 +225,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const secondaryLongitude = Number(editCafeData.secondaryLongitude);
     const secondaryRadius = Number(editCafeData.secondaryRadius);
     if (hasPrimaryLocation && (!Number.isFinite(latitude) || !Number.isFinite(longitude))) {
-      alert('Kafe konumu için geçerli enlem ve boylam girin.');
+      toast.warning('Kafe konumu için geçerli enlem ve boylam girin.');
       return;
     }
     if (!Number.isFinite(radius) || radius < 10 || radius > 5000) {
-      alert('Yarıçap 10-5000 metre arasında olmalıdır.');
+      toast.warning('Yarıçap 10-5000 metre arasında olmalıdır.');
       return;
     }
     if (hasSecondaryInput) {
       if (!Number.isFinite(secondaryLatitude) || !Number.isFinite(secondaryLongitude)) {
-        alert('İkinci konum için enlem ve boylam birlikte girilmelidir.');
+        toast.warning('İkinci konum için enlem ve boylam birlikte girilmelidir.');
         return;
       }
       if (!Number.isFinite(secondaryRadius) || secondaryRadius < 10 || secondaryRadius > 5000) {
-        alert('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
+        toast.warning('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
         return;
       }
     }
@@ -253,10 +257,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         // dailyRewardWheel removed in PR #37 — wheel is now global, see
         // backend DAILY_WHEEL_SLICES constant.
       });
-      alert('Kafe bilgileri güncellendi!');
+      toast.success('Kafe bilgileri güncellendi!');
       loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Güncelleme başarısız.'));
+      toast.error(extractErrorMessage(error, 'Güncelleme başarısız.'));
     }
   };
 
@@ -289,17 +293,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const currentRole = user.role;
 
     if (currentRole === 'cafe_admin') {
-      if (
-        window.confirm(
-          `${user.username} kullanıcısının kafe yöneticiliğini kaldırmak istediğinize emin misiniz?`
-        )
-      ) {
+      const ok = await confirm({
+        message: `${user.username} kullanıcısının kafe yöneticiliğini kaldırmak istediğinize emin misiniz?`,
+        danger: true,
+      });
+      if (ok) {
         try {
           await api.admin.updateUserRole(user.id, 'user', null);
-          alert('Kullanıcı rolü güncellendi!');
+          toast.success('Kullanıcı rolü güncellendi!');
           loadData();
         } catch (error) {
-          alert(extractErrorMessage(error, 'Rol güncelleme başarısız.'));
+          toast.error(extractErrorMessage(error, 'Rol güncelleme başarısız.'));
         }
       }
     } else {
@@ -311,19 +315,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
   const handleConfirmCafeAdmin = async () => {
     if (!selectedUser || !selectedCafeForAdmin) {
-      alert('Lütfen bir kafe seçin.');
+      toast.warning('Lütfen bir kafe seçin.');
       return;
     }
 
     try {
       await api.admin.updateUserRole(selectedUser.id, 'cafe_admin', parseInt(selectedCafeForAdmin));
-      alert(`${selectedUser.username} artık seçilen kafenin yöneticisi!`);
+      toast.success(`${selectedUser.username} artık seçilen kafenin yöneticisi!`);
       setShowRoleModal(false);
       setSelectedUser(null);
       setSelectedCafeForAdmin('');
       loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Rol güncelleme başarısız.'));
+      toast.error(extractErrorMessage(error, 'Rol güncelleme başarısız.'));
     }
   };
 
@@ -340,49 +344,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const numericPoints = Number(draftValue);
 
     if (!Number.isFinite(numericPoints) || numericPoints < 0) {
-      alert('Puan 0 veya daha büyük olmalıdır.');
+      toast.warning('Puan 0 veya daha büyük olmalıdır.');
       return;
     }
 
     try {
       await api.admin.updateUserPoints(user.id, numericPoints);
-      alert(`${user.username} için puan güncellendi.`);
+      toast.success(`${user.username} için puan güncellendi.`);
       loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Puan güncellenemedi.'));
+      toast.error(extractErrorMessage(error, 'Puan güncellenemedi.'));
     }
   };
 
   const handleDeleteUser = async (user: User) => {
     if (Number(user.id) === Number(currentUser.id)) {
-      alert('Kendi hesabını bu panelden silemezsin.');
+      toast.warning('Kendi hesabını bu panelden silemezsin.');
       return;
     }
 
-    if (
-      !window.confirm(
-        `${user.username} kullanıcısını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      message: `${user.username} kullanıcısını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`,
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       await api.admin.deleteUser(user.id);
-      alert('Kullanıcı silindi.');
+      toast.success('Kullanıcı silindi.');
       loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Kullanıcı silinemedi.'));
+      toast.error(extractErrorMessage(error, 'Kullanıcı silinemedi.'));
     }
   };
 
   const handleAddUser = async () => {
     if (!newUserData.username || !newUserData.email || !newUserData.password) {
-      alert('Kullanıcı adı, e-posta ve şifre zorunludur.');
+      toast.warning('Kullanıcı adı, e-posta ve şifre zorunludur.');
       return;
     }
     if (newUserData.role === 'cafe_admin' && !newUserData.cafe_id) {
-      alert('Kafe yöneticisi için kafe seçimi zorunludur.');
+      toast.warning('Kafe yöneticisi için kafe seçimi zorunludur.');
       return;
     }
 
@@ -397,32 +399,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         cafe_id: newUserData.role === 'cafe_admin' ? Number(newUserData.cafe_id) : null,
       });
 
-      alert('Yeni kullanıcı oluşturuldu.');
+      toast.success('Yeni kullanıcı oluşturuldu.');
       setShowAddUserModal(false);
       setNewUserData(EMPTY_USER_FORM);
       loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Kullanıcı oluşturulamadı.'));
+      toast.error(extractErrorMessage(error, 'Kullanıcı oluşturulamadı.'));
     } finally {
       setIsSubmittingUser(false);
     }
   };
 
   const handleDeleteGame = async (gameId: number) => {
-    if (window.confirm('Bu oyunu silmek istediğinize emin misiniz? (Geri alınamaz)')) {
+    const ok = await confirm({
+      message: 'Bu oyunu silmek istediğinize emin misiniz? (Geri alınamaz)',
+      danger: true,
+    });
+    if (ok) {
       try {
         await api.games.delete(gameId);
-        alert('Oyun silindi!');
+        toast.success('Oyun silindi!');
         loadData();
       } catch (error) {
-        alert(extractErrorMessage(error, 'Oyun silinemedi.'));
+        toast.error(extractErrorMessage(error, 'Oyun silinemedi.'));
       }
     }
   };
 
   const handleAddCafe = async () => {
     if (!newCafeData.name) {
-      alert('Lütfen kafe adı girin.');
+      toast.warning('Lütfen kafe adı girin.');
       return;
     }
     const latitudeRaw = String(newCafeData.latitude || '').trim();
@@ -438,20 +444,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const secondaryLongitude = Number(newCafeData.secondaryLongitude);
     const secondaryRadius = Number(newCafeData.secondaryRadius);
     if (hasPrimaryLocation && (!Number.isFinite(latitude) || !Number.isFinite(longitude))) {
-      alert('Yeni kafe için geçerli enlem ve boylam zorunludur.');
+      toast.warning('Yeni kafe için geçerli enlem ve boylam zorunludur.');
       return;
     }
     if (!Number.isFinite(radius) || radius < 10 || radius > 5000) {
-      alert('Yarıçap 10-5000 metre arasında olmalıdır.');
+      toast.warning('Yarıçap 10-5000 metre arasında olmalıdır.');
       return;
     }
     if (hasSecondaryInput) {
       if (!Number.isFinite(secondaryLatitude) || !Number.isFinite(secondaryLongitude)) {
-        alert('İkinci konum için enlem ve boylam birlikte girilmelidir.');
+        toast.warning('İkinci konum için enlem ve boylam birlikte girilmelidir.');
         return;
       }
       if (!Number.isFinite(secondaryRadius) || secondaryRadius < 10 || secondaryRadius > 5000) {
-        alert('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
+        toast.warning('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
         return;
       }
     }
@@ -465,30 +471,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         secondary_longitude: hasSecondaryInput ? secondaryLongitude : null,
         secondary_radius: hasSecondaryInput ? secondaryRadius : null,
       });
-      alert('Yeni kafe eklendi!');
+      toast.success('Yeni kafe eklendi!');
       setShowAddCafeModal(false);
       setNewCafeData(EMPTY_CAFE_FORM);
       loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Kafe eklenirken hata oluştu.'));
+      toast.error(extractErrorMessage(error, 'Kafe eklenirken hata oluştu.'));
     }
   };
 
   const handleDeleteCafe = async () => {
     if (!selectedCafe) {
-      alert('Silinecek bir kafe seçin.');
+      toast.warning('Silinecek bir kafe seçin.');
       return;
     }
 
     if (cafes.length <= 1) {
-      alert('Sistemde en az bir kafe kalmalıdır.');
+      toast.warning('Sistemde en az bir kafe kalmalıdır.');
       return;
     }
 
-    const confirmationMessage = `${selectedCafe.name} kafesini silmek istediğinize emin misiniz?\n\nBu işlem bağlı kullanıcıları kafeden ayırır, kafe yöneticilerini user rolüne düşürür, bağlı ödülleri siler ve açık oyunları kapatır.`;
-    if (!window.confirm(confirmationMessage)) {
-      return;
-    }
+    const ok = await confirm({
+      message: `${selectedCafe.name} kafesini silmek istediğinize emin misiniz?\n\nBu işlem bağlı kullanıcıları kafeden ayırır, kafe yöneticilerini user rolüne düşürür, bağlı ödülleri siler ve açık oyunları kapatır.`,
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const result: DeleteCafeResult = await api.admin.deleteCafe(selectedCafe.id);
@@ -499,17 +506,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         gamesForceClosed: 0,
       };
 
-      alert(
-        `${selectedCafe.name} silindi.\n` +
-          `${cleanup.detachedUsers} kullanıcı kafeden ayrıldı.\n` +
-          `${cleanup.cafeAdminsDemoted} kafe yöneticisi user rolüne alındı.\n` +
-          `${cleanup.rewardsDeleted} ödül silindi.\n` +
+      toast.success(
+        `${selectedCafe.name} silindi. ` +
+          `${cleanup.detachedUsers} kullanıcı kafeden ayrıldı, ` +
+          `${cleanup.cafeAdminsDemoted} kafe yöneticisi user rolüne alındı, ` +
+          `${cleanup.rewardsDeleted} ödül silindi, ` +
           `${cleanup.gamesForceClosed} açık oyun kapatıldı.`
       );
 
       await loadData();
     } catch (error) {
-      alert(extractErrorMessage(error, 'Kafe silinemedi.'));
+      toast.error(extractErrorMessage(error, 'Kafe silinemedi.'));
     }
   };
 
@@ -1010,6 +1017,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         }}
         onConfirm={handleConfirmCafeAdmin}
       />
+
+      {confirmDialog}
     </div>
   );
 };

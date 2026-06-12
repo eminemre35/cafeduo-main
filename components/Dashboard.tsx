@@ -15,6 +15,7 @@ import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
 import { MatchResultCard, type MatchStats } from './dashboard/MatchResultCard';
+import { useConfirm } from './ui/ConfirmDialog';
 
 // Hooks
 import { useGames } from '../hooks/useGames';
@@ -28,9 +29,7 @@ import { TournamentBanner } from './TournamentBanner';
 import { TournamentLeaderboardModal } from './TournamentLeaderboardModal';
 import { GameSection } from './dashboard/GameSection';
 import { RewardSection } from './dashboard/RewardSection';
-// DailyRewardWheel parking ramped — kept in tree but not mounted in the
-// dashboard. Spin endpoint + visual were both off; re-enable when there's
-// a proper fix to ship.
+import { DailyRewardWheel } from './dashboard/DailyRewardWheel';
 
 // Icons
 import { Trophy, Gift, Gamepad2 } from 'lucide-react';
@@ -49,6 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onRefreshUser,
 }) => {
   const toast = useToast();
+  const { confirm: confirmAction, confirmDialog } = useConfirm();
 
   const normalizeTableCode = (raw: unknown): string => {
     const value = String(raw || '')
@@ -303,16 +303,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  const handleLeaveGame = () => {
+  const handleLeaveGame = async () => {
     // Only warn about forfeit when the match is genuinely still in progress.
     // If gameResult is already set OR the game component told us the server
     // marked the match settled (matchSettledRef), skip the confirm — the
     // user is not abandoning anything, the match is over.
     const matchInProgress = !gameResult && !matchSettledRef.current;
     if (matchInProgress) {
-      const accepted = window.confirm(
-        'Oyundan çıkarsan mağlup sayılacaksın. Oyundan çıkmak istiyor musun?'
-      );
+      const accepted = await confirmAction({
+        title: 'Oyundan çık',
+        message: 'Oyundan çıkarsan mağlup sayılacaksın. Oyundan çıkmak istiyor musun?',
+        confirmLabel: 'Çık',
+        cancelLabel: 'Oyuna dön',
+        danger: true,
+      });
       if (!accepted) return;
     }
     void performLeaveGame();
@@ -320,7 +324,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Manuel dönüş (istatistik işlemeden)
   const handleBackToLobby = () => {
-    handleLeaveGame();
+    void handleLeaveGame();
   };
 
   // Oyun sonu (istatistik + puan güncelleme)
@@ -416,6 +420,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
         </div>
+        {/* Forfeit onayı bu ekranda açılır — dialog bu ağaçta da mount olmalı. */}
+        {confirmDialog}
       </div>
     );
   }
@@ -535,10 +541,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   />
                 </div>
 
-                {/* Sağ: Ödüller & Envanter (Günün Çarkı geçici olarak
-                    devre dışı — yarı-bitik durumdaydı, kullanıcı çıkarmamızı
-                    istedi). */}
+                {/* Sağ: Günün Çarkı + Ödüller & Envanter */}
                 <div className="order-2 min-w-0 space-y-6">
+                  {currentUser.cafe_id && (
+                    <DailyRewardWheel
+                      cafeId={currentUser.cafe_id}
+                      onPointsWon={(points) =>
+                        onUpdateUser({ ...currentUser, points: currentUser.points + points })
+                      }
+                      onGiftWon={() => {
+                        if (onRefreshUser) void onRefreshUser();
+                      }}
+                    />
+                  )}
                   <RewardSection
                     currentUser={currentUser}
                     rewards={rewards}
@@ -575,6 +590,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           tournament={activeTournament}
         />
       )}
+      {confirmDialog}
     </div>
   );
 };

@@ -14,6 +14,18 @@ jest.mock('../lib/api', () => ({
   },
 }));
 
+const mockToast = {
+  success: jest.fn(),
+  error: jest.fn(),
+  warning: jest.fn(),
+  loading: jest.fn(),
+  dismiss: jest.fn(),
+};
+jest.mock('../contexts/ToastContext', () => ({
+  ...jest.requireActual('../contexts/ToastContext'),
+  useToast: () => mockToast,
+}));
+
 describe('UserProfileModal', () => {
   const createUser = (): User => ({
     id: 7,
@@ -83,10 +95,9 @@ describe('UserProfileModal', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
-  it('shows alert when save fails', async () => {
+  it('shows toast error when save fails', async () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockRejectedValueOnce(new Error('db down'));
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
 
     const { container } = render(
       <UserProfileModal
@@ -108,9 +119,8 @@ describe('UserProfileModal', () => {
     fireEvent.click(saveButton as HTMLButtonElement);
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Güncelleme başarısız.');
+      expect(mockToast.error).toHaveBeenCalledWith('Güncelleme başarısız.');
     });
-    alertSpy.mockRestore();
   });
 
   it('calls onClose from close button and backdrop', () => {

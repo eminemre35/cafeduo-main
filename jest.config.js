@@ -16,6 +16,7 @@ export default {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^framer-motion$': '<rootDir>/__mocks__/framer-motion.js',
   },
   setupFilesAfterEnv: ['<rootDir>/test-setup.ts'],
   coverageThreshold: {
