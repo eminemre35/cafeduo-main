@@ -229,7 +229,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                   return (
                     <div
                       key={idx}
-                      className="absolute inset-0"
+                      className="absolute inset-0 rounded-full"
                       data-testid={`wheel-slice-${idx}`}
                       style={{
                         background: `conic-gradient(from ${startDeg}deg, ${hexColor} 0deg ${sliceDeg}deg, transparent ${sliceDeg}deg 360deg)`,
