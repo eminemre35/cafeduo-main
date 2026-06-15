@@ -42,15 +42,25 @@ const createGameMoveService = ({
 
   const normalizeClockState = (rawClock) => {
     const source = rawClock && typeof rawClock === 'object' ? rawClock : {};
-    const baseMs = Math.max(60_000, Math.min(1_800_000, Math.floor(Number(source.baseMs || DEFAULT_CLOCK.baseMs))));
-    const incrementMs = Math.max(0, Math.min(30_000, Math.floor(Number(source.incrementMs || DEFAULT_CLOCK.incrementMs))));
+    const baseMs = Math.max(
+      60_000,
+      Math.min(1_800_000, Math.floor(Number(source.baseMs || DEFAULT_CLOCK.baseMs)))
+    );
+    const incrementMs = Math.max(
+      0,
+      Math.min(30_000, Math.floor(Number(source.incrementMs || DEFAULT_CLOCK.incrementMs)))
+    );
 
     const whiteMsRaw = Number(source.whiteMs);
     const blackMsRaw = Number(source.blackMs);
     const whiteMs = Number.isFinite(whiteMsRaw) ? Math.max(0, Math.floor(whiteMsRaw)) : baseMs;
     const blackMs = Number.isFinite(blackMsRaw) ? Math.max(0, Math.floor(blackMsRaw)) : baseMs;
-    const lastTickAt = toIsoTime(source.lastTickAt) ? new Date(toIsoTime(source.lastTickAt)).toISOString() : null;
-    const label = source.label ? String(source.label).slice(0, 32) : `${Math.round(baseMs / 60000)}+${Math.round(incrementMs / 1000)}`;
+    const lastTickAt = toIsoTime(source.lastTickAt)
+      ? new Date(toIsoTime(source.lastTickAt)).toISOString()
+      : null;
+    const label = source.label
+      ? String(source.label).slice(0, 32)
+      : `${Math.round(baseMs / 60000)}+${Math.round(incrementMs / 1000)}`;
 
     return {
       baseMs,
@@ -109,7 +119,8 @@ const createGameMoveService = ({
           return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
         }
 
-        const currentState = game.game_state && typeof game.game_state === 'object' ? game.game_state : {};
+        const currentState =
+          game.game_state && typeof game.game_state === 'object' ? game.game_state : {};
 
         if (chessMove) {
           if (!isChessGameType(game.game_type)) {
@@ -128,7 +139,9 @@ const createGameMoveService = ({
           }
 
           const resolvedColor = adminActor
-            ? (player === 'guest' ? 'b' : 'w')
+            ? player === 'guest'
+              ? 'b'
+              : 'w'
             : resolveParticipantColor(actorParticipant, game);
           if (resolvedColor !== 'w' && resolvedColor !== 'b') {
             await client.query('ROLLBACK');
@@ -225,7 +238,14 @@ const createGameMoveService = ({
             return res.status(409).json({ error: 'Sıra sende değil.' });
           }
 
-          const appliedMove = chess.move(safeMove);
+          // chess.js v1 yasadışı hamlede null DÖNMEZ, Error FIRLATIR — yakalayıp
+          // 400 dönmezsek dıştaki catch'e düşüp 500 veriyordu.
+          let appliedMove;
+          try {
+            appliedMove = chess.move(safeMove);
+          } catch {
+            appliedMove = null;
+          }
           if (!appliedMove) {
             await client.query('ROLLBACK');
             return res.status(400).json({ error: 'Yasadışı hamle.' });
@@ -237,7 +257,9 @@ const createGameMoveService = ({
           const guestName = String(game.guest_name || '').trim();
           const winner =
             gameOver && nextChessState.result === 'checkmate'
-              ? (resolvedColor === 'w' ? hostName : guestName)
+              ? resolvedColor === 'w'
+                ? hostName
+                : guestName
               : null;
 
           const incrementedRemaining = Math.min(
@@ -377,7 +399,8 @@ const createGameMoveService = ({
               ? currentLive.submissions
               : {};
           const currentActorSubmission =
-            currentSubmissions[actorParticipant] && typeof currentSubmissions[actorParticipant] === 'object'
+            currentSubmissions[actorParticipant] &&
+            typeof currentSubmissions[actorParticipant] === 'object'
               ? currentSubmissions[actorParticipant]
               : {};
           const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
@@ -386,10 +409,11 @@ const createGameMoveService = ({
             await client.query('ROLLBACK');
             const participants = getGameParticipants(game);
             const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
-            const resolvedWinner =
-              participants.every((name) => Boolean(currentSubmissions[name]?.done))
-                ? pickWinnerFromResults(currentSubmissions, participants)
-                : null;
+            const resolvedWinner = participants.every((name) =>
+              Boolean(currentSubmissions[name]?.done)
+            )
+              ? pickWinnerFromResults(currentSubmissions, participants)
+              : null;
             return res.json({
               success: true,
               idempotent: true,
@@ -409,10 +433,9 @@ const createGameMoveService = ({
           };
 
           const participants = getGameParticipants(game);
-          const resolvedWinner =
-            participants.every((name) => Boolean(nextSubmissions[name]?.done))
-              ? pickWinnerFromResults(nextSubmissions, participants)
-              : null;
+          const resolvedWinner = participants.every((name) => Boolean(nextSubmissions[name]?.done))
+            ? pickWinnerFromResults(nextSubmissions, participants)
+            : null;
 
           const nextLiveState = {
             mode: safeLive.mode || String(game.game_type || '').trim(),
@@ -475,7 +498,9 @@ const createGameMoveService = ({
           const scorePayload =
             scoreSubmission && typeof scoreSubmission === 'object' ? scoreSubmission : {};
           const currentResults =
-            currentState.results && typeof currentState.results === 'object' ? currentState.results : {};
+            currentState.results && typeof currentState.results === 'object'
+              ? currentState.results
+              : {};
           const currentActorScore =
             currentResults[actorParticipant] && typeof currentResults[actorParticipant] === 'object'
               ? currentResults[actorParticipant]
@@ -583,11 +608,19 @@ const createGameMoveService = ({
           return res.status(409).json(mapTransitionError(legacyMoveStatus));
         }
 
-        const hostName = String(game.host_name || '').trim().toLowerCase();
-        const guestName = String(game.guest_name || '').trim().toLowerCase();
-        const actorNormalized = String(actorParticipant || '').trim().toLowerCase();
+        const hostName = String(game.host_name || '')
+          .trim()
+          .toLowerCase();
+        const guestName = String(game.guest_name || '')
+          .trim()
+          .toLowerCase();
+        const actorNormalized = String(actorParticipant || '')
+          .trim()
+          .toLowerCase();
         const resolvedPlayer = adminActor
-          ? (player === 'guest' ? 'guest' : 'host')
+          ? player === 'guest'
+            ? 'guest'
+            : 'host'
           : actorNormalized === hostName
             ? 'host'
             : actorNormalized === guestName
@@ -649,7 +682,9 @@ const createGameMoveService = ({
       }
 
       const resolvedColor = adminActor
-        ? (player === 'guest' ? 'b' : 'w')
+        ? player === 'guest'
+          ? 'b'
+          : 'w'
         : resolveParticipantColor(actorParticipant, {
             host_name: game.hostName,
             guest_name: game.guestName,
@@ -681,7 +716,9 @@ const createGameMoveService = ({
 
       if (elapsed.remainingMs <= 0) {
         const timeoutWinner =
-          resolvedColor === 'w' ? String(game.guestName || '').trim() : String(game.hostName || '').trim();
+          resolvedColor === 'w'
+            ? String(game.guestName || '').trim()
+            : String(game.hostName || '').trim();
         game.status = GAME_STATUS.FINISHED;
         game.winner = timeoutWinner || null;
         game.gameState = {
@@ -736,7 +773,13 @@ const createGameMoveService = ({
         return res.status(409).json({ error: 'Sıra sende değil.' });
       }
 
-      const appliedMove = chess.move(safeMove);
+      // chess.js v1 yasadışı hamlede Error fırlatır (null dönmez) — yakala, 400 dön.
+      let appliedMove;
+      try {
+        appliedMove = chess.move(safeMove);
+      } catch {
+        appliedMove = null;
+      }
       if (!appliedMove) {
         return res.status(400).json({ error: 'Yasadışı hamle.' });
       }
@@ -745,7 +788,9 @@ const createGameMoveService = ({
       const gameOver = nextChessState.isGameOver === true;
       const winner =
         gameOver && nextChessState.result === 'checkmate'
-          ? (resolvedColor === 'w' ? String(game.hostName || '').trim() : String(game.guestName || '').trim())
+          ? resolvedColor === 'w'
+            ? String(game.hostName || '').trim()
+            : String(game.guestName || '').trim()
           : null;
 
       const incrementedRemaining = Math.min(
@@ -862,7 +907,8 @@ const createGameMoveService = ({
           ? liveState.submissions
           : {};
       const currentActorSubmission =
-        currentSubmissions[actorParticipant] && typeof currentSubmissions[actorParticipant] === 'object'
+        currentSubmissions[actorParticipant] &&
+        typeof currentSubmissions[actorParticipant] === 'object'
           ? currentSubmissions[actorParticipant]
           : {};
       const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
@@ -873,10 +919,9 @@ const createGameMoveService = ({
           guest_name: game.guestName,
         });
         const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
-        const resolvedWinner =
-          participants.every((name) => Boolean(currentSubmissions[name]?.done))
-            ? pickWinnerFromResults(currentSubmissions, participants)
-            : null;
+        const resolvedWinner = participants.every((name) => Boolean(currentSubmissions[name]?.done))
+          ? pickWinnerFromResults(currentSubmissions, participants)
+          : null;
         return res.json({
           success: true,
           idempotent: true,
@@ -898,10 +943,9 @@ const createGameMoveService = ({
         host_name: game.hostName,
         guest_name: game.guestName,
       });
-      const resolvedWinner =
-        participants.every((name) => Boolean(nextSubmissions[name]?.done))
-          ? pickWinnerFromResults(nextSubmissions, participants)
-          : null;
+      const resolvedWinner = participants.every((name) => Boolean(nextSubmissions[name]?.done))
+        ? pickWinnerFromResults(nextSubmissions, participants)
+        : null;
 
       const nextLive = {
         mode: safeLive.mode || String(game.gameType || '').trim(),
@@ -961,7 +1005,8 @@ const createGameMoveService = ({
         username: actorName,
       });
       const existingScoreSubmission =
-        game.gameState.results[canonicalParticipant] && typeof game.gameState.results[canonicalParticipant] === 'object'
+        game.gameState.results[canonicalParticipant] &&
+        typeof game.gameState.results[canonicalParticipant] === 'object'
           ? game.gameState.results[canonicalParticipant]
           : {};
       const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
@@ -1033,11 +1078,19 @@ const createGameMoveService = ({
       return res.status(409).json(mapTransitionError(legacyMoveStatus));
     }
 
-    const hostName = String(game.hostName || '').trim().toLowerCase();
-    const guestName = String(game.guestName || '').trim().toLowerCase();
-    const actorNormalized = String(actorParticipant || '').trim().toLowerCase();
+    const hostName = String(game.hostName || '')
+      .trim()
+      .toLowerCase();
+    const guestName = String(game.guestName || '')
+      .trim()
+      .toLowerCase();
+    const actorNormalized = String(actorParticipant || '')
+      .trim()
+      .toLowerCase();
     const resolvedPlayer = adminActor
-      ? (player === 'guest' ? 'guest' : 'host')
+      ? player === 'guest'
+        ? 'guest'
+        : 'host'
       : actorNormalized === hostName
         ? 'host'
         : actorNormalized === guestName

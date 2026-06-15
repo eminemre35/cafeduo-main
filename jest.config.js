@@ -21,10 +21,10 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/test-setup.ts'],
   coverageThreshold: {
     global: {
-      lines: 67,
-      statements: 66,
-      branches: 54,
-      functions: 64,
+      lines: 72,
+      statements: 71,
+      branches: 60,
+      functions: 68,
     },
   },
   // CI coverage rozeti `coverage-summary.json` okur; json-summary olmadan 0% (kırmızı) çıkar.
