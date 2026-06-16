@@ -175,8 +175,16 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
     return base + targetMod;
   };
 
-  /** Find the slice the backend awarded, to land the wheel on it. */
-  const wonSliceIndex = (resp: { gift?: { label: string } | null; pointsWon: number }): number => {
+  /** Find the slice the backend awarded, to land the wheel on it. Prefer the
+   *  server-provided pickedIndex; fall back to matching points/gift. */
+  const wonSliceIndex = (resp: {
+    gift?: { label: string } | null;
+    pointsWon: number;
+    pickedIndex?: number;
+  }): number => {
+    if (typeof resp.pickedIndex === 'number' && resp.pickedIndex >= 0) {
+      return Math.min(resp.pickedIndex, Math.max(0, slices.length - 1));
+    }
     if (resp.gift) {
       const i = slices.findIndex((s) => s.gift);
       return i >= 0 ? i : 0;
@@ -190,7 +198,20 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
     setSpinning(true);
     setError(null);
     try {
-      const resp = await api.wheel.spin(cafeId);
+      let resp;
+      try {
+        resp = await api.wheel.spin(cafeId);
+      } catch (err) {
+        // The readable CSRF cookie can lapse while the auth session lives on,
+        // 403-ing the spin. A GET re-mints the cookie (server self-heals on
+        // safe requests); retry the spin once before surfacing the error.
+        if (err instanceof Error && /csrf/i.test(err.message)) {
+          await api.wheel.get(cafeId).catch(() => {});
+          resp = await api.wheel.spin(cafeId);
+        } else {
+          throw err;
+        }
+      }
 
       // Spin the wheel to the awarded slice. The animation itself is the
       // suspense, so the prize is revealed only once it visually settles.
@@ -267,17 +288,18 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
       {!loading && status && (
         <>
           {/* Wheel — true SVG pie, circular by construction */}
-          <div className="relative mx-auto w-52 h-52 sm:w-60 sm:h-60 mb-5">
+          <div className="relative mx-auto mt-3 mb-6 w-44 h-44 sm:w-52 sm:h-52">
             {slices.length > 0 ? (
               <>
-                {/* Static risograph misregistration shadow (offset crescents). */}
+                {/* Risograph misregistration — offset outline rings, not a glow
+                    blob: the rim re-printed a few px off in pink + blue. */}
                 <svg
                   viewBox="0 0 200 200"
                   className="absolute inset-0 h-full w-full pointer-events-none"
                   aria-hidden="true"
                 >
-                  <circle cx={108} cy={108} r={R} fill="#ff3e94" opacity={0.22} />
-                  <circle cx={104} cy={104} r={R} fill="#1e3fb5" opacity={0.28} />
+                  <circle cx={105} cy={105} r={R} fill="none" stroke="#ff3e94" strokeWidth={3} />
+                  <circle cx={103} cy={103} r={R} fill="none" stroke="#1e3fb5" strokeWidth={3} />
                 </svg>
 
                 {/* Rotating wheel face. */}
@@ -327,9 +349,13 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                   </svg>
                 </motion.div>
 
-                {/* Center hub */}
+                {/* Center hub — clean circle, no offset shadow (the wheel rim
+                    already carries the misregistration). */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-11 h-11 border-2 border-carbon bg-paper rounded-full flex items-center justify-center riso-shadow-pink-only">
+                  <div
+                    className="flex items-center justify-center border-2 border-carbon bg-paper"
+                    style={{ width: 38, height: 38, borderRadius: '9999px' }}
+                  >
                     <Sparkles size={18} className="text-riso-pink-deep" />
                   </div>
                 </div>

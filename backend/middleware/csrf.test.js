@@ -41,6 +41,28 @@ describe('CSRF Middleware', () => {
       expect(res.status).not.toHaveBeenCalled();
     });
 
+    it('should mint a CSRF cookie on a safe request when none is present (self-heal)', () => {
+      const { req, res, next } = createMocks({ method: 'GET', cookies: {} });
+      csrfMiddleware(req, res, next);
+      expect(next).toHaveBeenCalled();
+      expect(res.cookie).toHaveBeenCalledWith(
+        CSRF_COOKIE_NAME,
+        expect.any(String),
+        expect.any(Object)
+      );
+    });
+
+    it('should NOT re-mint the CSRF cookie on a safe request when one exists', () => {
+      const token = generateCsrfToken();
+      const { req, res, next } = createMocks({
+        method: 'GET',
+        cookies: { [CSRF_COOKIE_NAME]: token },
+      });
+      csrfMiddleware(req, res, next);
+      expect(next).toHaveBeenCalled();
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+
     it('should bypass CSRF check for HEAD requests', () => {
       const { req, res, next } = createMocks({ method: 'HEAD' });
       csrfMiddleware(req, res, next);

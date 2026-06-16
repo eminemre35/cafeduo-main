@@ -59,7 +59,10 @@ function csrfCookieOptions() {
     httpOnly: false, // Must be readable by JavaScript
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    // Match the auth cookie lifetime (7d). If this is shorter than the JWT
+    // session, the CSRF cookie expires first and every state-changing request
+    // 403s while the user still appears logged in.
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
     domain: process.env.COOKIE_DOMAIN || undefined,
   };
@@ -104,6 +107,13 @@ function setCsrfCookie(res) {
 function csrfMiddleware(req, res, next) {
   // Bypass CSRF check for safe methods
   if (SAFE_METHODS.has(req.method)) {
+    // Self-heal: if the readable CSRF cookie is missing (e.g. it expired while
+    // the longer-lived auth session is still valid), mint a fresh one on this
+    // safe request. The next state-changing request then succeeds without a
+    // re-login — a page refresh is enough to recover.
+    if (!req.cookies?.[CSRF_COOKIE_NAME]) {
+      setCsrfCookie(res);
+    }
     return next();
   }
 
