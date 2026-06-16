@@ -1,20 +1,31 @@
 /**
  * DailyRewardWheel — birim testleri
  *
- * Render bug fix doğrulaması:
- *   - Her dilim `background` inline style (conic-gradient) almalı
- *   - clipPath / WebkitClipPath kesinlikle olmamalı
+ * Davranış odaklı: çark gerçek bir SVG pasta olarak çizilir (her dilim bir
+ * <path>), iniş kazanılan dilimde durur. Testler render edilen yapıyı ve
+ * kullanıcıya görünen sonucu doğrular — CSS uygulama detayını (conic-gradient,
+ * clipPath) değil.
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { DailyRewardWheel } from './DailyRewardWheel';
 
-// framer-motion — passthrough mock
+// framer-motion — passthrough mock. animate/transition gibi motion-only
+// prop'ları DOM'a sızdırmadan çocukları render eder.
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({
+      children,
+      animate: _animate,
+      transition: _transition,
+      whileInView: _whileInView,
+      initial: _initial,
+      exit: _exit,
+      ...props
+    }: any) => <div {...props}>{children}</div>,
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useReducedMotion: () => true, // testlerde animasyon/suspense gecikmesini sıfırla
 }));
 
 // api mock
@@ -71,42 +82,78 @@ describe('DailyRewardWheel', () => {
     expect(screen.getByTestId('wheel-spin-button')).toHaveTextContent('ÇEVİR');
   });
 
-  // ─── Render bug fix: background conic-gradient, clipPath YOK ─────────────
+  // ─── SVG render: gerçek pasta dilimleri ──────────────────────────────────
 
-  it('her dilim background:conic-gradient inline style alır', async () => {
+  it('her dilim için bir SVG <path> çizer (dairesel, kare değil)', async () => {
+    (api.wheel.get as jest.Mock).mockResolvedValue(makeStatus());
+
+    const { container } = render(<DailyRewardWheel cafeId={1} />);
+    await waitFor(() => screen.getByTestId('wheel-slice-0'));
+
+    const paths = container.querySelectorAll('path[data-testid^="wheel-slice-"]');
+    expect(paths.length).toBe(WHEEL_SLICES.length);
+    // Her dilim bir yay (arc) komutu içermeli — pasta dilimi geometrisi.
+    paths.forEach((p) => expect(p.getAttribute('d')).toMatch(/A92,92/));
+  });
+
+  it('her dilimin puan etiketi görünür', async () => {
     (api.wheel.get as jest.Mock).mockResolvedValue(makeStatus());
 
     render(<DailyRewardWheel cafeId={1} />);
     await waitFor(() => screen.getByTestId('wheel-slice-0'));
 
-    for (let i = 0; i < WHEEL_SLICES.length; i++) {
-      const slice = screen.getByTestId(`wheel-slice-${i}`);
-      const bg = (slice as HTMLElement).style.background;
-      expect(bg).toMatch(/conic-gradient/);
-    }
+    expect(screen.getByText('+10')).toBeInTheDocument();
+    expect(screen.getByText('+50')).toBeInTheDocument();
+    expect(screen.getByText('+100')).toBeInTheDocument();
+    expect(screen.getByText('+500')).toBeInTheDocument();
   });
 
-  it('hiçbir dilimde clipPath veya WebkitClipPath olmamalı', async () => {
-    (api.wheel.get as jest.Mock).mockResolvedValue(makeStatus());
-
-    render(<DailyRewardWheel cafeId={1} />);
-    await waitFor(() => screen.getByTestId('wheel-slice-0'));
-
-    for (let i = 0; i < WHEEL_SLICES.length; i++) {
-      const slice = screen.getByTestId(`wheel-slice-${i}`) as HTMLElement;
-      expect(slice.style.clipPath).toBeFalsy();
-      expect(slice.style.getPropertyValue('-webkit-clip-path')).toBeFalsy();
-    }
-  });
-
-  it("conic-gradient startDeg doğru hesaplanır: ikinci dilim 270deg'den başlar (75/100*360=270)", async () => {
-    (api.wheel.get as jest.Mock).mockResolvedValue(makeStatus());
+  it('hediye dilimi yıldız (★) etiketi gösterir, emoji değil', async () => {
+    (api.wheel.get as jest.Mock).mockResolvedValue(
+      makeStatus({
+        wheel: [
+          { points: 10, weight: 90 },
+          { points: 0, weight: 10, gift: { label: 'Bedava Kahve' } },
+        ],
+      })
+    );
 
     render(<DailyRewardWheel cafeId={1} />);
     await waitFor(() => screen.getByTestId('wheel-slice-1'));
+    expect(screen.getByText('★')).toBeInTheDocument();
+  });
 
-    const slice1 = screen.getByTestId('wheel-slice-1') as HTMLElement;
-    expect(slice1.style.background).toMatch(/from 270deg/);
+  // ─── Spin sonucu ─────────────────────────────────────────────────────────
+
+  it('çevirince kazanılan puan overlay olarak gösterilir', async () => {
+    jest.useFakeTimers();
+    try {
+      (api.wheel.get as jest.Mock).mockResolvedValue(makeStatus());
+      (api.wheel.spin as jest.Mock).mockResolvedValue({
+        pointsWon: 50,
+        spin: { id: 1, points_won: 50, spun_at: '' },
+      });
+      const onPointsWon = jest.fn();
+
+      render(<DailyRewardWheel cafeId={1} onPointsWon={onPointsWon} />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const btn = screen.getByTestId('wheel-spin-button');
+      await act(async () => {
+        fireEvent.click(btn);
+      });
+      // reduced-motion → 60ms suspense; ilerlet ve promise'leri boşalt.
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(200);
+      });
+
+      expect(screen.getByText('+50 PUAN')).toBeInTheDocument();
+      expect(onPointsWon).toHaveBeenCalledWith(50);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   // ─── Disabled state ────────────────────────────────────────────────────────

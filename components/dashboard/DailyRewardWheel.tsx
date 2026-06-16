@@ -6,18 +6,23 @@
  * calendar day per cafe; the backend enforces this with a unique
  * (user_id, cafe_id, DATE(spun_at TZ Europe/Istanbul)) index.
  *
+ * Rendering: the wheel is drawn as a true SVG pie — each slice is a
+ * `<path>` arc, so it is circular by construction (no reliance on
+ * border-radius + overflow clipping, which fails on a transformed
+ * spinning element and made the old conic-gradient version render
+ * square). The spin lands deterministically on the slice the backend
+ * actually awarded, so the wheel stops on the real prize.
+ *
  * UI states:
  *   1. Loading        — fetching today's status
- *   2. Available      — large CTA "ÇEVİR" button + slices preview
- *   3. Spinning       — CSS rotation animation 2.5s + sound? no
- *   4. Won            — confetti animation + "+N PUAN"
+ *   2. Available      — large CTA "ÇEVİR" + the wheel
+ *   3. Spinning       — wheel rotates ~2.6s, lands on the won slice
+ *   4. Won            — "+N PUAN" / gift overlay
  *   5. Already spun   — disabled CTA + last win recap
  *   6. Cafe missing   — gracefully hide
- *
- * Mounts in the dashboard for any user with cafe_id set.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Gift, RotateCw, Sparkles } from 'lucide-react';
 import { api } from '../../lib/api';
 
@@ -47,17 +52,40 @@ interface DailyRewardWheelProps {
   onGiftWon?: (gift: { label: string }) => void;
 }
 
-// Inline hex colours — Tailwind class names can't be used in dynamic inline
-// styles (no JIT purge at runtime). Order matches the former SLICE_COLORS
-// array: pink, blue, mustard, spring, redox-red, paper-deep.
-const SLICE_HEX_COLORS = [
+// ─── Geometry ────────────────────────────────────────────────────────────────
+// SVG canvas is 200×200; the wheel is centred at (100,100) with radius 92.
+const CX = 100;
+const CY = 100;
+const R = 92;
+/** How long the wheel visibly spins before the prize overlay appears. */
+const SPIN_MS = 2600;
+
+/** Polar → cartesian where `deg` is measured clockwise from the top (12 o'clock).
+ *  This matches how a real wheel is read and how the top pointer sits. */
+function polar(deg: number, radius = R): { x: number; y: number } {
+  const rad = (deg * Math.PI) / 180;
+  return { x: CX + radius * Math.sin(rad), y: CY - radius * Math.cos(rad) };
+}
+
+/** SVG path for a pie wedge spanning [startDeg, endDeg] (clockwise from top). */
+function wedgePath(startDeg: number, endDeg: number): string {
+  const s = polar(startDeg);
+  const e = polar(endDeg);
+  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+  return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${R},${R} 0 ${largeArc} 1 ${e.x.toFixed(2)},${e.y.toFixed(2)} Z`;
+}
+
+// Riso spot palette. Index → slice fill. The boolean array marks the dark
+// inks that need light (paper) labels for contrast.
+const SLICE_FILL = [
   '#ff3e94', // riso-pink
   '#1e3fb5', // riso-blue
   '#f1b41e', // riso-mustard
   '#5bc25a', // riso-spring
-  '#e0251b', // riso-redox (approximate)
-  '#e8e4da', // paper-deep (approximate)
+  '#e0251b', // riso-redox
+  '#e8e4da', // paper-deep
 ];
+const SLICE_LABEL_LIGHT = [true, true, false, false, true, false];
 
 export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
   cafeId,
@@ -71,10 +99,15 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
    *  for the overlay. */
   const [justWon, setJustWon] = useState<number | null>(null);
   /** When the spin resolves to a gift slice, holds the gift label so the
-   *  overlay shows "🎁 BEDAVA KAHVE!" instead of a points badge. */
+   *  overlay shows the gift badge instead of a points badge. */
   const [justGift, setJustGift] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Cumulative wheel rotation in degrees — only ever increases so the wheel
+   *  always spins forward, then settles with the won slice under the pointer. */
+  const [rotation, setRotation] = useState(0);
+  const rotationRef = useRef(0);
   const justWonTimer = useRef<number | null>(null);
+  const prefersReduced = useReducedMotion();
 
   // Fetch wheel status when cafe changes.
   useEffect(() => {
@@ -112,35 +145,70 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
 
   const slices = useMemo(() => status?.wheel || [], [status]);
 
+  // Pre-compute each slice's wedge path, mid-angle and label once per slice set.
+  const geometry = useMemo(() => {
+    const totalW = slices.reduce((a, s) => a + Math.max(0, Number(s.weight) || 0), 0);
+    let acc = 0;
+    return slices.map((slice, idx) => {
+      const sweep =
+        totalW > 0 ? (Math.max(0, Number(slice.weight) || 0) / totalW) * 360 : 360 / slices.length;
+      const start = acc;
+      const end = acc + sweep;
+      const mid = start + sweep / 2;
+      acc = end;
+      return {
+        idx,
+        // A hair of overlap (0.4°) hides anti-alias seams between wedges.
+        path: wedgePath(start, Math.min(end + 0.4, 360)),
+        mid,
+        fill: SLICE_FILL[idx % SLICE_FILL.length],
+        labelLight: SLICE_LABEL_LIGHT[idx % SLICE_LABEL_LIGHT.length],
+        label: slice.gift ? '★' : `+${slice.points}`,
+      };
+    });
+  }, [slices]);
+
+  /** Final rotation so `midDeg` lands under the top pointer, after ≥4 turns. */
+  const landingRotation = (midDeg: number): number => {
+    const targetMod = ((-midDeg % 360) + 360) % 360;
+    const base = Math.ceil((rotationRef.current + 360 * 4) / 360) * 360;
+    return base + targetMod;
+  };
+
+  /** Find the slice the backend awarded, to land the wheel on it. */
+  const wonSliceIndex = (resp: { gift?: { label: string } | null; pointsWon: number }): number => {
+    if (resp.gift) {
+      const i = slices.findIndex((s) => s.gift);
+      return i >= 0 ? i : 0;
+    }
+    const i = slices.findIndex((s) => !s.gift && Number(s.points) === Number(resp.pointsWon));
+    return i >= 0 ? i : 0;
+  };
+
   const handleSpin = async () => {
     if (!cafeId || spinning || status?.alreadySpunToday) return;
     setSpinning(true);
     setError(null);
     try {
-      // Tiny artificial delay so the spin animation feels meaningful (the
-      // server responds in tens of ms but the user expects suspense).
-      const [resp] = await Promise.all([
-        api.wheel.spin(cafeId),
-        new Promise((resolve) => window.setTimeout(resolve, 2200)),
-      ]);
+      const resp = await api.wheel.spin(cafeId);
+
+      // Spin the wheel to the awarded slice. The animation itself is the
+      // suspense, so the prize is revealed only once it visually settles.
+      const idx = wonSliceIndex(resp);
+      const target = landingRotation(geometry[idx]?.mid ?? 0);
+      rotationRef.current = target;
+      setRotation(target);
+
+      await new Promise((resolve) => window.setTimeout(resolve, prefersReduced ? 60 : SPIN_MS));
+
       if (resp.gift) {
-        // Gift slice — Bedava Kahve etc. Show the gift overlay and tell
-        // the parent so it refetches inventory.
         setJustGift(resp.gift.label);
         onGiftWon?.(resp.gift);
       } else {
         setJustWon(resp.pointsWon);
         onPointsWon?.(resp.pointsWon);
       }
-      setStatus((prev) =>
-        prev
-          ? {
-              ...prev,
-              alreadySpunToday: true,
-              lastSpin: resp.spin,
-            }
-          : prev
-      );
+      setStatus((prev) => (prev ? { ...prev, alreadySpunToday: true, lastSpin: resp.spin } : prev));
       justWonTimer.current = window.setTimeout(() => {
         setJustWon(null);
         setJustGift(null);
@@ -198,95 +266,107 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
 
       {!loading && status && (
         <>
-          {/* Wheel preview — pure CSS pie chart */}
-          <div className="relative mx-auto w-44 h-44 sm:w-52 sm:h-52 mb-4">
-            <motion.div
-              className="absolute inset-0 rounded-full border-4 border-carbon overflow-hidden"
-              animate={spinning ? { rotate: 360 * 5 + Math.random() * 360 } : { rotate: 0 }}
-              transition={spinning ? { duration: 2.2, ease: 'easeOut' } : { duration: 0 }}
-            >
-              {slices.length > 0 ? (
-                slices.map((slice, idx) => {
-                  const totalW = slices.reduce((a, s) => a + Math.max(0, Number(s.weight) || 0), 0);
-                  const sliceDeg =
-                    totalW > 0
-                      ? (Math.max(0, Number(slice.weight) || 0) / totalW) * 360
-                      : 360 / slices.length;
-                  const startDeg = slices
-                    .slice(0, idx)
-                    .reduce(
-                      (acc, s) =>
-                        acc +
-                        (totalW > 0
-                          ? (Math.max(0, Number(s.weight) || 0) / totalW) * 360
-                          : 360 / slices.length),
-                      0
-                    );
-                  const hexColor = SLICE_HEX_COLORS[idx % SLICE_HEX_COLORS.length];
-                  // Each slice is a full-circle div; conic-gradient paints only
-                  // the arc [startDeg, startDeg+sliceDeg] and leaves the rest
-                  // transparent. Stacking all divs produces the correct pie.
-                  return (
-                    <div
-                      key={idx}
-                      className="absolute inset-0 rounded-full"
-                      data-testid={`wheel-slice-${idx}`}
-                      style={{
-                        background: `conic-gradient(from ${startDeg}deg, ${hexColor} 0deg ${sliceDeg}deg, transparent ${sliceDeg}deg 360deg)`,
-                      }}
-                    >
-                      {/* Label positioned along the midpoint radius of this slice */}
-                      <span
-                        className="absolute font-riso-display font-bold text-xs sm:text-sm whitespace-nowrap text-carbon"
-                        style={{
-                          top: '50%',
-                          left: '50%',
-                          transform: `rotate(${startDeg + sliceDeg / 2}deg) translate(0, -65%)`,
-                          transformOrigin: '0 0',
-                        }}
-                      >
-                        {slice.gift ? '🎁' : `+${slice.points}`}
-                      </span>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-paper-deep text-carbon-muted font-riso-mono text-xs">
-                  Henüz dilim yok
-                </div>
-              )}
-            </motion.div>
-            {/* Center hub + pointer */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-10 h-10 border-2 border-carbon bg-paper rounded-full flex items-center justify-center">
-                <Sparkles size={16} className="text-riso-pink-deep" />
-              </div>
-            </div>
-            <div
-              aria-hidden="true"
-              className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-carbon"
-            />
-
-            <AnimatePresence>
-              {(justWon !== null || justGift !== null) && (
-                <motion.div
-                  initial={{ scale: 0.3, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ opacity: 0, scale: 0.7 }}
-                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          {/* Wheel — true SVG pie, circular by construction */}
+          <div className="relative mx-auto w-52 h-52 sm:w-60 sm:h-60 mb-5">
+            {slices.length > 0 ? (
+              <>
+                {/* Static risograph misregistration shadow (offset crescents). */}
+                <svg
+                  viewBox="0 0 200 200"
+                  className="absolute inset-0 h-full w-full pointer-events-none"
+                  aria-hidden="true"
                 >
-                  {justGift !== null ? (
-                    <div className="border-4 border-carbon bg-riso-mustard text-carbon px-4 py-2 font-riso-display text-lg sm:text-xl font-bold riso-shadow-md rotate-[-4deg] text-center">
-                      🎁 {justGift.toUpperCase()}!
-                    </div>
-                  ) : (
-                    <div className="border-4 border-carbon bg-riso-spring text-carbon px-4 py-2 font-riso-display text-2xl font-bold riso-shadow-md rotate-[-4deg]">
-                      +{justWon} PUAN
-                    </div>
-                  )}
+                  <circle cx={108} cy={108} r={R} fill="#ff3e94" opacity={0.22} />
+                  <circle cx={104} cy={104} r={R} fill="#1e3fb5" opacity={0.28} />
+                </svg>
+
+                {/* Rotating wheel face. */}
+                <motion.div
+                  className="absolute inset-0"
+                  style={{ willChange: 'transform' }}
+                  animate={{ rotate: rotation }}
+                  transition={{
+                    duration: prefersReduced ? 0 : 2.6,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 200 200"
+                    className="h-full w-full"
+                    role="img"
+                    aria-label="Ödül çarkı"
+                  >
+                    {geometry.map((g) => (
+                      <path
+                        key={g.idx}
+                        d={g.path}
+                        fill={g.fill}
+                        stroke="#141413"
+                        strokeWidth={2}
+                        strokeLinejoin="round"
+                        data-testid={`wheel-slice-${g.idx}`}
+                      />
+                    ))}
+                    {geometry.map((g) => (
+                      <g key={`label-${g.idx}`} transform={`rotate(${g.mid} ${CX} ${CY})`}>
+                        <text
+                          x={CX}
+                          y={44}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          className="font-riso-display"
+                          style={{ fontSize: '13px', fontWeight: 700 }}
+                          fill={g.labelLight ? '#fbf7ee' : '#141413'}
+                        >
+                          {g.label}
+                        </text>
+                      </g>
+                    ))}
+                    {/* Crisp outer rim drawn on top of the wedges. */}
+                    <circle cx={CX} cy={CY} r={R} fill="none" stroke="#141413" strokeWidth={3} />
+                  </svg>
                 </motion.div>
-              )}
-            </AnimatePresence>
+
+                {/* Center hub */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-11 h-11 border-2 border-carbon bg-paper rounded-full flex items-center justify-center riso-shadow-pink-only">
+                    <Sparkles size={18} className="text-riso-pink-deep" />
+                  </div>
+                </div>
+
+                {/* Top pointer biting into the wheel */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[11px] border-r-[11px] border-t-[18px] border-l-transparent border-r-transparent border-t-carbon drop-shadow-sm z-10"
+                />
+
+                <AnimatePresence>
+                  {(justWon !== null || justGift !== null) && (
+                    <motion.div
+                      initial={{ scale: 0.4, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.22, ease: 'easeOut' }}
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                    >
+                      {justGift !== null ? (
+                        <div className="border-4 border-carbon bg-riso-mustard text-carbon px-4 py-2 font-riso-display text-lg sm:text-xl font-bold riso-shadow-md rotate-[-4deg] text-center flex items-center gap-2">
+                          <Gift size={20} /> {justGift.toUpperCase()}
+                        </div>
+                      ) : (
+                        <div className="border-4 border-carbon bg-riso-spring text-carbon px-4 py-2 font-riso-display text-2xl font-bold riso-shadow-md rotate-[-4deg]">
+                          +{justWon} PUAN
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-carbon bg-paper-deep text-carbon-muted font-riso-mono text-xs rounded-full">
+                Henüz dilim yok
+              </div>
+            )}
           </div>
 
           {/* Gift confirmation banner — shows the inventory-redirect hint
@@ -294,7 +374,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
               didn't change. */}
           {justGift && (
             <div className="mb-3 border-2 border-carbon border-l-[6px] border-l-riso-mustard bg-riso-mustard/20 p-3 text-xs text-carbon font-riso-body">
-              <strong>🎉 Tebrikler!</strong> {justGift} kuponun envanterine eklendi. Kasada QR kodu
+              <strong>Tebrikler!</strong> {justGift} kuponun envanterine eklendi. Kasada QR kodu
               okutarak teslim alabilirsin.
             </div>
           )}
