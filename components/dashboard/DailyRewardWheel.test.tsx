@@ -93,7 +93,7 @@ describe('DailyRewardWheel', () => {
     const paths = container.querySelectorAll('path[data-testid^="wheel-slice-"]');
     expect(paths.length).toBe(WHEEL_SLICES.length);
     // Her dilim bir yay (arc) komutu içermeli — pasta dilimi geometrisi.
-    paths.forEach((p) => expect(p.getAttribute('d')).toMatch(/A92,92/));
+    paths.forEach((p) => expect(p.getAttribute('d')).toMatch(/A\d+,\d+/));
   });
 
   it('her dilimin puan etiketi görünür', async () => {

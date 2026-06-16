@@ -23,7 +23,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Gift, RotateCw, Sparkles } from 'lucide-react';
+import { Gift, RotateCw } from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface WheelSlice {
@@ -53,39 +53,44 @@ interface DailyRewardWheelProps {
 }
 
 // ─── Geometry ────────────────────────────────────────────────────────────────
-// SVG canvas is 200×200; the wheel is centred at (100,100) with radius 92.
+// SVG canvas is 200×200, centred at (100,100). Layered like a classic prize
+// wheel: a bold pink ring (RING_INNER..RING_OUTER), a thin white gap
+// (SLICE_R..RING_INNER), then the coloured slices (0..SLICE_R).
 const CX = 100;
 const CY = 100;
-const R = 92;
+const RING_OUTER = 98;
+const RING_INNER = 86;
+const SLICE_R = 82;
+const HUB_R = 11;
+const RING_COLOR = '#e9258c';
 /** How long the wheel visibly spins before the prize overlay appears. */
 const SPIN_MS = 2600;
 
 /** Polar → cartesian where `deg` is measured clockwise from the top (12 o'clock).
  *  This matches how a real wheel is read and how the top pointer sits. */
-function polar(deg: number, radius = R): { x: number; y: number } {
+function polar(deg: number, radius: number): { x: number; y: number } {
   const rad = (deg * Math.PI) / 180;
   return { x: CX + radius * Math.sin(rad), y: CY - radius * Math.cos(rad) };
 }
 
 /** SVG path for a pie wedge spanning [startDeg, endDeg] (clockwise from top). */
-function wedgePath(startDeg: number, endDeg: number): string {
-  const s = polar(startDeg);
-  const e = polar(endDeg);
+function wedgePath(startDeg: number, endDeg: number, radius = SLICE_R): string {
+  const s = polar(startDeg, radius);
+  const e = polar(endDeg, radius);
   const largeArc = endDeg - startDeg > 180 ? 1 : 0;
-  return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${R},${R} 0 ${largeArc} 1 ${e.x.toFixed(2)},${e.y.toFixed(2)} Z`;
+  return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${radius},${radius} 0 ${largeArc} 1 ${e.x.toFixed(2)},${e.y.toFixed(2)} Z`;
 }
 
-// Riso spot palette. Index → slice fill. The boolean array marks the dark
-// inks that need light (paper) labels for contrast.
+// Friendly, saturated palette in the spirit of the reference wheel:
+// teal, blue, orange, pink, purple, green. Labels are white for contrast.
 const SLICE_FILL = [
-  '#ff3e94', // riso-pink
-  '#1e3fb5', // riso-blue
-  '#f1b41e', // riso-mustard
-  '#5bc25a', // riso-spring
-  '#e0251b', // riso-redox
-  '#e8e4da', // paper-deep
+  '#1fc7a3', // teal
+  '#2e7dd1', // blue
+  '#f5a623', // orange
+  '#e9258c', // pink
+  '#7b5cd6', // purple
+  '#5bc25a', // green
 ];
-const SLICE_LABEL_LIGHT = [true, true, false, false, true, false];
 
 export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
   cafeId,
@@ -145,24 +150,23 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
 
   const slices = useMemo(() => status?.wheel || [], [status]);
 
-  // Pre-compute each slice's wedge path, mid-angle and label once per slice set.
+  // Equal-sized slices (like the reference wheel) — visual balance, not the
+  // odds. The real probability lives server-side; the wheel still lands on the
+  // slice the backend actually awarded.
   const geometry = useMemo(() => {
-    const totalW = slices.reduce((a, s) => a + Math.max(0, Number(s.weight) || 0), 0);
-    let acc = 0;
+    const n = slices.length;
+    const sweep = n > 0 ? 360 / n : 0;
+    // Shrink labels as the wheel gets busier so the number always fits.
+    const fontSize = n <= 4 ? 14 : n <= 6 ? 12 : 10;
     return slices.map((slice, idx) => {
-      const sweep =
-        totalW > 0 ? (Math.max(0, Number(slice.weight) || 0) / totalW) * 360 : 360 / slices.length;
-      const start = acc;
-      const end = acc + sweep;
-      const mid = start + sweep / 2;
-      acc = end;
+      const start = idx * sweep;
+      const end = start + sweep;
       return {
         idx,
-        // A hair of overlap (0.4°) hides anti-alias seams between wedges.
-        path: wedgePath(start, Math.min(end + 0.4, 360)),
-        mid,
+        path: wedgePath(start, end),
+        mid: start + sweep / 2,
         fill: SLICE_FILL[idx % SLICE_FILL.length],
-        labelLight: SLICE_LABEL_LIGHT[idx % SLICE_LABEL_LIGHT.length],
+        fontSize,
         label: slice.gift ? '★' : `+${slice.points}`,
       };
     });
@@ -288,21 +292,20 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
       {!loading && status && (
         <>
           {/* Wheel — true SVG pie, circular by construction */}
-          <div className="relative mx-auto mt-3 mb-6 w-44 h-44 sm:w-52 sm:h-52">
+          <div className="relative mx-auto mt-3 mb-6 w-48 h-48 sm:w-56 sm:h-56">
             {slices.length > 0 ? (
               <>
-                {/* Risograph misregistration — offset outline rings, not a glow
-                    blob: the rim re-printed a few px off in pink + blue. */}
+                {/* Static back layer: bold pink ring + white gap. */}
                 <svg
                   viewBox="0 0 200 200"
                   className="absolute inset-0 h-full w-full pointer-events-none"
                   aria-hidden="true"
                 >
-                  <circle cx={105} cy={105} r={R} fill="none" stroke="#ff3e94" strokeWidth={3} />
-                  <circle cx={103} cy={103} r={R} fill="none" stroke="#1e3fb5" strokeWidth={3} />
+                  <circle cx={CX} cy={CY} r={RING_OUTER} fill={RING_COLOR} />
+                  <circle cx={CX} cy={CY} r={RING_INNER} fill="#ffffff" />
                 </svg>
 
-                {/* Rotating wheel face. */}
+                {/* Rotating wheel face — equal coloured slices + labels. */}
                 <motion.div
                   className="absolute inset-0"
                   style={{ willChange: 'transform' }}
@@ -323,8 +326,8 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                         key={g.idx}
                         d={g.path}
                         fill={g.fill}
-                        stroke="#141413"
-                        strokeWidth={2}
+                        stroke="#ffffff"
+                        strokeWidth={1.5}
                         strokeLinejoin="round"
                         data-testid={`wheel-slice-${g.idx}`}
                       />
@@ -333,38 +336,42 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                       <g key={`label-${g.idx}`} transform={`rotate(${g.mid} ${CX} ${CY})`}>
                         <text
                           x={CX}
-                          y={44}
+                          y={CY - SLICE_R * 0.62}
                           textAnchor="middle"
                           dominantBaseline="middle"
                           className="font-riso-display"
-                          style={{ fontSize: '13px', fontWeight: 700 }}
-                          fill={g.labelLight ? '#fbf7ee' : '#141413'}
+                          style={{ fontSize: `${g.fontSize}px`, fontWeight: 800 }}
+                          fill="#ffffff"
                         >
                           {g.label}
                         </text>
                       </g>
                     ))}
-                    {/* Crisp outer rim drawn on top of the wedges. */}
-                    <circle cx={CX} cy={CY} r={R} fill="none" stroke="#141413" strokeWidth={3} />
                   </svg>
                 </motion.div>
 
-                {/* Center hub — clean circle, no offset shadow (the wheel rim
-                    already carries the misregistration). */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div
-                    className="flex items-center justify-center border-2 border-carbon bg-paper"
-                    style={{ width: 38, height: 38, borderRadius: '9999px' }}
-                  >
-                    <Sparkles size={18} className="text-riso-pink-deep" />
-                  </div>
-                </div>
-
-                {/* Top pointer biting into the wheel */}
-                <div
+                {/* Static top layer: white center hub + downward pointer. */}
+                <svg
+                  viewBox="0 0 200 200"
+                  className="absolute inset-0 h-full w-full pointer-events-none z-10"
                   aria-hidden="true"
-                  className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[11px] border-r-[11px] border-t-[18px] border-l-transparent border-r-transparent border-t-carbon drop-shadow-sm z-10"
-                />
+                >
+                  <circle
+                    cx={CX}
+                    cy={CY}
+                    r={HUB_R}
+                    fill="#ffffff"
+                    stroke={RING_COLOR}
+                    strokeWidth={2}
+                  />
+                  <path
+                    d={`M88,5 L112,5 L100,32 Z`}
+                    fill="#ffffff"
+                    stroke={RING_COLOR}
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                  />
+                </svg>
 
                 <AnimatePresence>
                   {(justWon !== null || justGift !== null) && (
