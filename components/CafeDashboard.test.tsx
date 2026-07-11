@@ -171,13 +171,14 @@ describe('CafeDashboard', () => {
     fireEvent.change(screen.getByLabelText('Doğrulama Yarıçapı (metre)'), {
       target: { value: '220' },
     });
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '260' } });
     fireEvent.click(screen.getByText('KONUMU KAYDET'));
 
     await waitFor(() => {
       expect(api.cafes.updateLocation).toHaveBeenCalledWith(7, {
         latitude: 37.742001,
         longitude: 29.102001,
-        radius: 220,
+        radius: 260,
         secondaryLatitude: null,
         secondaryLongitude: null,
         secondaryRadius: null,

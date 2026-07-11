@@ -338,6 +338,7 @@ describe('AdminDashboard', () => {
       expect(screen.getByText(/Konum Detayları/)).toBeInTheDocument();
     });
 
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '720' } });
     fireEvent.click(screen.getByRole('button', { name: /Değişiklikleri Kaydet/ }));
 
     await waitFor(() => {
@@ -348,7 +349,7 @@ describe('AdminDashboard', () => {
           total_tables: 12,
           latitude: 37.739058,
           longitude: 29.103837,
-          radius: 500,
+          radius: 720,
           secondary_latitude: 37.7391,
           secondary_longitude: 29.1039,
           secondary_radius: 300,

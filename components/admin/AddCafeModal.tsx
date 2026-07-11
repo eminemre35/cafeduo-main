@@ -71,11 +71,17 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
           secondaryRadius={Number(formData.secondaryRadius) || 150}
           onPrimaryLatitudeChange={(value) => onFormChange({ ...formData, latitude: value })}
           onPrimaryLongitudeChange={(value) => onFormChange({ ...formData, longitude: value })}
+          onPrimaryRadiusChange={(value) =>
+            onFormChange({ ...formData, radius: Number.parseInt(value || '0', 10) })
+          }
           onSecondaryLatitudeChange={(value) =>
             onFormChange({ ...formData, secondaryLatitude: value })
           }
           onSecondaryLongitudeChange={(value) =>
             onFormChange({ ...formData, secondaryLongitude: value })
+          }
+          onSecondaryRadiusChange={(value) =>
+            onFormChange({ ...formData, secondaryRadius: Number.parseInt(value || '0', 10) })
           }
         />
       </div>
