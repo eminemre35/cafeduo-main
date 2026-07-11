@@ -18,7 +18,9 @@
  * injected once per session via an id-marked <link> in <head>.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { LocateFixed, Search, Trash2 } from 'lucide-react';
+import { searchAddresses, type GeocodingResult } from '../../lib/geocoding';
 
 interface LeafletBundle {
   MapContainer: React.ComponentType<any>;
@@ -63,12 +65,18 @@ interface MapLocationPickerProps {
 
   onPrimaryLatitudeChange: (value: string) => void;
   onPrimaryLongitudeChange: (value: string) => void;
+  onPrimaryRadiusChange: (value: string) => void;
   onSecondaryLatitudeChange?: (value: string) => void;
   onSecondaryLongitudeChange?: (value: string) => void;
+  onSecondaryRadiusChange?: (value: string) => void;
 
   /** If true, the secondary location switch is shown. Default: true if any
    *  of the secondary props are provided. */
   enableSecondary?: boolean;
+
+  /** Address search and browser geolocation can be disabled for constrained embeds. */
+  enableSearch?: boolean;
+  enableGeolocation?: boolean;
 
   /** Height of the map area. Default: responsive (260px → 300px sm+). */
   className?: string;
@@ -85,9 +93,13 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   secondaryRadius = 150,
   onPrimaryLatitudeChange,
   onPrimaryLongitudeChange,
+  onPrimaryRadiusChange,
   onSecondaryLatitudeChange,
   onSecondaryLongitudeChange,
+  onSecondaryRadiusChange,
   enableSecondary,
+  enableSearch = true,
+  enableGeolocation = true,
   className = '',
 }) => {
   const allowSecondary =
@@ -96,6 +108,11 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   const [mapTarget, setMapTarget] = useState<'primary' | 'secondary'>('primary');
   const [leafletBundle, setLeafletBundle] = useState<LeafletBundle | null>(null);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [interactionMessage, setInteractionMessage] = useState('');
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const primaryLat = Number(primaryLatitude);
   const primaryLng = Number(primaryLongitude);
@@ -178,6 +195,13 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
     };
   }, []);
 
+  useEffect(
+    () => () => {
+      searchAbortRef.current?.abort();
+    },
+    []
+  );
+
   const handleMapPick = (lat: number, lng: number) => {
     if (mapTarget === 'secondary' && allowSecondary) {
       onSecondaryLatitudeChange?.(lat.toFixed(6));
@@ -186,6 +210,101 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
     }
     onPrimaryLatitudeChange(lat.toFixed(6));
     onPrimaryLongitudeChange(lng.toFixed(6));
+  };
+
+  const activeTargetName = mapTarget === 'secondary' ? 'İkinci konum' : 'Ana konum';
+  const activeRadius = mapTarget === 'secondary' ? secondaryRadius : primaryRadius;
+
+  const applyCoordinates = (latitude: number, longitude: number) => {
+    if (mapTarget === 'secondary' && allowSecondary) {
+      onSecondaryLatitudeChange?.(latitude.toFixed(6));
+      onSecondaryLongitudeChange?.(longitude.toFixed(6));
+      return;
+    }
+    onPrimaryLatitudeChange(latitude.toFixed(6));
+    onPrimaryLongitudeChange(longitude.toFixed(6));
+  };
+
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    setSearchLoading(true);
+    setSearchResults([]);
+    setInteractionMessage('Adres aranıyor...');
+
+    try {
+      const results = await searchAddresses(searchQuery, controller.signal);
+      if (controller.signal.aborted) return;
+      setSearchResults(results);
+      setInteractionMessage(
+        results.length > 0 ? `${results.length} sonuç bulundu.` : 'Adres bulunamadı.'
+      );
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setInteractionMessage(error instanceof Error ? error.message : 'Adres araması başarısız.');
+    } finally {
+      if (!controller.signal.aborted) setSearchLoading(false);
+    }
+  };
+
+  const handleSearchResult = (result: GeocodingResult) => {
+    applyCoordinates(result.latitude, result.longitude);
+    setSearchQuery(result.displayName);
+    setSearchResults([]);
+    setInteractionMessage(`${activeTargetName} güncellendi.`);
+  };
+
+  const handleUseDeviceLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setInteractionMessage('Bu tarayıcı cihaz konumunu desteklemiyor.');
+      return;
+    }
+
+    setInteractionMessage('Cihaz konumu alınıyor...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = Number(position.coords.latitude);
+        const longitude = Number(position.coords.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          setInteractionMessage('Cihaz konumu geçersiz döndü.');
+          return;
+        }
+        applyCoordinates(latitude, longitude);
+        setInteractionMessage(`${activeTargetName} cihaz konumundan alındı.`);
+      },
+      (error) => {
+        const messageByCode: Record<number, string> = {
+          1: 'Konum izni reddedildi. Tarayıcı ayarlarından izin verin.',
+          2: 'Cihaz konumu alınamadı.',
+          3: 'Konum isteği zaman aşımına uğradı.',
+        };
+        setInteractionMessage(messageByCode[error.code] || 'Cihaz konumu alınamadı.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  const handleRadiusChange = (value: string) => {
+    if (mapTarget === 'secondary' && allowSecondary) {
+      onSecondaryRadiusChange?.(value);
+      return;
+    }
+    onPrimaryRadiusChange(value);
+  };
+
+  const handleClear = () => {
+    if (mapTarget === 'secondary' && allowSecondary) {
+      onSecondaryLatitudeChange?.('');
+      onSecondaryLongitudeChange?.('');
+      onSecondaryRadiusChange?.('150');
+    } else {
+      onPrimaryLatitudeChange('');
+      onPrimaryLongitudeChange('');
+      onPrimaryRadiusChange('150');
+    }
+    setInteractionMessage(`${activeTargetName} temizlendi.`);
   };
 
   const Leaflet = leafletBundle;
@@ -223,6 +342,84 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
           </div>
         )}
       </div>
+
+      {(enableSearch || enableGeolocation) && (
+        <div className="space-y-3 border-2 border-carbon bg-paper p-3">
+          {enableSearch && (
+            <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
+              <label htmlFor="location-search" className="sr-only">
+                Adres ara
+              </label>
+              <input
+                id="location-search"
+                type="search"
+                role="searchbox"
+                aria-label="Adres ara"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Adres, kampüs veya kafe ara..."
+                className="min-w-0 flex-1 border-2 border-carbon bg-paper-deep px-3 py-2 text-sm text-carbon outline-none placeholder:text-carbon-muted focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+              />
+              <button
+                type="submit"
+                disabled={searchLoading || !searchQuery.trim()}
+                className="riso-focus riso-press inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-paper disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Search size={15} />
+                {searchLoading ? 'Aranıyor...' : 'Adres ara'}
+              </button>
+            </form>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {enableGeolocation && (
+              <button
+                type="button"
+                onClick={handleUseDeviceLocation}
+                className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-carbon hover:bg-paper"
+              >
+                <LocateFixed size={15} />
+                Cihaz konumumu kullan
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleClear}
+              className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-carbon hover:bg-riso-redox/10"
+              aria-label={`${activeTargetName === 'Ana konum' ? 'Ana konumu' : 'İkinci konumu'} temizle`}
+            >
+              <Trash2 size={15} />
+              Temizle
+            </button>
+          </div>
+
+          {searchResults.length > 0 && (
+            <ul
+              role="listbox"
+              aria-label="Adres sonuçları"
+              className="max-h-48 overflow-y-auto border-2 border-carbon bg-paper"
+            >
+              {searchResults.map((result) => (
+                <li key={result.placeId}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    onClick={() => handleSearchResult(result)}
+                    className="w-full border-b border-carbon/20 px-3 py-2 text-left text-sm text-carbon last:border-b-0 hover:bg-riso-blue/15 focus:bg-riso-blue/15 focus:outline-none"
+                  >
+                    {result.displayName}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <p role="status" aria-live="polite" className="text-xs text-carbon-muted">
+            {interactionMessage || 'Adres ara, cihaz konumunu kullan veya haritaya tıkla.'}
+          </p>
+        </div>
+      )}
 
       {Leaflet ? (
         <div className="h-[260px] sm:h-[300px] overflow-hidden border-2 border-carbon">
@@ -265,6 +462,35 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
           {mapLoadError || 'Harita yükleniyor...'}
         </div>
       )}
+
+      <div className="border-2 border-carbon bg-paper p-3">
+        <div className="flex items-center justify-between gap-3">
+          <label
+            htmlFor="location-radius-slider"
+            className="text-xs font-bold uppercase tracking-[0.1em] text-carbon-soft"
+          >
+            {activeTargetName} yarıçapı
+          </label>
+          <span className="font-riso-mono text-sm text-carbon">
+            {Number(activeRadius) || 150} m
+          </span>
+        </div>
+        <input
+          id="location-radius-slider"
+          type="range"
+          min="10"
+          max="5000"
+          step="10"
+          value={Number(activeRadius) || 150}
+          onChange={(event) => handleRadiusChange(event.target.value)}
+          aria-label={`${activeTargetName} yarıçapı`}
+          className="mt-3 w-full accent-riso-blue"
+        />
+        <div className="mt-1 flex justify-between text-[10px] font-riso-mono text-carbon-muted">
+          <span>10 m</span>
+          <span>5000 m</span>
+        </div>
+      </div>
 
       <p className="text-xs text-carbon-muted font-riso-body">
         Haritada tıkladığın nokta, seçili hedefe (
