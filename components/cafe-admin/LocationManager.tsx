@@ -68,9 +68,17 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             secondaryRadius={Number(secondaryRadius) || 150}
             onPrimaryLatitudeChange={onLatitudeChange}
             onPrimaryLongitudeChange={onLongitudeChange}
+            onPrimaryCoordinatesChange={(nextLatitude, nextLongitude) => {
+              onLatitudeChange(nextLatitude);
+              onLongitudeChange(nextLongitude);
+            }}
             onPrimaryRadiusChange={onRadiusChange}
             onSecondaryLatitudeChange={onSecondaryLatitudeChange}
             onSecondaryLongitudeChange={onSecondaryLongitudeChange}
+            onSecondaryCoordinatesChange={(nextLatitude, nextLongitude) => {
+              onSecondaryLatitudeChange(nextLatitude);
+              onSecondaryLongitudeChange(nextLongitude);
+            }}
             onSecondaryRadiusChange={onSecondaryRadiusChange}
           />
         </div>

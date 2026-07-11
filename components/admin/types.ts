@@ -64,7 +64,9 @@ export interface AddUserModalProps {
 export interface AddCafeModalProps {
   isOpen: boolean;
   formData: AdminCafeFormData;
-  onFormChange: (next: AdminCafeFormData) => void;
+  onFormChange: (
+    next: AdminCafeFormData | ((current: AdminCafeFormData) => AdminCafeFormData)
+  ) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
