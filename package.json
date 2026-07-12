@@ -20,6 +20,10 @@
     "url": "git+https://github.com/eminemrre/cafeduo-main.git"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=20.17.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "start": "node backend/server.js",
     "server": "nodemon --watch backend --ext js,mjs,cjs,json backend/server.js",
@@ -32,6 +36,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "quality": "npm run lint && npm run typecheck",
+    "verify:security": "npm audit --audit-level=moderate",
+    "verify": "npm run verify:security && npm run lint && npm run typecheck && npm run test:ci && npm run build",
     "prepare": "husky || true",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -142,7 +148,7 @@
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
-    "lint-staged": "^17.0.4",
+    "lint-staged": "^16.4.0",
     "node-pg-migrate": "^8.0.4",
     "nodemon": "^3.1.14",
     "postcss": "8.5.12",

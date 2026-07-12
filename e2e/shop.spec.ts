@@ -29,6 +29,7 @@ test.describe('Shop & Inventory Flow', () => {
       headers: {
         Authorization: `Bearer ${session.token}`,
         'X-CSRF-Token': session.csrfToken || 'test-csrf-token-for-e2e',
+        Cookie: `csrf_token=${session.csrfToken || 'test-csrf-token-for-e2e'}`,
         'Content-Type': 'application/json',
       },
       data: {

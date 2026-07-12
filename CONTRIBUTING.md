@@ -32,11 +32,34 @@ First off, thanks for taking the time to contribute! 🎉
 
 See the [README.md](README.md) for detailed setup instructions using Docker or manual installation.
 
+## CafeDuo çalışma kapısı
+
+Node.js `20.17+` ve npm `10+` kullanın. Değişiklik göndermeden önce tek komutluk doğrulamayı çalıştırın:
+
+```bash
+npm ci
+npm run verify
+npm run test:e2e:smoke
+```
+
+`npm run verify` güvenlik audit'ini, lint'i, TypeScript kontrolünü, unit test + coverage'ı ve production build'i fail-fast çalıştırır. Smoke E2E testi API + frontend entegrasyonunu ayrıca doğrular.
+
+### Pull request kuralları
+
+1. `main` üzerine doğrudan push veya başarısız kontrolü yönetici olarak geçme yapılmaz.
+2. PR açıklamasında değişen davranış, test komutları ve varsa migration/deploy etkisi yazılır.
+3. CI'da `build-and-test` ve `e2e-tests` yeşil olmadan merge edilmez.
+4. Güvenlik bulguları için `npm run verify:security` sonucu PR'a eklenir.
+
+### Canlıya çıkış
+
+Canlı deploy sonrasında `/api/readiness`, `/api/meta/version` ve public smoke kontrolü doğrulanır. Beklenen commit canlı sürüm ile eşleşmiyorsa deploy tamamlanmış sayılmaz.
+
 ## Style Guide
 
--   Use **TypeScript** for frontend code.
--   Use **Prettier** for formatting.
--   Follow existing code patterns.
+- Use **TypeScript** for frontend code.
+- Use **Prettier** for formatting.
+- Follow existing code patterns.
 
 ## License
 
