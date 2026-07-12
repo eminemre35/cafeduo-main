@@ -7,11 +7,12 @@
  * aesthetic — cream paper canvas, halftone overlay, sticker-pinned mini
  * stats, double-shadow CTAs.
  */
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Play, Timer, Trophy, Users } from 'lucide-react';
 import { Button, Squiggle } from './ui';
+import { FloatingSquareField } from './FloatingSquareField';
 
 interface HeroProps {
   onLogin: () => void;
@@ -29,6 +30,7 @@ export const Hero: React.FC<HeroProps> = ({
   isAdmin,
 }) => {
   const navigate = useNavigate();
+  const heroRef = useRef<HTMLElement | null>(null);
 
   const handlePanelClick = () => {
     if (isAdmin) navigate('/admin');
@@ -38,10 +40,13 @@ export const Hero: React.FC<HeroProps> = ({
 
   return (
     <section
+      ref={heroRef}
       id="home"
       aria-label="Ana bölüm"
       className="riso-kantin riso-kantin-app relative min-h-screen overflow-hidden bg-paper pt-32 pb-20 sm:pt-40 sm:pb-28"
     >
+      <FloatingSquareField containerRef={heroRef} />
+
       {/* Halftone texture across the whole hero */}
       <div
         aria-hidden="true"

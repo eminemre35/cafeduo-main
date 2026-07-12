@@ -13,6 +13,14 @@ describe('Hero', () => {
     jest.clearAllMocks();
   });
 
+  it('renders the decorative floating square field', () => {
+    render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
+
+    const squares = screen.getAllByTestId('hero-floating-square');
+    expect(squares.length).toBeGreaterThanOrEqual(8);
+    expect(squares.every((square) => square.getAttribute('aria-hidden') === 'true')).toBe(true);
+  });
+
   it('renders the XPatla-inspired slogan', () => {
     render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
 
@@ -52,12 +60,7 @@ describe('Hero', () => {
 
   it('routes cafe_admin user to cafe-admin panel', () => {
     render(
-      <Hero
-        onLogin={jest.fn()}
-        onRegister={jest.fn()}
-        isLoggedIn={true}
-        userRole="cafe_admin"
-      />
+      <Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={true} userRole="cafe_admin" />
     );
 
     fireEvent.click(screen.getByText('Panele Geç'));
