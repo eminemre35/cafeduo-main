@@ -842,6 +842,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                               radius: Number.parseInt(value || '0', 10),
                             }))
                           }
+                          onPrimaryRadiusChange={(value) =>
+                            setEditCafeData({
+                              ...editCafeData,
+                              radius: Number.parseInt(value || '0', 10),
+                            })
+                          }
                           onSecondaryLatitudeChange={(value) =>
                             setEditCafeData((current) => ({ ...current, secondaryLatitude: value }))
                           }
@@ -863,6 +869,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                               ...current,
                               secondaryRadius: Number.parseInt(value || '0', 10),
                             }))
+                          }
+                          onSecondaryRadiusChange={(value) =>
+                            setEditCafeData({
+                              ...editCafeData,
+                              secondaryRadius: Number.parseInt(value || '0', 10),
+                            })
                           }
                         />
                       </div>

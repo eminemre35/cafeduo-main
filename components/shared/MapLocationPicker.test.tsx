@@ -65,7 +65,7 @@ describe('MapLocationPicker', () => {
     expect(props.onSecondaryLongitudeChange).toHaveBeenCalledWith('29.102000');
   });
 
-  it('emits the selected coordinate pair atomically', async () => {
+  it('emits the selected coordinate pair atomically when provided', async () => {
     const props = {
       ...buildProps(),
       onPrimaryCoordinatesChange: jest.fn(),
