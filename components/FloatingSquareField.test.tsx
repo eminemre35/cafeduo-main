@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { useReducedMotion } from 'framer-motion';
 import { FloatingSquareField } from './FloatingSquareField';
