@@ -342,6 +342,10 @@ export const bootstrapAuthenticatedPage = async (
     await cafeSelect.selectOption(selectedCafeId);
     await tableInput.fill(tableNumber);
     await expect(tableInput).toHaveValue(tableNumber);
+    const showVerification = page.locator('[data-testid="checkin-show-verification"]');
+    if (await isVisible(showVerification)) {
+      await showVerification.click();
+    }
     await verificationInput.fill(verificationCode);
     await expect(verificationInput).toHaveValue(verificationCode);
     await expect(checkInSubmit).toBeEnabled({ timeout: 3000 });
