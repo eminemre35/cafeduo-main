@@ -65,6 +65,26 @@ describe('MapLocationPicker', () => {
     expect(props.onSecondaryLongitudeChange).toHaveBeenCalledWith('29.102000');
   });
 
+  it('emits the selected coordinate pair atomically when provided', async () => {
+    const props = {
+      ...buildProps(),
+      onPrimaryCoordinatesChange: jest.fn(),
+    };
+    (searchAddresses as jest.Mock).mockResolvedValue([
+      { placeId: '2', displayName: 'Yeni Kafe', latitude: 37.743, longitude: 29.103 },
+    ]);
+    const user = userEvent.setup();
+
+    render(<MapLocationPicker {...props} />);
+    await user.type(screen.getByRole('searchbox', { name: 'Adres ara' }), 'yeni');
+    await user.click(screen.getByRole('button', { name: 'Adres ara' }));
+    await user.click(await screen.findByRole('option', { name: 'Yeni Kafe' }));
+
+    expect(props.onPrimaryCoordinatesChange).toHaveBeenCalledWith('37.743000', '29.103000');
+    expect(props.onPrimaryLatitudeChange).not.toHaveBeenCalled();
+    expect(props.onPrimaryLongitudeChange).not.toHaveBeenCalled();
+  });
+
   it('synchronizes the radius slider and clears the active target', async () => {
     const props = buildProps();
     const user = userEvent.setup();
@@ -89,7 +109,9 @@ describe('MapLocationPicker', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Adres ara' }), 'kampüs');
     await user.click(screen.getByRole('button', { name: 'Adres ara' }));
 
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Adres servisi kapalı.'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Adres servisi kapalı.')
+    );
     expect(props.onPrimaryLatitudeChange).not.toHaveBeenCalled();
   });
 });

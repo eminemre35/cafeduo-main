@@ -828,10 +828,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           secondaryLongitude={editCafeData.secondaryLongitude}
                           secondaryRadius={Number(editCafeData.secondaryRadius) || 150}
                           onPrimaryLatitudeChange={(value) =>
-                            setEditCafeData({ ...editCafeData, latitude: value })
+                            setEditCafeData((current) => ({ ...current, latitude: value }))
                           }
                           onPrimaryLongitudeChange={(value) =>
-                            setEditCafeData({ ...editCafeData, longitude: value })
+                            setEditCafeData((current) => ({ ...current, longitude: value }))
+                          }
+                          onPrimaryCoordinatesChange={(latitude, longitude) =>
+                            setEditCafeData((current) => ({ ...current, latitude, longitude }))
+                          }
+                          onPrimaryRadiusChange={(value) =>
+                            setEditCafeData((current) => ({
+                              ...current,
+                              radius: Number.parseInt(value || '0', 10),
+                            }))
                           }
                           onPrimaryRadiusChange={(value) =>
                             setEditCafeData({
@@ -840,10 +849,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             })
                           }
                           onSecondaryLatitudeChange={(value) =>
-                            setEditCafeData({ ...editCafeData, secondaryLatitude: value })
+                            setEditCafeData((current) => ({ ...current, secondaryLatitude: value }))
                           }
                           onSecondaryLongitudeChange={(value) =>
-                            setEditCafeData({ ...editCafeData, secondaryLongitude: value })
+                            setEditCafeData((current) => ({
+                              ...current,
+                              secondaryLongitude: value,
+                            }))
+                          }
+                          onSecondaryCoordinatesChange={(latitude, longitude) =>
+                            setEditCafeData((current) => ({
+                              ...current,
+                              secondaryLatitude: latitude,
+                              secondaryLongitude: longitude,
+                            }))
+                          }
+                          onSecondaryRadiusChange={(value) =>
+                            setEditCafeData((current) => ({
+                              ...current,
+                              secondaryRadius: Number.parseInt(value || '0', 10),
+                            }))
                           }
                           onSecondaryRadiusChange={(value) =>
                             setEditCafeData({

@@ -65,9 +65,11 @@ interface MapLocationPickerProps {
 
   onPrimaryLatitudeChange: (value: string) => void;
   onPrimaryLongitudeChange: (value: string) => void;
+  onPrimaryCoordinatesChange?: (latitude: string, longitude: string) => void;
   onPrimaryRadiusChange: (value: string) => void;
   onSecondaryLatitudeChange?: (value: string) => void;
   onSecondaryLongitudeChange?: (value: string) => void;
+  onSecondaryCoordinatesChange?: (latitude: string, longitude: string) => void;
   onSecondaryRadiusChange?: (value: string) => void;
 
   /** If true, the secondary location switch is shown. Default: true if any
@@ -93,9 +95,11 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   secondaryRadius = 150,
   onPrimaryLatitudeChange,
   onPrimaryLongitudeChange,
+  onPrimaryCoordinatesChange,
   onPrimaryRadiusChange,
   onSecondaryLatitudeChange,
   onSecondaryLongitudeChange,
+  onSecondaryCoordinatesChange,
   onSecondaryRadiusChange,
   enableSecondary,
   enableSearch = true,
@@ -202,27 +206,35 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
     []
   );
 
-  const handleMapPick = (lat: number, lng: number) => {
+  const emitCoordinates = (latitude: number, longitude: number) => {
+    const formattedLatitude = latitude.toFixed(6);
+    const formattedLongitude = longitude.toFixed(6);
     if (mapTarget === 'secondary' && allowSecondary) {
-      onSecondaryLatitudeChange?.(lat.toFixed(6));
-      onSecondaryLongitudeChange?.(lng.toFixed(6));
+      if (onSecondaryCoordinatesChange) {
+        onSecondaryCoordinatesChange(formattedLatitude, formattedLongitude);
+      } else {
+        onSecondaryLatitudeChange?.(formattedLatitude);
+        onSecondaryLongitudeChange?.(formattedLongitude);
+      }
       return;
     }
-    onPrimaryLatitudeChange(lat.toFixed(6));
-    onPrimaryLongitudeChange(lng.toFixed(6));
+    if (onPrimaryCoordinatesChange) {
+      onPrimaryCoordinatesChange(formattedLatitude, formattedLongitude);
+    } else {
+      onPrimaryLatitudeChange(formattedLatitude);
+      onPrimaryLongitudeChange(formattedLongitude);
+    }
+  };
+
+  const handleMapPick = (lat: number, lng: number) => {
+    emitCoordinates(lat, lng);
   };
 
   const activeTargetName = mapTarget === 'secondary' ? 'İkinci konum' : 'Ana konum';
   const activeRadius = mapTarget === 'secondary' ? secondaryRadius : primaryRadius;
 
   const applyCoordinates = (latitude: number, longitude: number) => {
-    if (mapTarget === 'secondary' && allowSecondary) {
-      onSecondaryLatitudeChange?.(latitude.toFixed(6));
-      onSecondaryLongitudeChange?.(longitude.toFixed(6));
-      return;
-    }
-    onPrimaryLatitudeChange(latitude.toFixed(6));
-    onPrimaryLongitudeChange(longitude.toFixed(6));
+    emitCoordinates(latitude, longitude);
   };
 
   const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {

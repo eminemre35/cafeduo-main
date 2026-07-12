@@ -93,7 +93,7 @@ services:
     depends_on:
       - api
     expose:
-      - '80'
+      - '8080'
 
   caddy:
     image: caddy:2-alpine
@@ -107,6 +107,8 @@ services:
     environment:
       SITE_ADDRESS: '${SITE_ADDRESS:-localhost}'
       ACME_EMAIL: '${ACME_EMAIL:-}'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
