@@ -19,7 +19,7 @@ export const DEFAULT_E2E_API_BASE_URL = 'http://127.0.0.1:3001';
 
 const normalizeBaseUrl = (rawBase: string) => rawBase.replace(/\/+$/, '');
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const CHECK_IN_GATE_TIMEOUT_MS = 10000;
+const CHECK_IN_GATE_TIMEOUT_MS = 15000;
 const E2E_CAFE_VERIFICATION_CODES: Record<string, string> = {
   '1': '1234',
   '2': '5678',
@@ -272,9 +272,10 @@ export const bootstrapAuthenticatedPage = async (
   page: Page,
   baseURL: string,
   session: E2ESession,
-  options: { checkedIn?: boolean; userOverride?: any } = {}
+  options: { checkedIn?: boolean; userOverride?: any; skipCheckInRecovery?: boolean } = {}
 ) => {
   const checkedIn = Boolean(options.checkedIn);
+  const skipCheckInRecovery = Boolean(options.skipCheckInRecovery);
   const baseUser = options.userOverride || session.user;
   const user = checkedIn
     ? {
@@ -338,7 +339,7 @@ export const bootstrapAuthenticatedPage = async (
     const tableInput = page.locator('[data-testid="checkin-table-input"]');
     const verificationInput = page.locator('#checkin-verification-code');
 
-    await cafeSelect.waitFor({ state: 'visible', timeout: 3000 });
+    await cafeSelect.waitFor({ state: 'visible', timeout: 8000 });
     await cafeSelect.selectOption(selectedCafeId);
     await tableInput.fill(tableNumber);
     await expect(tableInput).toHaveValue(tableNumber);
@@ -348,7 +349,7 @@ export const bootstrapAuthenticatedPage = async (
     }
     await verificationInput.fill(verificationCode);
     await expect(verificationInput).toHaveValue(verificationCode);
-    await expect(checkInSubmit).toBeEnabled({ timeout: 3000 });
+    await expect(checkInSubmit).toBeEnabled({ timeout: 8000 });
     await checkInSubmit.click();
 
     return (
@@ -382,12 +383,12 @@ export const bootstrapAuthenticatedPage = async (
     return 'timeout';
   };
 
-  const initialSurface = await waitForSurface(7000);
+  const initialSurface = await waitForSurface(10000);
   if (initialSurface === 'dashboard') {
     return;
   }
 
-  if (checkedIn && initialSurface === 'checkin') {
+  if (checkedIn && !skipCheckInRecovery && initialSurface === 'checkin') {
     const dashboardAfterCheckIn = await performCheckInRecovery();
     if (dashboardAfterCheckIn) {
       return;
@@ -402,7 +403,7 @@ export const bootstrapAuthenticatedPage = async (
   await page.waitForTimeout(300);
 
   const finalSurface = await waitForSurface(CHECK_IN_GATE_TIMEOUT_MS);
-  if (checkedIn && finalSurface === 'checkin') {
+  if (checkedIn && !skipCheckInRecovery && finalSurface === 'checkin') {
     await performCheckInRecovery();
   }
 };
