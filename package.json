@@ -151,7 +151,7 @@
     "lint-staged": "^16.4.0",
     "node-pg-migrate": "^8.0.4",
     "nodemon": "^3.1.14",
-    "postcss": "8.5.12",
+    "postcss": "8.5.25",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.1.17",
     "ts-jest": "^29.4.6",
@@ -162,7 +162,7 @@
   "overrides": {
     "@rollup/plugin-terser": "1.0.0",
     "serialize-javascript": "7.0.5",
-    "shell-quote": "1.8.4",
+    "shell-quote": "1.10.0",
     "ws": "8.21.0"
   },
   "lint-staged": {
