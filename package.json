@@ -98,7 +98,7 @@
     "js-yaml": "4.3.0",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
-    "lucide-react": "^0.263.1",
+    "lucide-react": "^1.28.0",
     "nodemailer": "^9.0.3",
     "pg": "^8.11.3",
     "pixi.js": "^8.6.0",
