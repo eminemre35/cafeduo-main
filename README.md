@@ -23,7 +23,7 @@
 
 ---
 
-> **30 saniyelik özet** — CafeDuo, üniversite kafelerinde müşteri sadakatini **oyunlaştırma (gamification)** yoluyla güçlendiren web tabanlı bir platformdur. Kullanıcılar GPS+PIN ile kafe masasında check-in yapar, 2 kişilik gerçek zamanlı oyunlar oynar (Nişancı Düellosu, Bilgi Yarışı, Retro Satranç), puan kazanır ve bu puanları o kafenin ödüllerine dönüştürür. **React 18 + Node.js 20 + PostgreSQL 15 + Socket.IO** üzerine kuruludur; **Octalysis Framework**'ün 8 motivasyon sürücüsünden 7'sini aktif kullanır; üretim ortamında 7/24 [cafeduotr.com](https://cafeduotr.com) adresinde çalışmaktadır.
+> **30 saniyelik özet** — CafeDuo, üniversite kafelerinde müşteri sadakatini **oyunlaştırma (gamification)** yoluyla güçlendiren web tabanlı bir platformdur. Kullanıcılar GPS+PIN ile kafe masasında check-in yapar, 2 kişilik gerçek zamanlı oyunlar oynar (Nişancı Düellosu, Bilgi Yarışı, Retro Satranç), puan kazanır ve bu puanları o kafenin ödüllerine dönüştürür. **React 19 + Node.js 22 + PostgreSQL 15 + Socket.IO** üzerine kuruludur; **Octalysis Framework**'ün 8 motivasyon sürücüsünden 7'sini aktif kullanır; üretim ortamında 7/24 [cafeduotr.com](https://cafeduotr.com) adresinde çalışmaktadır.
 
 ## 📑 İçindekiler
 
@@ -124,15 +124,15 @@ Kullanıcı giriş yaptıktan sonra **kafe seçer + masa numarası girer + GPS k
 
 | Katman            | Teknoloji                                     | Tercih Sebebi                                                               |
 | ----------------- | --------------------------------------------- | --------------------------------------------------------------------------- |
-| **Frontend**      | React 18 · TypeScript 5 · Vite · Tailwind v4  | Tip güvenliği, hızlı HMR, geniş ekosistem                                   |
-| **Backend**       | Node.js 20 · Express                          | Frontend ile aynı dil; event-driven model gerçek zamanlı oyunlar için ideal |
+| **Frontend**      | React 19 · TypeScript 5 · Vite · Tailwind v4  | Tip güvenliği, hızlı HMR, geniş ekosistem                                   |
+| **Backend**       | Node.js 22 · Express                          | Frontend ile aynı dil; event-driven model gerçek zamanlı oyunlar için ideal |
 | **Veritabanı**    | PostgreSQL 15 · pgvector                      | ACID, JSONB, vektör arama (gelecek AI özellikleri için altyapı)             |
 | **Önbellek**      | Redis 7                                       | Sub-ms gecikme; pub/sub; rate-limit ve JWT blacklist store                  |
 | **Realtime**      | Socket.IO                                     | WebSocket + polling fallback (zayıf bağlantı dayanıklılığı)                 |
 | **Kapsayıcı**     | Docker · Docker Compose                       | 4 servis (postgres / redis / api / web), taşınabilir                        |
 | **Reverse Proxy** | Traefik (prod, Dokploy) · Caddy 2 (compose)   | Otomatik HTTPS, Let's Encrypt                                               |
 | **CI / CD**       | GitHub Actions · Dokploy                      | `main`'e her push → otomatik build + deploy                                 |
-| **Test**          | Jest · React Testing Library · Playwright     | 898 unit/integration + smoke E2E                                            |
+| **Test**          | Jest · React Testing Library · Playwright     | 1311 unit/integration + smoke E2E                                           |
 | **Gözlemleme**    | Sentry APM · Winston · (opsiyonel) Prometheus | Structured logs, hata izleme, metrik                                        |
 
 ## 🚀 Hızlı Başlangıç
@@ -228,7 +228,7 @@ npm run migrate:status   # Pending migration kontrolü
 
 | Metrik                       | Değer                                    |
 | ---------------------------- | ---------------------------------------- |
-| Birim / entegrasyon testleri | **898 passing** (91 test dosyası)        |
+| Birim / entegrasyon testleri | **1311 passing** (110 test dosyası)      |
 | Satır kapsama                | **%67** (Google standardı %60-80 içinde) |
 | Dal kapsama                  | **%54**                                  |
 | E2E (Playwright)             | Smoke (kritik akış) + advanced realtime  |
@@ -236,7 +236,7 @@ npm run migrate:status   # Pending migration kontrolü
 | CI çalıştırma süresi         | ~30 sn unit · ~3 dk full pipeline        |
 
 ```bash
-npm run test:ci    # 898 test + coverage raporu
+npm run test:ci    # 1311 test + coverage raporu
 npm run test:e2e   # Smoke senaryolar
 ```
 
@@ -297,7 +297,7 @@ Detaylı kurulum rehberi: [DEPLOYMENT.md](./DEPLOYMENT.md)
 - [x] MVP: kimlik, check-in, 3 oyun, puan ekonomisi, kupon, RBAC
 - [x] Üretim dağıtımı + otomatik HTTPS + Dokploy CI/CD
 - [x] Sentry APM + structured logging
-- [x] 898 test, %67 satır kapsama
+- [x] 1311 test, %81 satır kapsama
 - [ ] Native uygulama (React Native) — GPS spoofing tespiti için `FLAG_MOCK_LOCATION`
 - [ ] **Streak mekaniği** (Octalysis 8. sürücü: Kayıp Kaçınma) — etik sınırlar gözetilerek
 - [ ] B2B SaaS abonelik portali (kafe sahibi self-service onboarding)

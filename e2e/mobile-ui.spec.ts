@@ -112,4 +112,32 @@ test.describe('Mobile UI Stability', () => {
       contentType: 'image/png',
     });
   });
+
+  test('@advanced daily reward wheel stays usable on mobile without overflow', async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
+    const session = await provisionUser(request, root, 'mobile_wheel');
+    await checkInUser(request, root, session.token, { tableNumber: 8, csrfToken: session.csrfToken });
+    const user = await fetchCurrentUser(request, root, session.token);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await bootstrapAuthenticatedPage(page, root, session, {
+      checkedIn: true,
+      userOverride: user,
+      skipCheckInRecovery: true,
+    });
+
+    const wheel = page.locator('[data-testid="daily-reward-wheel"]').first();
+    await expect(wheel).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-testid="wheel-spin-button"]').first()).toBeVisible();
+
+    // Çark mobilde yatay taşma yaratmamalı.
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth + 1
+    );
+    expect(hasHorizontalOverflow).toBeFalsy();
+  });
 });

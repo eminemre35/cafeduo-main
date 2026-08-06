@@ -17,6 +17,7 @@
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 const { clearCache } = require('../middleware/cache');
 const { SUPPORTED_GAME_TYPES } = require('../utils/serverConfig');
+const memoryState = require('../store/memoryState');
 
 const MIN_WINDOW_MS = 15 * 60 * 1000; // 15 min
 const MAX_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -205,12 +206,27 @@ const createTournamentHandlers = ({ pool, isDbConnected, logger }) => {
           );
         }
       },
-      memory: async () =>
-        sendApiProblem(res, {
-          status: 501,
-          code: 'NOT_IMPLEMENTED',
-          message: 'Demo modda turnuva oluşturulamaz.',
-        }),
+      memory: async () => {
+        const nextId =
+          memoryState.tournaments.reduce((max, t) => Math.max(max, Number(t.id) || 0), 0) + 1;
+        const tournament = {
+          id: nextId,
+          cafe_id: cafeId,
+          name: rawName,
+          game_type: gameType,
+          start_at: startAt.toISOString(),
+          end_at: endAt.toISOString(),
+          // start_at >= now + MIN_LEAD validasyonu gereği her zaman scheduled
+          // başlar; tournamentJobs start_at geçince active'e ilerletir (DB ile aynı).
+          status: 'scheduled',
+          prize_tiers: tiers,
+          created_by: req.user?.id || null,
+          created_at: new Date().toISOString(),
+          finalized_at: null,
+        };
+        memoryState.tournaments.push(tournament);
+        return res.json({ success: true, tournament });
+      },
     });
   };
 
@@ -234,16 +250,20 @@ const createTournamentHandlers = ({ pool, isDbConnected, logger }) => {
           );
           return res.json(result.rows);
         } catch (err) {
-          return sendApiError(
-            res,
-            logger,
-            'Tournament list error',
-            err,
-            'Turnuvalar yüklenemedi.'
-          );
+          return sendApiError(res, logger, 'Tournament list error', err, 'Turnuvalar yüklenemedi.');
         }
       },
-      memory: async () => res.json([]),
+      memory: async () => {
+        const rows = memoryState.tournaments
+          .filter(
+            (t) =>
+              Number(t.cafe_id) === cafeId &&
+              ['scheduled', 'active', 'finalizing', 'finished'].includes(t.status)
+          )
+          .sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime())
+          .slice(0, 50);
+        return res.json(rows);
+      },
     });
   };
 
@@ -297,12 +317,18 @@ const createTournamentHandlers = ({ pool, isDbConnected, logger }) => {
           );
         }
       },
-      memory: async () =>
-        sendApiProblem(res, {
-          status: 501,
-          code: 'NOT_IMPLEMENTED',
-          message: 'Demo modda sıralama yok.',
-        }),
+      memory: async () => {
+        const tournament = memoryState.tournaments.find((t) => Number(t.id) === tournamentId);
+        if (!tournament) {
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'TOURNAMENT_NOT_FOUND',
+            message: 'Turnuva bulunamadı.',
+          });
+        }
+        // Memory mode'da turnuva puanları birikmez; boş leaderboard döner.
+        return res.json({ tournament, leaderboard: [] });
+      },
     });
   };
 
@@ -350,12 +376,25 @@ const createTournamentHandlers = ({ pool, isDbConnected, logger }) => {
           );
         }
       },
-      memory: async () =>
-        sendApiProblem(res, {
-          status: 501,
-          code: 'NOT_IMPLEMENTED',
-          message: 'Demo modda turnuva iptali yok.',
-        }),
+      memory: async () => {
+        const adminScope = isAdminActor(req.user);
+        const target = memoryState.tournaments.find((t) => {
+          const idMatches = Number(t.id) === tournamentId;
+          if (!idMatches) return false;
+          if (adminScope) return true;
+          return Number(t.cafe_id) === cafeId;
+        });
+        if (!target || target.status !== 'scheduled') {
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'NOT_CANCELLABLE',
+            message: 'Sadece henüz başlamamış turnuvalar iptal edilebilir.',
+          });
+        }
+        target.status = 'cancelled';
+        target.finalized_at = new Date().toISOString();
+        return res.json({ success: true });
+      },
     });
   };
 

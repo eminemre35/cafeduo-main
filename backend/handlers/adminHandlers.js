@@ -165,10 +165,14 @@ const createAdminHandlers = ({
         const users = getMemoryUsers();
         const nextId =
           (users.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) || 0) + 1;
+        // Login bcrypt.compare ile password_hash dogrular; hash'siz kullanici
+        // hicbir zaman giris yapamaz (memory createUser bug'i).
+        const hashedPassword = await bcrypt.hash(String(payload.password), 10);
         const createdUser = {
           id: nextId,
           username: payload.username,
           email: payload.email,
+          password_hash: hashedPassword,
           points: payload.points,
           wins: 0,
           gamesPlayed: 0,

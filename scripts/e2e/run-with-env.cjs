@@ -23,6 +23,10 @@ const env = {
   AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS: '500',
   API_RATE_LIMIT_MAX_REQUESTS: '5000',
   RATE_LIMIT_MAX_REQUESTS: '5000',
+  // E2E admin bootstrap: promoteBootstrapAdmins memory mode'da da calisir.
+  // Turnuva / cafe-admin / konum editoru testleri icin sabit admin hesabi.
+  BOOTSTRAP_ADMIN_EMAILS: process.env.BOOTSTRAP_ADMIN_EMAILS || 'e2e.admin@example.com',
+  BOOTSTRAP_ADMIN_PASSWORD: process.env.BOOTSTRAP_ADMIN_PASSWORD || 'E2eAdmin!2026',
 };
 
 const child = spawn(command, args, {

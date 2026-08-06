@@ -15,6 +15,7 @@ const memoryState = {
       table_number: null,
     },
   ],
+  tournaments: [],
   games: [
     {
       id: 1,

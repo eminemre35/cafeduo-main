@@ -20,8 +20,13 @@ jest.mock('../middleware/cache', () => ({
 }));
 
 const { createTournamentHandlers } = require('./tournamentHandlers');
+const memoryState = require('../store/memoryState');
 
 // ─── yardımcılar ───────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+  memoryState.tournaments.length = 0;
+});
 
 const createMockRes = () => {
   const res = {};
@@ -92,18 +97,40 @@ describe('createTournament', () => {
     expect(res.payload.tournament).toEqual(created);
   });
 
-  it('Demo modda 501 döner', async () => {
+  it('Memory modda geçmiş start_at reddedilir (WINDOW_TOO_SOON)', async () => {
     const { handlers } = makeHandlers({ dbMode: false });
+    const start = new Date(Date.now() - 60_000);
+    const end = new Date(Date.now() + 60 * 60 * 1000);
     const req = {
       user: { id: 1, role: 'cafe_admin', cafe_id: 3 },
-      body: { name: 'Demo', start_at, end_at, prize_tiers: validTiers },
+      body: {
+        name: 'Demo Turnuvası',
+        start_at: start.toISOString(),
+        end_at: end.toISOString(),
+        prize_tiers: validTiers,
+      },
     };
     const res = createMockRes();
 
     await handlers.createTournament(req, res);
 
-    expect(res.statusCode).toBe(501);
-    expect(res.payload.code).toBe('NOT_IMPLEMENTED');
+    expect(res.statusCode).toBe(400);
+    expect(res.payload.code).toBe('WINDOW_TOO_SOON');
+    expect(memoryState.tournaments).toHaveLength(0);
+  });
+
+  it('Memory modda gelecek start_at ile scheduled turnuva oluşturur', async () => {
+    const { handlers } = makeHandlers({ dbMode: false });
+    const req = {
+      user: { id: 1, role: 'cafe_admin', cafe_id: 3 },
+      body: { name: 'Gelecek', start_at, end_at, prize_tiers: validTiers },
+    };
+    const res = createMockRes();
+
+    await handlers.createTournament(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.tournament.status).toBe('scheduled');
   });
 
   it('cafe_id olmayan kullanıcıda 400 döner', async () => {
@@ -548,7 +575,16 @@ describe('getLeaderboard', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it('Demo modda 501 döner', async () => {
+  it('Memory modda var olan turnuva için boş leaderboard döner', async () => {
+    memoryState.tournaments.push({
+      id: 5,
+      cafe_id: 3,
+      name: 'Demo',
+      status: 'active',
+      start_at: new Date(Date.now() - 60_000).toISOString(),
+      end_at: new Date(Date.now() + 60_000).toISOString(),
+      prize_tiers: [],
+    });
     const { handlers } = makeHandlers({ dbMode: false });
 
     const req = { params: { id: '5' } };
@@ -556,8 +592,21 @@ describe('getLeaderboard', () => {
 
     await handlers.getLeaderboard(req, res);
 
-    expect(res.statusCode).toBe(501);
-    expect(res.payload.code).toBe('NOT_IMPLEMENTED');
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.tournament.id).toBe(5);
+    expect(res.payload.leaderboard).toEqual([]);
+  });
+
+  it('Memory modda olmayan turnuva için 404 döner', async () => {
+    const { handlers } = makeHandlers({ dbMode: false });
+
+    const req = { params: { id: '99' } };
+    const res = createMockRes();
+
+    await handlers.getLeaderboard(req, res);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.payload.code).toBe('TOURNAMENT_NOT_FOUND');
   });
 
   it('DB hatası 500 döner', async () => {
@@ -626,7 +675,16 @@ describe('cancelTournament', () => {
     expect(res.payload.code).toBe('VALIDATION_ERROR');
   });
 
-  it('Demo modda 501 döner', async () => {
+  it('Memory modda scheduled turnuvayı iptal eder', async () => {
+    memoryState.tournaments.push({
+      id: 3,
+      cafe_id: 3,
+      name: 'Demo',
+      status: 'scheduled',
+      start_at: new Date(Date.now() + 60_000).toISOString(),
+      end_at: new Date(Date.now() + 3_600_000).toISOString(),
+      prize_tiers: [],
+    });
     const { handlers } = makeHandlers({ dbMode: false });
 
     const req = {
@@ -638,8 +696,34 @@ describe('cancelTournament', () => {
 
     await handlers.cancelTournament(req, res);
 
-    expect(res.statusCode).toBe(501);
-    expect(res.payload.code).toBe('NOT_IMPLEMENTED');
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.success).toBe(true);
+    expect(memoryState.tournaments[0].status).toBe('cancelled');
+  });
+
+  it('Memory modda aktif turnuva iptal edilemez (409)', async () => {
+    memoryState.tournaments.push({
+      id: 3,
+      cafe_id: 3,
+      name: 'Demo',
+      status: 'active',
+      start_at: new Date(Date.now() - 60_000).toISOString(),
+      end_at: new Date(Date.now() + 3_600_000).toISOString(),
+      prize_tiers: [],
+    });
+    const { handlers } = makeHandlers({ dbMode: false });
+
+    const req = {
+      params: { id: '3' },
+      user: { id: 1, role: 'cafe_admin', cafe_id: 3 },
+      body: {},
+    };
+    const res = createMockRes();
+
+    await handlers.cancelTournament(req, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('NOT_CANCELLABLE');
   });
 
   it('Admin tüm kafelerin turnuvalarını iptal edebilir (cafeFilter uygulanmaz)', async () => {
