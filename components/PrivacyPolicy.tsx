@@ -12,7 +12,7 @@
  * for client-side route changes — we force scroll(0,0) ourselves.
  */
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import {
   Shield,
   Lock,

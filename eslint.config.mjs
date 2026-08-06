@@ -113,7 +113,7 @@ export default [
   },
   // Backend & migrations (CommonJS / Node)
   {
-    files: ['backend/**/*.js', 'migrations/**/*.js', 'shared/**/*.js'],
+    files: ['backend/**/*.js', 'migrations/**/*.js', 'shared/**/*.js', 'jest.transform.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
@@ -211,7 +211,12 @@ export default [
   },
   // Test files — looser
   {
-    files: ['**/*.{test,spec}.{js,ts,tsx}', 'test-setup.ts', 'e2e/**/*.ts', '__mocks__/**/*.js'],
+    files: [
+      '**/*.{test,spec}.{js,ts,tsx}',
+      'test-setup.ts',
+      'e2e/**/*.ts',
+      '__mocks__/**/*.{js,cjs}',
+    ],
     languageOptions: {
       globals: {
         require: 'readonly',

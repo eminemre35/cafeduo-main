@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { Footer } from './Footer';
 
 describe('Footer', () => {
@@ -12,7 +12,9 @@ describe('Footer', () => {
     );
 
     expect(screen.getByText('CafeDuo')).toBeInTheDocument();
-    expect(screen.getByText(`© ${new Date().getFullYear()} tüm hakları saklıdır`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`© ${new Date().getFullYear()} tüm hakları saklıdır`)
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         'Kafede bekleyen kullanıcıları eşleştirip oyun ve ödül döngüsüne bağlayan sosyal deneyim altyapısı.'

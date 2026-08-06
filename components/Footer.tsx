@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { Instagram, Twitter, Mail, Shield, ArrowUpRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { BUILD_META } from '../lib/buildMeta';
 import { RevealGroup, RevealItem } from './ui';
 

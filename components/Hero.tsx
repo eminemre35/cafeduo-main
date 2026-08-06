@@ -8,7 +8,7 @@
  * stats, double-shadow CTAs.
  */
 import React, { useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowRight, Play, Timer, Trophy, Users } from 'lucide-react';
 import { Button, Squiggle } from './ui';

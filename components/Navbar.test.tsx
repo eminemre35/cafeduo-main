@@ -5,7 +5,7 @@ import { Navbar } from './Navbar';
 const mockNavigate = jest.fn();
 const mockUseLocation = jest.fn();
 
-jest.mock('react-router-dom', () => ({
+jest.mock('react-router', () => ({
   useNavigate: () => mockNavigate,
   useLocation: () => mockUseLocation(),
 }));
@@ -13,8 +13,8 @@ jest.mock('react-router-dom', () => ({
 jest.mock('../constants', () => ({
   NAV_ITEMS: [
     { id: 'features', label: 'ÖZELLİKLER' },
-    { id: 'games', label: 'OYUNLAR' }
-  ]
+    { id: 'games', label: 'OYUNLAR' },
+  ],
 }));
 
 describe('Navbar', () => {

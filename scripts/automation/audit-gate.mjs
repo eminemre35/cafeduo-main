@@ -1,26 +1,19 @@
 #!/usr/bin/env node
 /**
- * Audit gate with allowlist.
+ * Audit gate — strict.
  *
- * Fails CI when `npm audit` reports moderate+ vulnerabilities EXCEPT
- * advisories that are documented as non-applicable to this project.
- *
- * Why allowlist exists:
- *   - GHSA-qwww-vcr4-c8h2 (react-router RSC Mode CSRF Bypass):
- *     Only affects React Router's RSC (React Server Components) mode.
- *     CafeDuo is a classic Vite SPA using BrowserRouter — no RSC, no
- *     loaders/actions. Fixing requires React 19 upgrade (RR 8.x peer dep),
- *     tracked as a separate task. Remove from ALLOWLIST after that upgrade.
+ * Fails CI when `npm audit` reports moderate+ vulnerabilities.
+ * No allowlist: the last exception (GHSA-qwww-vcr4-c8h2, react-router
+ * RSC-only CSRF) was resolved by the React 19 + React Router 8 upgrade.
+ * If a non-applicable advisory appears again, document it here BEFORE
+ * adding it to ALLOWLIST below.
  *
  * Usage: node scripts/automation/audit-gate.mjs
  * Exit code 0 = gate passed, 1 = actionable vulnerabilities found.
  */
 import { spawnSync } from 'node:child_process';
 
-const ALLOWLIST = new Set([
-  // react-router RSC-mode CSRF bypass — SPA does not use RSC (see header)
-  'GHSA-qwww-vcr4-c8h2',
-]);
+const ALLOWLIST = new Set([]);
 
 const MIN_SEVERITY = ['moderate', 'high', 'critical'];
 

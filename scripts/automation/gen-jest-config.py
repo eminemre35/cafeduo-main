@@ -1,9 +1,25 @@
-export default {
+# jest.config.js'i byte-exact ureten gecici script.
+# Backslash'lari elle saymak yerine chr(92) kullaniyoruz.
+BS = chr(92)  # backslash
+
+# JS kaynak dosyasinda regex key'lerinin VALUE'lari soyle olmali:
+#   tsx : ^.+\.tsx?$          (regex: literal dot + tsx)
+#   rr  : ^.+node_modules[\\/]react-router[\\/].+\.js$  (class: backslash veya slash)
+#
+# JS string literal'inde value'daki her bir backslash icin kaynakta iki tane gerekir:
+#   tsx key raw : '^.+<BS><BS>.tsx?$'
+#   rr key raw  : '^.+node_modules[<BS><BS><BS><BS>/]react-router[<BS><BS><BS><BS>/].+<BS><BS>.js$'
+
+TSX_KEY = "'^.+" + BS + BS + ".tsx?$'"
+RR_KEY = "'^.+node_modules[" + BS + BS + BS + BS + "/]react-router[" + BS + BS + BS + BS + "/].+" + BS + BS + ".js$'"
+COOKIE_ES_KEY = "'^.+node_modules[" + BS + BS + BS + BS + "/]cookie-es[" + BS + BS + BS + BS + "/].+" + BS + BS + ".m?js$'"
+
+content = """export default {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transform: {
-    '^.+\\.tsx?$': [
+    %s: [
       'ts-jest',
       {
         useESM: true,
@@ -14,12 +30,12 @@ export default {
     ],
     // react-router 8 ESM-only'dir; jest.transform.js onu CJS'e cevirir
     // (import.meta.hot temizlenir, ts-jest commonjs ciktisi uretir).
-    '^.+node_modules[\\\\/]react-router[\\\\/].+\\.js$': '<rootDir>/jest.transform.js',
+    %s: '<rootDir>/jest.transform.js',
   },
   transformIgnorePatterns: ['node_modules/(?!(react-router)/)'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '%s.(css|less|scss|sass)$': 'identity-obj-proxy',
     // cookie-es ESM-only (.mjs) — jest CJS pipeline'inda yuklenemez; react-router'in
     // server-runtime'inda kullanilir ve testlerde cagrilmaz, minimal stub yeterli.
     '^cookie-es$': '<rootDir>/__mocks__/cookie-es.cjs',
@@ -53,3 +69,12 @@ export default {
     '!**/*.legacy.js',
   ],
 };
+""" % (TSX_KEY, RR_KEY, BS + BS)
+
+with open('jest.config.js', 'w', encoding='utf-8', newline='\n') as f:
+    f.write(content)
+
+print('YAZILDI. Key satirlari:')
+for line in content.splitlines():
+    if 'tsx?$' in line or 'react-router[' in line:
+        print(repr(line))

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { AlertTriangle, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
