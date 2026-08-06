@@ -51,5 +51,11 @@ export default {
     'backend/utils/**/*.js',
     '!**/*.d.ts',
     '!**/*.legacy.js',
+    // WebGL/PixiJS overlay dosyalari jsdom'da test edilemez (her testte mock'lanir)
+    '!lib/pixi/**',
+    '!components/games/*StageCanvas*',
+    '!components/games/ChessBoardOverlay.tsx',
+    // Sadece re-export yapan barrel dosyasi
+    '!backend/handlers/game/index.js',
   ],
 };

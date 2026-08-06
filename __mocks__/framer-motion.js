@@ -64,7 +64,10 @@ module.exports = {
   useAnimation: () => ({ start: jest.fn(), stop: jest.fn(), set: jest.fn() }),
   useMotionValue: (initial) => ({ get: () => initial, set: jest.fn() }),
   useTransform: () => ({ get: jest.fn() }),
-  useSpring: (val) => val,
+  useSpring: (val) =>
+    typeof val === 'object' && val !== null && typeof val.get === 'function'
+      ? val
+      : { get: () => val, set: jest.fn() },
   useReducedMotion: () => false,
   useScroll: () => ({ scrollY: { get: () => 0 }, scrollX: { get: () => 0 } }),
   useVelocity: () => ({ get: () => 0 }),
