@@ -22,15 +22,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { LocateFixed, Search, Trash2 } from 'lucide-react';
 import { searchAddresses, type GeocodingResult } from '../../lib/geocoding';
 
-interface LeafletBundle {
-  MapContainer: React.ComponentType<any>;
-  TileLayer: React.ComponentType<any>;
-  Marker: React.ComponentType<any>;
-  Circle: React.ComponentType<any>;
-  useMapEvents: (handlers: {
-    click?: (event: { latlng?: { lat?: number; lng?: number } }) => void;
-  }) => unknown;
-}
+type LeafletBundle = {
+  MapContainer: typeof import('react-leaflet').MapContainer;
+  TileLayer: typeof import('react-leaflet').TileLayer;
+  Marker: typeof import('react-leaflet').Marker;
+  Circle: typeof import('react-leaflet').Circle;
+  useMapEvents: typeof import('react-leaflet').useMapEvents;
+};
 
 /** Internal — wires Leaflet's click events into our pick callback. Lives
  *  inside the map's React tree so it can call useMapEvents safely. */
@@ -169,7 +167,8 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
       .then(([reactLeaflet, leafletModule]) => {
         if (!isMounted) return;
 
-        const Leaflet = (leafletModule as { default?: any }).default || leafletModule;
+        const leafletNs = leafletModule as typeof import('leaflet');
+        const Leaflet = (leafletNs as { default?: typeof import('leaflet') }).default || leafletNs;
         const defaultIcon = Leaflet.icon({
           iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
           iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',

@@ -763,24 +763,7 @@ describe('adminHandlers', () => {
   });
 
   describe('updateCafe (db mode)', () => {
-    const createDbContext = (extraColumns = []) => {
-      const client = { query: jest.fn(), release: jest.fn() };
-      const allColumns = [
-        { column_name: 'id' },
-        { column_name: 'name' },
-        { column_name: 'address' },
-        { column_name: 'total_tables' },
-        { column_name: 'table_count' },
-        { column_name: 'pin' },
-        { column_name: 'daily_pin' },
-        { column_name: 'latitude' },
-        { column_name: 'longitude' },
-        { column_name: 'radius' },
-        { column_name: 'secondary_latitude' },
-        { column_name: 'secondary_longitude' },
-        { column_name: 'secondary_radius' },
-        ...extraColumns.map((c) => ({ column_name: c })),
-      ];
+    const createDbContext = () => {
       const pool = { query: jest.fn() };
       const logger = { error: jest.fn(), warn: jest.fn() };
       const cacheCleaner = jest.fn().mockResolvedValue(undefined);
@@ -1084,7 +1067,7 @@ describe('adminHandlers', () => {
     });
 
     it('kullanıcısı olmayan kafe silinir, oyun güncelleme atlanır', async () => {
-      const { dbHandlers, client, cacheCleaner } = createDbContext();
+      const { dbHandlers, client } = createDbContext();
       client.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({ rows: [{ id: 3, name: 'Boş Kafe' }] }) // cafe lock

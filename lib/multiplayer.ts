@@ -53,17 +53,26 @@ const buildSubmissionKey = (params: {
   return `${base}|${entropy}`.slice(0, 96);
 };
 
-const extractAuthoritativeWinner = (game: any): string | null => {
+interface GameResultLike {
+  winner?: string | null;
+  status?: string | null;
+  gameState?: {
+    resolvedWinner?: string | null;
+    live?: { resolvedWinner?: string | null };
+  };
+}
+
+const extractAuthoritativeWinner = (game: GameResultLike | null | undefined): string | null => {
   const winner = normalizeName(
-    game?.winner ??
-    game?.gameState?.resolvedWinner ??
-    game?.gameState?.live?.resolvedWinner
+    game?.winner ?? game?.gameState?.resolvedWinner ?? game?.gameState?.live?.resolvedWinner
   );
   return winner || null;
 };
 
-const isGameFinished = (game: any): boolean =>
-  String(game?.status || '').trim().toLowerCase() === 'finished';
+const isGameFinished = (game: GameResultLike | null | undefined): boolean =>
+  String(game?.status || '')
+    .trim()
+    .toLowerCase() === 'finished';
 
 export const pickWinnerFromScoreboard = (scoreboard: Scoreboard): string | null => {
   const entries = Object.entries(scoreboard);
@@ -98,7 +107,12 @@ export const submitScoreAndWaitForWinner = async (params: {
   durationMs?: number;
   timeoutMs?: number;
   pollIntervalMs?: number;
-}): Promise<{ winner: string | null; timedOut: boolean; scoreboard: Scoreboard; finished: boolean }> => {
+}): Promise<{
+  winner: string | null;
+  timedOut: boolean;
+  scoreboard: Scoreboard;
+  finished: boolean;
+}> => {
   const {
     gameId,
     username,
@@ -123,7 +137,9 @@ export const submitScoreAndWaitForWinner = async (params: {
   while (Date.now() < deadline) {
     try {
       const game = await api.games.get(gameId);
-      const participants = [normalizeName(game?.hostName), normalizeName(game?.guestName)].filter(Boolean);
+      const participants = [normalizeName(game?.hostName), normalizeName(game?.guestName)].filter(
+        Boolean
+      );
       const gameState = game?.gameState;
       const maybeResults =
         gameState && typeof gameState === 'object'

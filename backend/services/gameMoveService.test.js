@@ -62,7 +62,6 @@
  */
 
 const { createGameMoveService } = require('./gameMoveService');
-const { GAME_STATUS } = require('../utils/gameStateMachine');
 
 // ---------------------------------------------------------------------------
 // Yardımcılar
@@ -136,61 +135,6 @@ const makeClient = ({ gameRow = null, failOn = null } = {}) => {
     return { rows: [] };
   });
   return client;
-};
-
-/** Temel bağımlılıklar — testlerde override edilebilir */
-const basedeps = () => ({
-  isDbConnected: jest.fn(async () => true),
-  logger: { error: jest.fn() },
-  normalizeParticipantName,
-  isAdminActor: () => false,
-  isChessGameType: (t) => String(t || '').trim() === 'Retro Satranç',
-  resolveParticipantColor: (participant, game) => {
-    if (participant === (game.host_name || game.hostName)) return 'w';
-    if (participant === (game.guest_name || game.guestName)) return 'b';
-    return null;
-  },
-  sanitizeChessMovePayload: (m) => m,
-  createInitialChessState: () => ({ fen: '', clock: {} }),
-  buildChessStateFromEngine: (chess, _prev, appliedMove) => ({
-    fen: chess.fen(),
-    turn: chess.turn(),
-    isGameOver: chess.isGameOver(),
-    result: chess.isCheckmate() ? 'checkmate' : chess.isDraw() ? 'draw' : null,
-    moveHistory: appliedMove ? [{ san: appliedMove.san }] : [],
-  }),
-  assertGameStatusTransition: () => ({ ok: true }),
-  assertRequiredGameStatus: ({ currentStatus, requiredStatus }) => ({
-    ok: currentStatus === requiredStatus,
-    code: 'invalid_status_transition',
-    message: 'invalid',
-    from: currentStatus,
-    to: requiredStatus,
-  }),
-  mapTransitionError: (e) => ({ error: e.message || 'transition_error', ...e }),
-  sanitizeLiveSubmission: (p) => p,
-  getGameParticipants,
-  pickWinnerFromResults: () => null,
-  sanitizeScoreSubmission: (p) => p,
-  getMemoryGames: () => [],
-  emitRealtimeUpdate: jest.fn(),
-  applyDbSettlement: jest.fn(async () => ({ transferredPoints: 50 })),
-  applyMemorySettlement: jest.fn(() => ({ transferredPoints: 50 })),
-  getMemoryUsers: jest.fn(() => []),
-});
-
-const makeService = (overrides = {}, client = null) => {
-  const deps = { ...baseDepsDerived(), ...overrides };
-  if (client) deps.pool = { connect: jest.fn(async () => client) };
-  return createGameMoveService(deps);
-};
-
-// baseDepsDerived — baseDepsl ile aynı ama jest.fn() çağrıları taze
-const baseDepsDerived = () => baseDepsDerivedImpl();
-const _pool = null;
-const baseDepsDerivedImpl = () => {
-  const deps = baseDepsDerived_raw();
-  return deps;
 };
 
 // Temiz fabrika

@@ -31,6 +31,7 @@ const removeRetryMarker = (key: string) => {
 /**
  * Wrap React.lazy with one-time hard refresh recovery for stale chunk URLs after deployment.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- React.lazy requires ComponentType<any>; props are unknown at wrapper level
 export const lazyWithRetry = <T extends React.ComponentType<any>>(
   importFactory: () => Promise<{ default: T }>,
   componentId: string

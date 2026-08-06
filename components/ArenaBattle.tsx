@@ -150,7 +150,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     }, GAUGE_TICK_MS);
 
     return () => window.clearInterval(interval);
-  }, [live.done, live.resolvingMatch, round]);
+  }, [live.done, live.resolvingMatch, round, GAUGE_STEP, GAUGE_TICK_MS]);
 
   // Push the bouncing gauge value into the PixiJS overlay each tick so the
   // animated reticle stays in sync with the underlying state.
